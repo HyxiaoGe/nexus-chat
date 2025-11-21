@@ -1,0 +1,5 @@
+{
+  "name": "NexusChat - Multi-LLM Room",
+  "description": "A professional multi-agent chatroom allowing simultaneous, independent responses from different LLM personas (Gemini powered) in a Telegram-style interface.",
+  "requestFramePermissions": []
+}
