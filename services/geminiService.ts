@@ -6,6 +6,7 @@ interface GenerateStreamParams {
   provider: LLMProvider;
   prompt: string;
   onChunk: (text: string) => void;
+  signal?: AbortSignal;
 }
 
 export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> => {
@@ -67,7 +68,8 @@ export const generateContentStream = async ({
   agent,
   provider,
   prompt,
-  onChunk
+  onChunk,
+  signal
 }: GenerateStreamParams): Promise<void> => {
   
   // 1. Handle Google GenAI Models
@@ -85,12 +87,16 @@ export const generateContentStream = async ({
       });
 
       for await (const chunk of response) {
+        if (signal?.aborted) {
+            break;
+        }
         const text = chunk.text;
         if (text) {
           onChunk(text);
         }
       }
     } catch (error) {
+      if (signal?.aborted) return; // Ignore abort errors for GenAI
       console.error("Gemini API Error:", error);
       throw error;
     }
@@ -132,6 +138,7 @@ export const generateContentStream = async ({
         const response = await fetch(url, {
             method: 'POST',
             headers,
+            signal, // Pass the abort signal to fetch
             body: JSON.stringify({
                 model: agent.modelId,
                 messages: [
@@ -154,6 +161,11 @@ export const generateContentStream = async ({
         let buffer = '';
 
         while (true) {
+            if (signal?.aborted) {
+                reader.cancel();
+                break;
+            }
+
             const { done, value } = await reader.read();
             if (done) break;
 
@@ -177,9 +189,10 @@ export const generateContentStream = async ({
                     }
                     
                     // Handle DeepSeek R1 reasoning content if present (OpenRouter often passes this through)
+                    // Some providers output reasoning inside the content, others in a specific field.
                     const reasoning = json.choices?.[0]?.delta?.reasoning_content;
                     if (reasoning) {
-                         onChunk(`\n\n> *Thinking Process:* ${reasoning}\n\n`);
+                         onChunk(`<think>${reasoning}</think>`);
                     }
                 } catch (e) {
                     // console.warn("Failed to parse SSE message", e);
@@ -187,7 +200,8 @@ export const generateContentStream = async ({
             }
         }
 
-    } catch (error) {
+    } catch (error: any) {
+        if (error.name === 'AbortError') return;
         console.error("OpenAI Compatible API Error:", error);
         throw error;
     }

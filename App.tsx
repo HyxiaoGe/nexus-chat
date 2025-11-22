@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare } from 'lucide-react';
+import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
 
@@ -8,16 +8,23 @@ import { Sidebar } from './components/Sidebar';
 import { MessageBubble } from './components/MessageBubble';
 import { ModelSettings } from './components/ModelSettings';
 import { ToastProvider } from './components/Toast';
-import { generateContentStream } from './services/geminiService';
 import { DEFAULT_AGENTS, DEFAULT_PROVIDERS, STORAGE_KEYS, DEFAULT_APP_SETTINGS } from './constants';
 import { Message, Session, AgentConfig, LLMProvider, AppSettings } from './types';
-
-const generateId = () => Math.random().toString(36).substring(2, 15);
+import { generateId } from './utils/common';
+import { useChatOrchestrator } from './hooks/useChatOrchestrator';
+import { useScrollToBottom } from './hooks/useScrollToBottom';
 
 interface NexusChatProps {
   appSettings: AppSettings;
   setAppSettings: (settings: AppSettings) => void;
 }
+
+const SUGGESTIONS = [
+    { icon: <Sparkles size={20} className="text-yellow-500" />, label: "Creative Writing", prompt: "Write a short sci-fi story about a robot who loves gardening." },
+    { icon: <Code size={20} className="text-blue-500" />, label: "Code Assistant", prompt: "Explain the difference between React useMemo and useCallback with examples." },
+    { icon: <Zap size={20} className="text-purple-500" />, label: "Brainstorming", prompt: "Give me 5 unique marketing ideas for a coffee shop." },
+    { icon: <Feather size={20} className="text-green-500" />, label: "Philosophy", prompt: "Summarize the core concepts of Stoicism in simple terms." },
+];
 
 const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) => {
   const { t, i18n } = useTranslation();
@@ -33,9 +40,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sync language with i18next
@@ -66,6 +71,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     if (savedAgents) setAgents(JSON.parse(savedAgents));
     if (savedProviders) {
         const parsed = JSON.parse(savedProviders);
+        // Ensure OpenRouter exists in old configs
         if (!parsed.find((p: LLMProvider) => p.id === 'provider-openrouter')) {
             setProviders([...parsed, DEFAULT_PROVIDERS.find(p => p.id === 'provider-openrouter')!]);
         } else {
@@ -96,20 +102,23 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(allMessages));
   };
 
-  // --- Scroll to bottom ---
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // --- Scrolling ---
+  // Use custom hook for smart scrolling (only auto-scroll if already at bottom)
+  const { scrollRef, onScroll, scrollToBottom, showScrollButton } = useScrollToBottom([messages]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isStreaming]);
+  // --- Hooks ---
+  const { isStreaming, sendMessage, stopGeneration } = useChatOrchestrator({
+      activeSessionId,
+      agents,
+      providers,
+      messages,
+      setMessages,
+      saveMessagesToStorage,
+      onScrollToBottom: scrollToBottom
+  });
 
   // --- Actions ---
   const createNewSession = () => {
-    // Note: t() might not be ready on first render if using backend, but with resource bundle it is fine.
-    // We can default to "New Chat" if t is missing or use a key that is replaced later? 
-    // Actually, title is persisted, so we must generate a string.
     const newSession: Session = {
       id: generateId(),
       title: `${t('common.create')} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
@@ -135,106 +144,31 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || !activeSessionId || isStreaming) return;
+  const onSend = () => {
+      sendMessage(input);
+      setInput('');
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+  };
 
-    const currentInput = input.trim();
-    setInput('');
-    if (textareaRef.current) textareaRef.current.style.height = 'auto';
-
-    // 1. User Message
-    const userMsg: Message = {
-      id: generateId(),
-      sessionId: activeSessionId,
-      role: 'user',
-      content: currentInput,
-      timestamp: Date.now(),
-    };
-
-    // 2. Identify Active Agents
-    const activeAgents = agents.filter(a => a.enabled);
-    if (activeAgents.length === 0) {
-        const errorMsg: Message = {
-            id: generateId(),
-            sessionId: activeSessionId,
-            role: 'model',
-            content: t('app.noAgentsEnabled'),
-            timestamp: Date.now()
-        };
-        const updated = [...messages, userMsg, errorMsg];
-        setMessages(updated);
-        saveMessagesToStorage(activeSessionId, updated);
-        return;
-    }
-
-    // 3. Create Placeholder Messages
-    const agentMessages: Message[] = activeAgents.map(agent => ({
-      id: generateId(),
-      sessionId: activeSessionId,
-      role: 'model',
-      content: '',
-      agentId: agent.id,
-      timestamp: Date.now(),
-      isStreaming: true,
-    }));
-
-    const newMessagesState = [...messages, userMsg, ...agentMessages];
-    setMessages(newMessagesState);
-    saveMessagesToStorage(activeSessionId, newMessagesState);
-    setIsStreaming(true);
-
-    // 4. Parallel Requests
-    try {
-      await Promise.all(activeAgents.map(async (agent, index) => {
-        const messageId = agentMessages[index].id;
-        const provider = providers.find(p => p.id === agent.providerId);
-
-        if (!provider) {
-             setMessages(prev => {
-                 const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: t('app.configError') } : m);
-                 saveMessagesToStorage(activeSessionId, final);
-                 return final;
-             });
-             return;
-        }
-
-        try {
-          await generateContentStream({
-            agent: agent,
-            provider: provider,
-            prompt: currentInput,
-            onChunk: (text) => {
-              setMessages(prev => prev.map(m => 
-                  m.id === messageId ? { ...m, content: m.content + text } : m
-              ));
+  const handleSuggestionClick = (prompt: string) => {
+      setInput(prompt);
+      if (textareaRef.current) {
+          textareaRef.current.focus();
+          // Small delay to allow state update
+          setTimeout(() => {
+            if (textareaRef.current) {
+                 textareaRef.current.style.height = 'auto';
+                 textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
             }
-          });
-
-          setMessages(prev => {
-              const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false } : m);
-              saveMessagesToStorage(activeSessionId, final);
-              return final;
-          });
-
-        } catch (err: any) {
-          console.error(err);
-          setMessages(prev => {
-            const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: err.message || t('common.failed') } : m);
-            saveMessagesToStorage(activeSessionId, final);
-            return final;
-          });
-        }
-      }));
-    } finally {
-      setIsStreaming(false);
-    }
+          }, 10);
+      }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       if (appSettings.enterToSend) {
           e.preventDefault();
-          handleSendMessage();
+          onSend();
       }
     }
   };
@@ -271,7 +205,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300">
+    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">
       
       <Sidebar 
         sessions={sessions}
@@ -283,11 +217,12 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      <main className="flex-1 flex flex-col h-full relative min-w-0 transition-all duration-300">
-        <header className="h-16 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/90 backdrop-blur flex items-center justify-between px-4 z-10 sticky top-0">
+      <main className="flex-1 flex flex-col h-full relative min-w-0 transition-all duration-300 bg-gray-50 dark:bg-[#0B0F17]">
+        {/* Header - Minimalist & Glass */}
+        <header className="absolute top-0 left-0 right-0 h-16 flex items-center justify-between px-4 z-20 bg-white/60 dark:bg-gray-950/60 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50">
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                <Menu size={24} />
+            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                <Menu size={20} />
             </button>
             <div className="flex flex-col">
                 <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-sm md:text-base truncate max-w-[200px] md:max-w-md">
@@ -299,70 +234,120 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             </div>
           </div>
           
-          <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg transition-all hover:shadow-sm">
+          <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 border border-gray-200 dark:border-gray-800/50 rounded-full transition-all hover:shadow-sm">
             <SettingsIcon size={16} className="text-blue-500 dark:text-blue-400" />
             <span className="hidden sm:inline">{t('app.settings')}</span>
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-2 scroll-smooth bg-white dark:bg-gray-950">
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-600 space-y-6 animate-in fade-in zoom-in duration-500">
-                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-2xl flex items-center justify-center shadow-lg border border-gray-200 dark:border-gray-700">
-                    <Plus size={40} className="text-blue-500 opacity-80" />
-                </div>
-                <div className="text-center space-y-2">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 tracking-tight">{t('app.welcomeTitle')}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                       {t('app.welcomeSubtitle')}
-                    </p>
-                    <div className="flex justify-center gap-2 mt-4">
-                        <button onClick={() => setIsSettingsOpen(true)} className="text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/10 dark:hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-200 dark:border-blue-500/30 transition-colors">
-                            {t('app.configureAgents')}
-                        </button>
-                        <button className="text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition-colors cursor-default">
-                            {t('app.agentsReady')}
-                        </button>
+        {/* Chat Area */}
+        <div 
+            ref={scrollRef}
+            onScroll={onScroll}
+            className="flex-1 overflow-y-auto pt-20 pb-32 px-4 md:px-0 scroll-smooth relative"
+        >
+          <div className="max-w-4xl mx-auto w-full">
+              {messages.length === 0 ? (
+                /* Empty State Carousel */
+                <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500 px-4">
+                    <div className="space-y-4">
+                        <div className="w-24 h-24 mx-auto bg-gradient-to-tr from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/20 rotate-3 transform transition-transform hover:rotate-6">
+                            <Plus size={48} className="text-white" />
+                        </div>
+                        <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">{t('app.welcomeTitle')}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+                           {t('app.welcomeSubtitle')}
+                        </p>
+                    </div>
+
+                    {/* Suggestions Carousel */}
+                    <div className="w-full max-w-3xl mt-8">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Start with a suggestion</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                            {SUGGESTIONS.map((s, i) => (
+                                <button 
+                                    key={i}
+                                    onClick={() => handleSuggestionClick(s.prompt)}
+                                    className="group p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all duration-200 flex items-start gap-3"
+                                >
+                                    <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg group-hover:scale-110 transition-transform">
+                                        {s.icon}
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-gray-700 dark:text-gray-200 text-sm">{s.label}</div>
+                                        <div className="text-xs text-gray-500 mt-1 line-clamp-1">{s.prompt}</div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
-          ) : (
-            messages.map((msg) => (
-              <MessageBubble 
-                key={msg.id} 
-                message={msg} 
-                config={agents.find(a => a.id === msg.agentId)}
-              />
-            ))
+              ) : (
+                /* Message Stream */
+                <div className="space-y-8 pb-4">
+                    {messages.map((msg) => (
+                      <MessageBubble 
+                        key={msg.id} 
+                        message={msg} 
+                        config={agents.find(a => a.id === msg.agentId)}
+                      />
+                    ))}
+                </div>
+              )}
+          </div>
+          
+          {/* Floating Scroll Button */}
+          {showScrollButton && (
+            <button
+              onClick={() => scrollToBottom()}
+              className="fixed bottom-32 right-6 md:right-10 p-3 bg-white dark:bg-gray-800 text-gray-600 dark:text-white rounded-full shadow-xl border border-gray-100 dark:border-gray-700 hover:scale-110 transition-all animate-in fade-in zoom-in z-30"
+            >
+              <ArrowDown size={20} />
+            </button>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50/90 dark:bg-gray-950/95 backdrop-blur">
-            <div className="max-w-4xl mx-auto relative group">
-                <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={handleInput}
-                    onKeyDown={handleKeyDown}
-                    placeholder={t('app.inputPlaceholder')}
-                    disabled={isStreaming}
-                    rows={1}
-                    className="w-full bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-2xl pl-4 pr-12 py-3.5 border border-gray-200 dark:border-gray-800 focus:border-blue-500 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500/30 scrollbar-hide shadow-sm transition-all"
-                    style={{ minHeight: '52px' }}
-                />
-                <button
-                    onClick={handleSendMessage}
-                    disabled={!input.trim() || isStreaming}
-                    className={`absolute right-2 bottom-2.5 p-2 rounded-xl transition-all duration-200 ${!input.trim() || isStreaming ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-50 shadow-lg shadow-blue-900/20 hover:scale-105 active:scale-95'}`}
-                >
-                    {isStreaming ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={18} />}
-                </button>
-            </div>
-            <div className="text-center mt-2">
-                <span className="text-[10px] text-gray-400 dark:text-gray-600">
-                    {isStreaming ? t('app.generating') : appSettings.enterToSend ? t('app.enterToSend') : t('app.ctrlToSend')}
-                </span>
+        {/* Floating Input Bar (Cockpit) */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent dark:from-[#0B0F17] dark:via-[#0B0F17] dark:to-transparent z-30 pointer-events-none">
+            <div className="max-w-4xl mx-auto pointer-events-auto">
+                <div className="relative group shadow-2xl shadow-blue-900/5 dark:shadow-black/50 rounded-[2rem] bg-white dark:bg-[#151b26] border border-gray-200 dark:border-gray-800 transition-all focus-within:border-blue-400/50 dark:focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-100 dark:focus-within:ring-blue-900/20">
+                    <textarea
+                        ref={textareaRef}
+                        value={input}
+                        onChange={handleInput}
+                        onKeyDown={handleKeyDown}
+                        placeholder={t('app.inputPlaceholder')}
+                        disabled={isStreaming}
+                        rows={1}
+                        className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-6 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
+                        style={{ minHeight: '60px' }}
+                    />
+                    
+                    <div className="absolute right-2 bottom-2">
+                        {isStreaming ? (
+                          <button
+                            onClick={stopGeneration}
+                            className="p-2.5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                            title="Stop Generating"
+                          >
+                            <Square size={20} fill="currentColor" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={onSend}
+                            disabled={!input.trim()}
+                            className={`p-2.5 rounded-full transition-all duration-200 flex items-center justify-center ${!input.trim() ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30 hover:scale-105 active:scale-95'}`}
+                          >
+                            <Send size={20} className={input.trim() ? "ml-0.5" : ""} />
+                          </button>
+                        )}
+                    </div>
+                </div>
+                <div className="text-center mt-3">
+                    <span className="text-[10px] font-medium text-gray-400 dark:text-gray-600 tracking-wide uppercase">
+                        {isStreaming ? t('app.generating') : appSettings.enterToSend ? t('app.enterToSend') : t('app.ctrlToSend')}
+                    </span>
+                </div>
             </div>
         </div>
 

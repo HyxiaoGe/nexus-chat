@@ -40,7 +40,9 @@ export const resources = {
         noAgentsEnabled: "No agents enabled. Please check Settings > My Agents.",
         configError: "Configuration Error",
         typing: "typing...",
-        emptyResponse: "Empty response"
+        emptyResponse: "Empty response",
+        thinking: "Deep Reasoning",
+        chainOfThought: "Chain of Thought"
       },
       settings: {
         title: "Settings",
@@ -166,7 +168,9 @@ export const resources = {
         noAgentsEnabled: "未启用智能体。请检查 设置 > 我的智能体。",
         configError: "配置错误",
         typing: "输入中...",
-        emptyResponse: "空回复"
+        emptyResponse: "空回复",
+        thinking: "深度思考中",
+        chainOfThought: "思维链"
       },
       settings: {
         title: "设置",
