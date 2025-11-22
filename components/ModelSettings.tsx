@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
@@ -9,6 +8,7 @@ import {
 } from 'lucide-react';
 import { fetchOpenRouterModels, validateOpenRouterKey } from '../services/geminiService';
 import { useToast } from './Toast';
+import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
 
 interface ModelSettingsProps {
@@ -39,6 +39,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   onClose
 }) => {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const [activeSection, setActiveSection] = useState<Section>('general');
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentForm, setAgentForm] = useState<Partial<AgentConfig>>({});
@@ -94,8 +95,15 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     success(t('settings.agents.agentSaved'));
   };
 
-  const handleDeleteAgent = (id: string) => {
-      if (confirm(`${t('common.delete')}?`)) {
+  const handleDeleteAgent = async (id: string) => {
+      const isConfirmed = await confirm({
+        title: t('common.delete'),
+        description: t('settings.agents.deleteConfirm'),
+        variant: 'danger',
+        confirmLabel: t('common.delete')
+      });
+
+      if (isConfirmed) {
           onUpdateAgents(agents.filter(a => a.id !== id));
           if (editingAgentId === id) setEditingAgentId(null);
           info(t('settings.agents.agentDeleted'));
@@ -196,12 +204,32 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       setActiveSection('providers');
   };
 
-  const handleDeleteProvider = (id: string) => {
-      if(confirm(t('settings.providers.confirmDelete'))) {
+  const handleDeleteProvider = async (id: string) => {
+      const isConfirmed = await confirm({
+        title: t('settings.providers.delete'),
+        description: t('settings.providers.confirmDelete'),
+        variant: 'danger',
+        confirmLabel: t('common.delete')
+      });
+
+      if(isConfirmed) {
           onUpdateProviders(providers.filter(p => p.id !== id));
           info(t('settings.providers.delete'));
       }
   };
+  
+  const handleClearAllData = async () => {
+      const isConfirmed = await confirm({
+          title: t('settings.data.clear'),
+          description: t('settings.data.confirmClear'),
+          variant: 'danger',
+          confirmLabel: t('settings.data.clear')
+      });
+      
+      if (isConfirmed) {
+          onClearData();
+      }
+  }
 
   // --- Renders ---
   const NavItem = ({ section, icon: Icon, label }: { section: Section, icon: any, label: string }) => (
@@ -641,7 +669,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 <div>
                                     <h3 className="text-base font-bold text-red-800 dark:text-red-100">{t('settings.data.danger')}</h3>
                                     <p className="text-sm text-red-600 dark:text-red-300/70 mt-1 mb-4">{t('settings.data.dangerDesc')}</p>
-                                    <button onClick={onClearData} className="px-4 py-2 bg-white hover:bg-red-50 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-sm font-medium transition-colors">
+                                    <button onClick={handleClearAllData} className="px-4 py-2 bg-white hover:bg-red-50 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-sm font-medium transition-colors">
                                         {t('settings.data.clear')}
                                     </button>
                                 </div>

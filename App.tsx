@@ -7,6 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { MessageBubble } from './components/MessageBubble';
 import { ModelSettings } from './components/ModelSettings';
 import { ToastProvider } from './components/Toast';
+import { DialogProvider } from './contexts/DialogContext';
 import { DEFAULT_AGENTS, DEFAULT_PROVIDERS, STORAGE_KEYS, DEFAULT_APP_SETTINGS } from './constants';
 import { Message, Session, AgentConfig, LLMProvider, AppSettings } from './types';
 import { generateId } from './utils/common';
@@ -412,7 +413,9 @@ const App = () => {
   return (
     <I18nextProvider i18n={i18n}>
       <ToastProvider>
-        <NexusChat appSettings={appSettings} setAppSettings={setAppSettings} />
+        <DialogProvider>
+          <NexusChat appSettings={appSettings} setAppSettings={setAppSettings} />
+        </DialogProvider>
       </ToastProvider>
     </I18nextProvider>
   );
