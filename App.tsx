@@ -1,17 +1,27 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare } from 'lucide-react';
+import { I18nextProvider, useTranslation } from 'react-i18next';
+import i18n from './i18n';
 
 import { Sidebar } from './components/Sidebar';
 import { MessageBubble } from './components/MessageBubble';
 import { ModelSettings } from './components/ModelSettings';
+import { ToastProvider } from './components/Toast';
 import { generateContentStream } from './services/geminiService';
 import { DEFAULT_AGENTS, DEFAULT_PROVIDERS, STORAGE_KEYS, DEFAULT_APP_SETTINGS } from './constants';
 import { Message, Session, AgentConfig, LLMProvider, AppSettings } from './types';
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
-const App: React.FC = () => {
+interface NexusChatProps {
+  appSettings: AppSettings;
+  setAppSettings: (settings: AppSettings) => void;
+}
+
+const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) => {
+  const { t, i18n } = useTranslation();
+  
   // --- State ---
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -19,7 +29,6 @@ const App: React.FC = () => {
   
   const [agents, setAgents] = useState<AgentConfig[]>(DEFAULT_AGENTS);
   const [providers, setProviders] = useState<LLMProvider[]>(DEFAULT_PROVIDERS);
-  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,12 +38,18 @@ const App: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Sync language with i18next
+  useEffect(() => {
+    if (appSettings.language && i18n.language !== appSettings.language) {
+      i18n.changeLanguage(appSettings.language);
+    }
+  }, [appSettings.language, i18n]);
+
   // --- Initialization ---
   useEffect(() => {
     const savedSessions = localStorage.getItem(STORAGE_KEYS.SESSIONS);
     const savedAgents = localStorage.getItem(STORAGE_KEYS.AGENTS);
     const savedProviders = localStorage.getItem(STORAGE_KEYS.PROVIDERS);
-    const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
     
     if (savedSessions) {
       const parsedSessions = JSON.parse(savedSessions);
@@ -51,30 +66,18 @@ const App: React.FC = () => {
     if (savedAgents) setAgents(JSON.parse(savedAgents));
     if (savedProviders) {
         const parsed = JSON.parse(savedProviders);
-        // Migration: ensure openrouter exists if old data
         if (!parsed.find((p: LLMProvider) => p.id === 'provider-openrouter')) {
             setProviders([...parsed, DEFAULT_PROVIDERS.find(p => p.id === 'provider-openrouter')!]);
         } else {
             setProviders(parsed);
         }
     }
-    if (savedSettings) setAppSettings(JSON.parse(savedSettings));
   }, []);
-
-  // --- Theme Effect ---
-  useEffect(() => {
-      if (appSettings.theme === 'dark') {
-          document.documentElement.classList.add('dark');
-      } else {
-          document.documentElement.classList.remove('dark');
-      }
-  }, [appSettings.theme]);
 
   // --- Persistence ---
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions)); }, [sessions]);
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.AGENTS, JSON.stringify(agents)); }, [agents]);
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(providers)); }, [providers]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(appSettings)); }, [appSettings]);
 
   useEffect(() => {
     if (activeSessionId) {
@@ -104,9 +107,12 @@ const App: React.FC = () => {
 
   // --- Actions ---
   const createNewSession = () => {
+    // Note: t() might not be ready on first render if using backend, but with resource bundle it is fine.
+    // We can default to "New Chat" if t is missing or use a key that is replaced later? 
+    // Actually, title is persisted, so we must generate a string.
     const newSession: Session = {
       id: generateId(),
-      title: `Chat ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
+      title: `${t('common.create')} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -152,7 +158,7 @@ const App: React.FC = () => {
             id: generateId(),
             sessionId: activeSessionId,
             role: 'model',
-            content: "No agents enabled. Please check Settings > My Agents.",
+            content: t('app.noAgentsEnabled'),
             timestamp: Date.now()
         };
         const updated = [...messages, userMsg, errorMsg];
@@ -185,7 +191,7 @@ const App: React.FC = () => {
 
         if (!provider) {
              setMessages(prev => {
-                 const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: "Configuration Error" } : m);
+                 const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: t('app.configError') } : m);
                  saveMessagesToStorage(activeSessionId, final);
                  return final;
              });
@@ -213,7 +219,7 @@ const App: React.FC = () => {
         } catch (err: any) {
           console.error(err);
           setMessages(prev => {
-            const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: err.message || "Failed." } : m);
+            const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: err.message || t('common.failed') } : m);
             saveMessagesToStorage(activeSessionId, final);
             return final;
           });
@@ -258,7 +264,7 @@ const App: React.FC = () => {
   };
 
   const handleClearData = () => {
-      if (confirm("Are you sure you want to wipe all data? This cannot be undone.")) {
+      if (confirm(t('settings.data.confirmClear'))) {
           localStorage.clear();
           window.location.reload();
       }
@@ -285,17 +291,17 @@ const App: React.FC = () => {
             </button>
             <div className="flex flex-col">
                 <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-sm md:text-base truncate max-w-[200px] md:max-w-md">
-                    {sessions.find(s => s.id === activeSessionId)?.title || "New Chat"}
+                    {sessions.find(s => s.id === activeSessionId)?.title || t('sidebar.newChat')}
                 </h2>
                 <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                    <MessageSquare size={10} /> {agents.filter(a => a.enabled).length} active agents
+                    <MessageSquare size={10} /> {t('app.activeAgents_other', { count: agents.filter(a => a.enabled).length })}
                 </span>
             </div>
           </div>
           
           <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg transition-all hover:shadow-sm">
             <SettingsIcon size={16} className="text-blue-500 dark:text-blue-400" />
-            <span className="hidden sm:inline">Settings</span>
+            <span className="hidden sm:inline">{t('app.settings')}</span>
           </button>
         </header>
 
@@ -306,16 +312,16 @@ const App: React.FC = () => {
                     <Plus size={40} className="text-blue-500 opacity-80" />
                 </div>
                 <div className="text-center space-y-2">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 tracking-tight">NexusChat</h3>
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200 tracking-tight">{t('app.welcomeTitle')}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                       Orchestrate multiple LLMs in a single unified view.
+                       {t('app.welcomeSubtitle')}
                     </p>
                     <div className="flex justify-center gap-2 mt-4">
                         <button onClick={() => setIsSettingsOpen(true)} className="text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-600/10 dark:hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-200 dark:border-blue-500/30 transition-colors">
-                            Configure Agents
+                            {t('app.configureAgents')}
                         </button>
                         <button className="text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition-colors cursor-default">
-                            {agents.filter(a => a.enabled).length} Ready
+                            {t('app.agentsReady')}
                         </button>
                     </div>
                 </div>
@@ -339,7 +345,7 @@ const App: React.FC = () => {
                     value={input}
                     onChange={handleInput}
                     onKeyDown={handleKeyDown}
-                    placeholder="Send a message..."
+                    placeholder={t('app.inputPlaceholder')}
                     disabled={isStreaming}
                     rows={1}
                     className="w-full bg-white dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-2xl pl-4 pr-12 py-3.5 border border-gray-200 dark:border-gray-800 focus:border-blue-500 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500/30 scrollbar-hide shadow-sm transition-all"
@@ -348,33 +354,59 @@ const App: React.FC = () => {
                 <button
                     onClick={handleSendMessage}
                     disabled={!input.trim() || isStreaming}
-                    className={`absolute right-2 bottom-2.5 p-2 rounded-xl transition-all duration-200 ${!input.trim() || isStreaming ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/20 hover:scale-105 active:scale-95'}`}
+                    className={`absolute right-2 bottom-2.5 p-2 rounded-xl transition-all duration-200 ${!input.trim() || isStreaming ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-50 shadow-lg shadow-blue-900/20 hover:scale-105 active:scale-95'}`}
                 >
                     {isStreaming ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={18} />}
                 </button>
             </div>
             <div className="text-center mt-2">
                 <span className="text-[10px] text-gray-400 dark:text-gray-600">
-                    {isStreaming ? 'Generating responses...' : appSettings.enterToSend ? 'Enter to send, Shift+Enter for new line' : 'Ctrl+Enter to send'}
+                    {isStreaming ? t('app.generating') : appSettings.enterToSend ? t('app.enterToSend') : t('app.ctrlToSend')}
                 </span>
             </div>
         </div>
 
+        <ModelSettings 
+            agents={agents}
+            providers={providers}
+            settings={appSettings}
+            onUpdateAgents={setAgents}
+            onUpdateProviders={setProviders}
+            onUpdateSettings={setAppSettings}
+            onExportData={handleExportData}
+            onClearData={handleClearData}
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+        />
       </main>
-
-      <ModelSettings 
-        agents={agents}
-        providers={providers}
-        settings={appSettings}
-        onUpdateAgents={setAgents}
-        onUpdateProviders={setProviders}
-        onUpdateSettings={setAppSettings}
-        onExportData={handleExportData}
-        onClearData={handleClearData}
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </div>
+  );
+};
+
+const App = () => {
+  const [appSettings, setAppSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    return saved ? JSON.parse(saved) : DEFAULT_APP_SETTINGS;
+  });
+
+  useEffect(() => {
+    if (appSettings.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [appSettings.theme]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(appSettings));
+  }, [appSettings]);
+
+  return (
+    <I18nextProvider i18n={i18n}>
+      <ToastProvider>
+        <NexusChat appSettings={appSettings} setAppSettings={setAppSettings} />
+      </ToastProvider>
+    </I18nextProvider>
   );
 };
 

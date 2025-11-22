@@ -4,9 +4,12 @@ import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
-    Download, Eraser, Moon, Sun, Edit2, Check
+    Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
+    Eye, EyeOff, Globe
 } from 'lucide-react';
-import { fetchOpenRouterModels } from '../services/geminiService';
+import { fetchOpenRouterModels, validateOpenRouterKey } from '../services/geminiService';
+import { useToast } from './Toast';
+import { useTranslation } from 'react-i18next';
 
 interface ModelSettingsProps {
   agents: AgentConfig[];
@@ -35,14 +38,17 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   isOpen,
   onClose
 }) => {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<Section>('general');
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentForm, setAgentForm] = useState<Partial<AgentConfig>>({});
   
   const [expandedProviderId, setExpandedProviderId] = useState<string | null>(null);
   const [providerForm, setProviderForm] = useState<Partial<LLMProvider>>({});
+  const [showApiKey, setShowApiKey] = useState(false);
   
   const [isSyncingModels, setIsSyncingModels] = useState(false);
+  const { success, error, info } = useToast();
 
   if (!isOpen) return null;
 
@@ -69,7 +75,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   };
 
   const handleSaveAgent = () => {
-    if (!editingAgentId || !agentForm.name) return;
+    if (!editingAgentId || !agentForm.name) {
+        error(t('settings.agents.agentNameRequired'));
+        return;
+    }
     const updatedAgent = agentForm as AgentConfig;
     
     const exists = agents.find(a => a.id === editingAgentId);
@@ -82,12 +91,14 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     onUpdateAgents(newAgents);
     setEditingAgentId(null);
     setAgentForm({});
+    success(t('settings.agents.agentSaved'));
   };
 
   const handleDeleteAgent = (id: string) => {
-      if (confirm('Delete this agent?')) {
+      if (confirm(`${t('common.delete')}?`)) {
           onUpdateAgents(agents.filter(a => a.id !== id));
           if (editingAgentId === id) setEditingAgentId(null);
+          info(t('settings.agents.agentDeleted'));
       }
   };
 
@@ -102,35 +113,65 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       } else {
           setExpandedProviderId(provider.id);
           setProviderForm({...provider});
+          setShowApiKey(false); // Reset visibility
       }
   };
 
-  const handleSaveProvider = () => {
+  const handleSaveProvider = async () => {
       if (!expandedProviderId) return;
+      
+      // Strict Validation for OpenRouter
+      if (providerForm.type === 'openai-compatible' && providerForm.id === 'provider-openrouter') {
+         if (!providerForm.apiKey) {
+             error(t('settings.providers.apiKeyRequired'));
+             return;
+         }
+         
+         try {
+             const isValid = await validateOpenRouterKey(providerForm.apiKey);
+             if (!isValid) {
+                 error(t('settings.providers.invalidKey'));
+                 return;
+             }
+             success(t('settings.providers.keyVerified'));
+         } catch (e: any) {
+             error(`${t('common.error')}: ${e.message}`);
+             return;
+         }
+      }
+
       const updatedProvider = providerForm as LLMProvider;
       onUpdateProviders(providers.map(p => p.id === expandedProviderId ? updatedProvider : p));
       setExpandedProviderId(null);
+      success(t('settings.providers.saved'));
   };
 
   const handleSyncModels = async (providerId: string, apiKey: string) => {
       if (!apiKey) {
-          alert("Please save your API Key first.");
+          error(t('settings.providers.apiKeyRequired'));
           return;
       }
       setIsSyncingModels(true);
       try {
+          // 1. Validate Key First
+          const isValid = await validateOpenRouterKey(apiKey);
+          if (!isValid) {
+              throw new Error(t('settings.providers.invalidKey'));
+          }
+
+          // 2. Then Fetch Models
           const models = await fetchOpenRouterModels(apiKey);
           if (models.length > 0) {
              const updatedProviders = providers.map(p => 
                  p.id === providerId ? { ...p, fetchedModels: models } : p
              );
              onUpdateProviders(updatedProviders);
-             alert(`Successfully synced ${models.length} models from OpenRouter!`);
+             success(t('settings.providers.syncSuccess'));
           } else {
-             alert("No models found. Check your API Key.");
+             error(t('settings.providers.noModels'));
           }
-      } catch (e) {
-          alert("Failed to sync models.");
+      } catch (e: any) {
+          error(`${t('common.error')}: ${e.message}`);
       } finally {
           setIsSyncingModels(false);
       }
@@ -151,12 +192,14 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       onUpdateProviders([...providers, newProvider]);
       setExpandedProviderId(newId);
       setProviderForm(newProvider);
+      setShowApiKey(false);
       setActiveSection('providers');
   };
 
   const handleDeleteProvider = (id: string) => {
-      if(confirm('Delete this provider? associated agents may break.')) {
+      if(confirm(t('settings.providers.confirmDelete'))) {
           onUpdateProviders(providers.filter(p => p.id !== id));
+          info(t('settings.providers.delete'));
       }
   };
 
@@ -182,23 +225,23 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       return (
         <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 space-y-5 animate-in fade-in slide-in-from-bottom-2">
             <div className="flex items-center justify-between">
-                <h3 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2"><Edit2 size={16}/> Edit Agent</h3>
+                <h3 className="text-gray-900 dark:text-white font-semibold flex items-center gap-2"><Edit2 size={16}/> {t('settings.agents.edit')}</h3>
                 <button onClick={() => setEditingAgentId(null)} className="text-gray-400 hover:text-red-500"><X size={18} /></button>
             </div>
 
             <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-3 space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Name</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.name')}</label>
                     <input 
                         type="text" 
                         value={agentForm.name || ''} 
                         onChange={e => setAgentForm({...agentForm, name: e.target.value})}
                         className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Agent Name"
+                        placeholder={t('settings.agents.placeholderName')}
                     />
                 </div>
                 <div className="col-span-1 space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Avatar</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.avatar')}</label>
                     <input 
                         type="text" 
                         value={agentForm.avatar || ''} 
@@ -211,7 +254,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Provider</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.provider')}</label>
                     <select 
                         value={agentForm.providerId || ''}
                         onChange={e => setAgentForm({...agentForm, providerId: e.target.value})}
@@ -223,7 +266,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     </select>
                 </div>
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Model ID</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.modelId')}</label>
                     <div className="relative">
                         <input 
                             type="text" 
@@ -231,7 +274,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             value={agentForm.modelId || ''} 
                             onChange={e => setAgentForm({...agentForm, modelId: e.target.value})}
                             className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="Select or type..."
+                            placeholder={t('settings.agents.placeholderModel')}
                         />
                         <datalist id="model-suggestions">
                             {availableModels.map(m => (
@@ -243,18 +286,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             </div>
 
             <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase">System Prompt</label>
+                <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.systemPrompt')}</label>
                 <textarea 
                     value={agentForm.systemPrompt || ''} 
                     onChange={e => setAgentForm({...agentForm, systemPrompt: e.target.value})}
                     className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none font-mono"
-                    placeholder="How should this agent behave?"
+                    placeholder={t('settings.agents.placeholderPrompt')}
                 />
             </div>
 
             <div className="flex gap-3 pt-2">
                 <button onClick={handleSaveAgent} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                    <Save size={16}/> Save Agent
+                    <Save size={16}/> {t('settings.agents.save')}
                 </button>
                 {agents.find(a => a.id === editingAgentId) && (
                     <button onClick={() => handleDeleteAgent(editingAgentId!)} className="px-4 bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 border border-transparent dark:border-red-900 rounded-lg transition-colors">
@@ -273,7 +316,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       return (
         <div className="mt-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase">Provider Name</label>
+                <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.providers.name')}</label>
                 <input 
                     type="text" 
                     value={providerForm.name || ''}
@@ -285,7 +328,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             
             {providerForm.type === 'openai-compatible' && (isCustom || isOpenRouter) && (
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Base URL {isOpenRouter && '(Default is correct)'}</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.providers.baseUrl')} {isOpenRouter && t('settings.providers.defaultCorrect')}</label>
                     <input 
                         type="text" 
                         value={providerForm.baseURL || ''}
@@ -297,39 +340,52 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             )}
 
             <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase">API Key {providerForm.type === 'google' && '(Optional if using Env)'}</label>
+                <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.providers.apiKey')} {providerForm.type === 'google' && t('settings.providers.apiKeyOptional')}</label>
                 <div className="flex gap-2">
-                    <input 
-                        type="password" 
-                        value={providerForm.apiKey || ''}
-                        onChange={e => setProviderForm({...providerForm, apiKey: e.target.value})}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="sk-..."
-                    />
+                    <div className="relative w-full">
+                        <input 
+                            type={showApiKey ? "text" : "password"}
+                            value={providerForm.apiKey || ''}
+                            onChange={e => setProviderForm({...providerForm, apiKey: e.target.value})}
+                            className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2 pr-10 text-sm text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="sk-..."
+                        />
+                        <button 
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            tabIndex={-1}
+                        >
+                            {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                    </div>
+                    
                     {isOpenRouter && (
                         <button 
                             onClick={() => handleSyncModels(providerId, providerForm.apiKey || '')}
                             disabled={isSyncingModels || !providerForm.apiKey}
                             className="px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg flex items-center gap-2 text-xs font-medium whitespace-nowrap transition-colors"
-                            title="Fetch available models from OpenRouter"
+                            title={t('settings.providers.verifySync')}
                         >
                             {isSyncingModels ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                            Sync Models
+                            {t('settings.providers.verifySync')}
                         </button>
                     )}
                 </div>
                 {isOpenRouter && (
-                    <p className="text-[10px] text-gray-500 mt-1">Enter key & click Sync to populate model list in Agent settings.</p>
+                    <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                        <ShieldCheck size={10} className="text-green-500" /> 
+                        {t('settings.providers.validating')}
+                    </p>
                 )}
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
                 {isCustom && (
-                     <button onClick={() => handleDeleteProvider(providerId)} className="text-sm text-red-500 hover:text-red-600 mr-auto flex items-center gap-1"><Trash2 size={14} /> Delete Provider</button>
+                     <button onClick={() => handleDeleteProvider(providerId)} className="text-sm text-red-500 hover:text-red-600 mr-auto flex items-center gap-1"><Trash2 size={14} /> {t('settings.providers.delete')}</button>
                 )}
-                <button onClick={() => setExpandedProviderId(null)} className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3">Cancel</button>
+                <button onClick={() => setExpandedProviderId(null)} className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3">{t('settings.providers.cancel')}</button>
                 <button onClick={handleSaveProvider} className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm">
-                    <Save size={14} /> Save Configuration
+                    <Save size={14} /> {t('settings.providers.saveVerify')}
                 </button>
             </div>
         </div>
@@ -348,20 +404,20 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             <div className="mb-8 px-2">
                 <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                     <Settings className="text-blue-500" />
-                    Settings
+                    {t('settings.title')}
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">NexusChat Configuration</p>
+                <p className="text-xs text-gray-500 mt-1">{t('settings.subtitle')}</p>
             </div>
             
             <nav className="space-y-1 flex-1">
-                <NavItem section="general" icon={Monitor} label="General" />
-                <NavItem section="agents" icon={Bot} label="My Agents" />
-                <NavItem section="providers" icon={Server} label="Providers" />
-                <NavItem section="data" icon={Database} label="Data & Storage" />
+                <NavItem section="general" icon={Monitor} label={t('settings.nav.general')} />
+                <NavItem section="agents" icon={Bot} label={t('settings.nav.agents')} />
+                <NavItem section="providers" icon={Server} label={t('settings.nav.providers')} />
+                <NavItem section="data" icon={Database} label={t('settings.nav.data')} />
             </nav>
 
             <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800 text-center">
-                <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors">Close Settings</button>
+                <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors">{t('common.close')}</button>
             </div>
         </div>
 
@@ -371,51 +427,83 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 
                 {/* Header for each section */}
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">{activeSection === 'data' ? 'Data Management' : activeSection}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
+                        {activeSection === 'general' && t('settings.general.title')}
+                        {activeSection === 'agents' && t('settings.agents.title')}
+                        {activeSection === 'providers' && t('settings.providers.title')}
+                        {activeSection === 'data' && t('settings.data.title')}
+                    </h1>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {activeSection === 'general' && 'Customize your interface and preferences.'}
-                        {activeSection === 'agents' && 'Manage your AI personas and their behaviors.'}
-                        {activeSection === 'providers' && 'Configure API keys and connection endpoints.'}
-                        {activeSection === 'data' && 'Export chat history or clear local storage.'}
+                        {activeSection === 'general' && t('settings.general.desc')}
+                        {activeSection === 'agents' && t('settings.agents.desc')}
+                        {activeSection === 'providers' && t('settings.providers.desc')}
+                        {activeSection === 'data' && t('settings.data.desc')}
                     </p>
                 </div>
 
                 {/* GENERAL SECTION */}
                 {activeSection === 'general' && (
                     <div className="space-y-6">
+                        {/* Theme Settings */}
                         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Appearance</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('settings.general.appearance')}</h3>
                             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                 <div className="flex items-center gap-3">
                                     {settings.theme === 'dark' ? <Moon className="text-purple-500" /> : <Sun className="text-orange-500" />}
                                     <div>
-                                        <p className="text-sm font-medium text-gray-900 dark:text-white">Theme Mode</p>
-                                        <p className="text-xs text-gray-500">Switch between light and dark interfaces.</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{t('settings.general.theme')}</p>
+                                        <p className="text-xs text-gray-500">{t('settings.general.themeDesc')}</p>
                                     </div>
                                 </div>
                                 <div className="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
                                     <button 
-                                        onClick={() => onUpdateSettings({...settings, theme: 'light'})}
+                                        onClick={() => { onUpdateSettings({...settings, theme: 'light'}); success(t('settings.general.themeChanged', { theme: t('settings.general.light') })); }}
                                         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${settings.theme === 'light' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                                     >
-                                        Light
+                                        {t('settings.general.light')}
                                     </button>
                                     <button 
-                                        onClick={() => onUpdateSettings({...settings, theme: 'dark'})}
+                                        onClick={() => { onUpdateSettings({...settings, theme: 'dark'}); success(t('settings.general.themeChanged', { theme: t('settings.general.dark') })); }}
                                         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${settings.theme === 'dark' ? 'bg-gray-600 text-white shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                                     >
-                                        Dark
+                                        {t('settings.general.dark')}
+                                    </button>
+                                </div>
+                            </div>
+
+                             {/* Language Settings */}
+                             <div className="flex items-center justify-between p-4 mt-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <Globe className="text-blue-500" />
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{t('settings.general.language')}</p>
+                                        <p className="text-xs text-gray-500">{t('settings.general.languageDesc')}</p>
+                                    </div>
+                                </div>
+                                <div className="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
+                                    <button 
+                                        onClick={() => onUpdateSettings({...settings, language: 'en'})}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${settings.language === 'en' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                    >
+                                        English
+                                    </button>
+                                    <button 
+                                        onClick={() => onUpdateSettings({...settings, language: 'zh'})}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${settings.language === 'zh' ? 'bg-white text-gray-900 shadow' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                    >
+                                        中文
                                     </button>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Input Preferences */}
                          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Input Preferences</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('settings.general.input')}</h3>
                              <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white">Enter to Send</p>
-                                    <p className="text-xs text-gray-500">If disabled, use Cmd+Enter (Mac) or Ctrl+Enter to send.</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{t('settings.general.enterToSend')}</p>
+                                    <p className="text-xs text-gray-500">{t('settings.general.enterToSendDesc')}</p>
                                 </div>
                                 <button onClick={() => onUpdateSettings({...settings, enterToSend: !settings.enterToSend})} className={`transition-colors ${settings.enterToSend ? 'text-blue-600' : 'text-gray-400'}`}>
                                     {settings.enterToSend ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
@@ -450,7 +538,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                                     <h3 className="font-bold text-gray-900 dark:text-white text-sm">{agent.name}</h3>
                                                     <div className="flex flex-wrap gap-1 mt-1">
                                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${isGoogle ? 'border-green-200 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900' : 'border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900'}`}>
-                                                            {provider?.name || 'Unknown'}
+                                                            {provider?.name || t('common.unknown')}
                                                         </span>
                                                     </div>
                                                     <p className="text-[10px] text-gray-500 mt-1 font-mono truncate w-32">{agent.modelId}</p>
@@ -474,7 +562,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 
                         {!editingAgentId && (
                             <button onClick={handleNewAgent} className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500 text-gray-500 dark:text-gray-400 hover:text-blue-500 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all bg-gray-50 dark:bg-gray-800/30">
-                                <Plus size={18} /> Create New Agent
+                                <Plus size={18} /> {t('settings.agents.new')}
                             </button>
                         )}
                     </div>
@@ -486,8 +574,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                          <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg flex gap-3">
                             <div className="text-blue-500 mt-0.5"><Server size={18} /></div>
                             <div className="text-sm text-blue-900 dark:text-blue-100">
-                                <p className="font-semibold mb-1">Why configure providers?</p>
-                                <p className="opacity-80">Providers are the actual AI services. Configure them once (API Key, URL) and link multiple agents to them.</p>
+                                <p className="font-semibold mb-1">{t('settings.providers.infoTitle')}</p>
+                                <p className="opacity-80">{t('settings.providers.infoDesc')}</p>
                             </div>
                          </div>
 
@@ -502,10 +590,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                             <div>
                                                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                     {provider.name}
-                                                    {provider.apiKey && <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} /> Connected</span>}
+                                                    {provider.apiKey && <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} /> {t('settings.providers.connected')}</span>}
                                                 </h3>
                                                 <div className="text-xs text-gray-500 mt-0.5">
-                                                    {provider.type === 'google' ? 'Google Native API' : 'OpenAI Compatible Endpoint'}
+                                                    {provider.type === 'google' ? t('settings.providers.googleApi') : t('settings.providers.openaiApi')}
                                                 </div>
                                             </div>
                                         </div>
@@ -513,7 +601,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                             onClick={() => handleExpandProvider(provider)} 
                                             className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors border ${expandedProviderId === provider.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                                         >
-                                            {expandedProviderId === provider.id ? 'Close Config' : 'Configure'}
+                                            {expandedProviderId === provider.id ? t('common.close') : t('common.edit')}
                                         </button>
                                     </div>
                                     {expandedProviderId === provider.id && renderProviderForm(provider.id)}
@@ -522,7 +610,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         </div>
 
                         <button onClick={handleNewProvider} className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500/50 text-gray-500 hover:text-blue-500 rounded-lg flex items-center justify-center gap-2 text-sm transition-all">
-                             <Plus size={16} /> Add Custom Provider
+                             <Plus size={16} /> {t('settings.providers.addCustom')}
                         </button>
                      </div>
                 )}
@@ -536,10 +624,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     <Download size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Export Data</h3>
-                                    <p className="text-sm text-gray-500 mt-1 mb-4">Download all your sessions, messages, and configuration as a JSON file.</p>
+                                    <h3 className="text-base font-bold text-gray-900 dark:text-white">{t('settings.data.export')}</h3>
+                                    <p className="text-sm text-gray-500 mt-1 mb-4">{t('settings.data.exportDesc')}</p>
                                     <button onClick={onExportData} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors">
-                                        Download JSON Backup
+                                        {t('settings.data.download')}
                                     </button>
                                 </div>
                             </div>
@@ -551,10 +639,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     <Eraser size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-red-800 dark:text-red-100">Danger Zone</h3>
-                                    <p className="text-sm text-red-600 dark:text-red-300/70 mt-1 mb-4">Permanently delete all chat history and custom configurations. This cannot be undone.</p>
+                                    <h3 className="text-base font-bold text-red-800 dark:text-red-100">{t('settings.data.danger')}</h3>
+                                    <p className="text-sm text-red-600 dark:text-red-300/70 mt-1 mb-4">{t('settings.data.dangerDesc')}</p>
                                     <button onClick={onClearData} className="px-4 py-2 bg-white hover:bg-red-50 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-sm font-medium transition-colors">
-                                        Clear All Data
+                                        {t('settings.data.clear')}
                                     </button>
                                 </div>
                             </div>

@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Session } from '../types';
-import { MessageSquarePlus, MessageSquare, Trash2, Moon, Sun } from 'lucide-react';
+import { MessageSquarePlus, MessageSquare, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
   sessions: Session[];
@@ -22,6 +23,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   toggleSidebar
 }) => {
+  const { t } = useTranslation();
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -42,12 +45,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2">
             <span className="bg-blue-600 text-white p-1 rounded text-xs">N</span>
-            NexusChat
+            {t('app.title')}
           </h1>
           <button 
             onClick={onCreateSession}
             className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors shadow-sm"
-            aria-label="New Chat"
+            aria-label={t('sidebar.newChat')}
+            title={t('sidebar.newChat')}
           >
             <MessageSquarePlus size={20} />
           </button>
@@ -56,9 +60,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Session List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {sessions.length === 0 ? (
-            <div className="text-gray-400 dark:text-gray-500 text-sm text-center mt-10">
-              No active conversations.
-              <br />Start a new one!
+            <div className="text-gray-400 dark:text-gray-500 text-sm text-center mt-10 whitespace-pre-line">
+              {t('sidebar.noSessions')}
             </div>
           ) : (
             sessions.map((session) => (
@@ -82,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={(e) => onDeleteSession(session.id, e)}
                   className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
-                  title="Delete Session"
+                  title={t('sidebar.deleteSession')}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -93,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-500 text-center bg-gray-50 dark:bg-gray-900/50">
-          Multi-LLM Orchestrator v1.2
+          {t('sidebar.footer', { version: '1.2' })}
         </div>
       </div>
     </>

@@ -4,7 +4,7 @@ export type ProviderType = 'google' | 'openai-compatible';
 export interface AppSettings {
   theme: 'light' | 'dark';
   enterToSend: boolean;
-  language: string;
+  language: 'en' | 'zh';
 }
 
 export interface LLMProvider {

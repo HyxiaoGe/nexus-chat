@@ -1,5 +1,15 @@
 {
   "name": "NexusChat - Multi-LLM Room",
   "description": "A professional multi-agent chatroom allowing simultaneous, independent responses from different LLM personas (Gemini powered) in a Telegram-style interface.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
+    "i18next": "https://aistudiocdn.com/i18next@^23.10.0",
+    "react-i18next": "https://aistudiocdn.com/react-i18next@^14.1.0"
+  }
 }

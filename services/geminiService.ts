@@ -12,25 +12,58 @@ interface GenerateStreamParams {
   onChunk: (text: string) => void;
 }
 
-export const fetchOpenRouterModels = async (apiKey: string): Promise<string[]> => {
+export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> => {
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
+    const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+      method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${apiKey}`
       }
     });
+
+    if (response.status === 401) {
+        return false;
+    }
+
+    if (!response.ok) {
+        // If it's a 402 or other error, we treat it as validation failure or throw specific error
+        throw new Error(`Validation failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // OpenRouter auth/key returns { data: { label: "...", usage: ... } } if valid
+    return !!data?.data;
+  } catch (error) {
+    console.error("Key validation error:", error);
+    throw error;
+  }
+};
+
+export const fetchOpenRouterModels = async (apiKey: string): Promise<string[]> => {
+  try {
+    // Note: OpenRouter /models is public, but we pass the key anyway for rate limits/personalized visibility
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+    };
+    if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/models', { headers });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch models: ${response.statusText}`);
     }
 
     const data = await response.json();
-    // OpenRouter returns { data: [ { id: '...' }, ... ] }
+    if (!data.data || !Array.isArray(data.data)) {
+        throw new Error("Invalid response format from API");
+    }
+
     return data.data.map((m: any) => m.id).sort();
   } catch (error) {
     console.error("Error fetching OpenRouter models:", error);
-    return [];
+    throw error;
   }
 };
 

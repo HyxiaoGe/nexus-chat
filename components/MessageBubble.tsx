@@ -2,6 +2,7 @@
 import React from 'react';
 import { Message, AgentConfig } from '../types';
 import { Bot, User, Copy, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface MessageBubbleProps {
   message: Message;
@@ -9,6 +10,7 @@ interface MessageBubbleProps {
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config }) => {
+  const { t } = useTranslation();
   const isUser = message.role === 'user';
   
   const handleCopy = () => {
@@ -31,7 +33,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
           
           <div className="flex items-center gap-2 mb-1 px-1">
             <span className={`text-xs font-bold ${isUser ? 'text-indigo-600 dark:text-indigo-400' : 'text-blue-600 dark:text-blue-400'}`}>
-              {isUser ? 'You' : config?.name || 'Unknown Agent'}
+              {isUser ? t('common.you') : config?.name || t('app.configError')}
             </span>
             {!isUser && (
                 <span className="text-[10px] text-gray-500 font-mono border border-gray-300 dark:border-gray-700 rounded px-1 bg-gray-50 dark:bg-gray-800">
@@ -48,7 +50,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
             ${message.error ? 'border-red-500/50 bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-200' : ''}
           `}>
             
-            {message.content || (message.isStreaming ? <span className="animate-pulse">▋</span> : <span className="text-gray-400 italic">Empty response</span>)}
+            {message.content || (message.isStreaming ? <span className="animate-pulse">▋</span> : <span className="text-gray-400 italic">{t('app.emptyResponse')}</span>)}
             
             {message.error && (
                 <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-xs mt-2 pt-2 border-t border-red-200 dark:border-red-800/30">
@@ -58,7 +60,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
             )}
 
             {!message.isStreaming && message.content && (
-               <button onClick={handleCopy} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-opacity bg-white/50 dark:bg-black/20 rounded p-1" title="Copy text">
+               <button onClick={handleCopy} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-opacity bg-white/50 dark:bg-black/20 rounded p-1" title={t('common.copy')}>
                  <Copy size={12} />
                </button>
             )}
@@ -66,7 +68,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
           
           <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 px-1 flex items-center gap-2">
             {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-            {message.isStreaming && <span className="text-green-600 dark:text-green-500 animate-pulse font-bold">typing...</span>}
+            {message.isStreaming && <span className="text-green-600 dark:text-green-500 animate-pulse font-bold">{t('app.typing')}</span>}
           </div>
 
         </div>
