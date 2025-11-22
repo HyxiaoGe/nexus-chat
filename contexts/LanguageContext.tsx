@@ -1,4 +1,5 @@
 
-// This file is deprecated.
-// Please use react-i18next (useTranslation hook) instead.
+// DEPRECATED
+// This file has been replaced by `react-i18next`.
+// It can be safely deleted.
 export {};
