@@ -1,10 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Terminal, Check, Copy, ChevronDown, ChevronRight, BrainCircuit, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+interface CodeBlockProps {
+  language: string;
+  code: string;
+}
+
 // Enhanced CodeBlock Component
-const CodeBlock = ({ language, code }: { language: string; code: string }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
   const [copied, setCopied] = useState(false);
   const { t } = useTranslation();
 

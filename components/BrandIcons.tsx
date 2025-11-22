@@ -4,7 +4,7 @@ import {
   OpenAI,
   Google,
   DeepSeek,
-  Claude,
+  Anthropic,
   Meta,
   Mistral,
   Perplexity,
@@ -12,16 +12,16 @@ import {
   Qwen,
   Minimax,
   Microsoft,
-  LobeHub
+  LobeHub,
+  Gemini
 } from '@lobehub/icons';
 
-// Mapping string keys (from constants.ts) to LobeHub components
 const BRAND_MAP: Record<string, any> = {
   openai: OpenAI,
   google: Google,
-  gemini: Google, 
-  anthropic: Claude, 
-  claude: Claude,
+  gemini: Gemini,
+  anthropic: Anthropic,
+  claude: Anthropic,
   deepseek: DeepSeek,
   meta: Meta,
   llama: Meta,
@@ -43,13 +43,13 @@ interface BrandIconProps {
 
 export const BrandIcon: React.FC<BrandIconProps> = ({ brand, size = 24, className = '' }) => {
   const key = brand?.toLowerCase().trim();
-  const IconComponent = BRAND_MAP[key] || LobeHub;
+  const IconComponent = BRAND_MAP[key] || BRAND_MAP['other'];
 
-  if (key === 'other' || !BRAND_MAP[key]) {
+  if (!IconComponent) {
        return <Bot size={size} className={className} />;
   }
 
-  // Using .Avatar as requested for the full colored icon
+  // Use .Avatar for the official colored version as requested
   return (
     <div className={className} style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <IconComponent.Avatar size={size} />

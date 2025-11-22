@@ -1,5 +1,4 @@
-
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Message, AgentConfig, LLMProvider } from '../types';
 import { generateContentStream } from '../services/geminiService';
 import { generateId } from '../utils/common';

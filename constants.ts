@@ -7,8 +7,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   language: 'en'
 };
 
-// We now use keys to reference the SVG components in BrandIcons.tsx
-// keywords: helper to auto-detect brand from model ID
+// Keys match the mapping in components/BrandIcons.tsx
 export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
   openai: {
     name: 'OpenAI',
@@ -17,7 +16,7 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   },
   google: {
     name: 'Google Gemini',
-    logo: 'google',
+    logo: 'gemini', // Changed to gemini for the sparkle icon
     keywords: ['google', 'gemini']
   },
   anthropic: {
@@ -42,7 +41,7 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   },
   xai: {
     name: 'xAI (Grok)',
-    logo: 'xai',
+    logo: 'grok',
     keywords: ['x-ai', 'grok']
   },
   perplexity: {
@@ -57,17 +56,17 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   },
   minimax: {
     name: 'MiniMax',
-    logo: 'qwen', // Fallback or add specific if needed
+    logo: 'minimax', 
     keywords: ['minimax']
   },
   microsoft: {
     name: 'Microsoft',
-    logo: 'openai', // Often uses Azure/OpenAI logo for generic MS models
+    logo: 'microsoft',
     keywords: ['microsoft', 'phi']
   },
   other: {
     name: 'Assistant',
-    logo: 'openai', 
+    logo: 'other', 
     keywords: []
   }
 };
@@ -166,7 +165,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-gemini-flash',
     name: 'Gemini Flash',
-    avatar: 'google', // Uses Key
+    avatar: 'gemini', 
     providerId: 'provider-google',
     modelId: 'gemini-2.5-flash',
     systemPrompt: 'You are a helpful and fast assistant.',
@@ -179,7 +178,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-deepseek-r1',
     name: 'DeepSeek R1',
-    avatar: 'deepseek', // Uses Key
+    avatar: 'deepseek',
     providerId: 'provider-openrouter',
     modelId: 'deepseek/deepseek-r1',
     systemPrompt: 'You are a reasoning engine. Show your chain of thought clearly inside <think> tags.',
@@ -191,7 +190,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-claude-sonnet',
     name: 'Claude Sonnet',
-    avatar: 'anthropic', // Uses Key
+    avatar: 'anthropic',
     providerId: 'provider-openrouter',
     modelId: 'anthropic/claude-3.5-sonnet',
     systemPrompt: 'You are Claude, a helpful AI assistant created by Anthropic.',
@@ -203,7 +202,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-gpt4o',
     name: 'GPT-4o',
-    avatar: 'openai', // Uses Key
+    avatar: 'openai',
     providerId: 'provider-openrouter',
     modelId: 'openai/gpt-4o',
     systemPrompt: 'You are a helpful assistant.',
