@@ -310,13 +310,20 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
               ) : (
                 /* Message Stream */
                 <div className="space-y-8 pb-4">
-                    {messages.map((msg) => (
-                      <MessageBubble 
-                        key={msg.id} 
-                        message={msg} 
-                        config={agents.find(a => a.id === msg.agentId)}
-                      />
-                    ))}
+                    {messages.map((msg) => {
+                        // Logic to delay showing agent bubble until content starts streaming or error occurs
+                        if (msg.role === 'model' && msg.isStreaming && !msg.content && !msg.error) {
+                            return null;
+                        }
+
+                        return (
+                          <MessageBubble 
+                            key={msg.id} 
+                            message={msg} 
+                            config={agents.find(a => a.id === msg.agentId)}
+                          />
+                        );
+                    })}
                 </div>
               )}
           </div>
