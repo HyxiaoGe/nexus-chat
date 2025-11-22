@@ -4,7 +4,7 @@ import { AgentConfig, LLMProvider, AppSettings } from "./types";
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'dark',
   enterToSend: true,
-  language: 'en'
+  language: 'zh'
 };
 
 // Keys match the mapping in components/BrandIcons.tsx
@@ -168,7 +168,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'gemini', 
     providerId: 'provider-google',
     modelId: 'gemini-2.5-flash',
-    systemPrompt: 'You are a helpful and fast assistant.',
+    systemPrompt: '你是一个乐于助人且反应迅速的助手。',
     enabled: true,
     config: {
       temperature: 0.7,
@@ -181,7 +181,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'deepseek',
     providerId: 'provider-openrouter',
     modelId: 'deepseek/deepseek-r1',
-    systemPrompt: 'You are a reasoning engine. Show your chain of thought clearly inside <think> tags.',
+    systemPrompt: '你是一个推理引擎。请在 <think> 标签内清晰地展示你的思维链。',
     enabled: true,
     config: {
       temperature: 0.6
@@ -193,7 +193,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
     modelId: 'anthropic/claude-3.5-sonnet',
-    systemPrompt: 'You are Claude, a helpful AI assistant created by Anthropic.',
+    systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: false,
     config: {
       temperature: 0.7
@@ -205,7 +205,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'openai',
     providerId: 'provider-openrouter',
     modelId: 'openai/gpt-4o',
-    systemPrompt: 'You are a helpful assistant.',
+    systemPrompt: '你是一个乐于助人的助手。',
     enabled: false,
     config: {
       temperature: 0.7
@@ -225,24 +225,24 @@ export const STORAGE_KEYS = {
 
 export const SYSTEM_PROMPT_TEMPLATES = [
   {
-    label: 'Code Expert',
+    label: '代码专家',
     icon: '💻',
-    prompt: 'You are an expert software engineer. Provide clean, efficient, and well-documented code. Explain your logic clearly and prioritize best practices.'
+    prompt: '你是一位软件工程专家。请提供清晰、高效且文档齐全的代码。解释你的逻辑并优先考虑最佳实践。'
   },
   {
-    label: 'Creative Writer',
+    label: '创意写作',
     icon: '✍️',
-    prompt: 'You are a creative writer with a flair for vivid imagery and emotional depth. Engage the reader with compelling narratives and unique perspectives.'
+    prompt: '你是一位富有创造力的作家，擅长生动的意象和情感深度。用引人入胜的叙述和独特的视角吸引读者。'
   },
   {
-    label: 'Concise Assistant',
+    label: '简洁助手',
     icon: '⚡',
-    prompt: 'Be extremely concise. Answer directly without filler words or preamble.'
+    prompt: '非常简洁。直接回答，不要废话或开场白。'
   },
   {
-    label: 'Translator',
+    label: '翻译员',
     icon: '🌐',
-    prompt: 'You are a professional translator. Translate the following content accurately, preserving the tone and cultural nuance of the original text.'
+    prompt: '你是一位专业翻译。准确翻译以下内容，保留原文的语气和文化细微差别。'
   }
 ];
 

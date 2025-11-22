@@ -47,7 +47,8 @@ export const resources = {
         startSuggestion: "Start with a suggestion",
         updateAvailable: "New version available",
         clickToRefresh: "Refresh to apply updates",
-        refresh: "Refresh"
+        refresh: "Refresh",
+        stop: "Stop Generating"
       },
       suggestions: {
         creative: {
@@ -109,6 +110,30 @@ export const resources = {
           agentNameRequired: "Agent name is required",
           agentSaved: "Agent saved successfully",
           agentDeleted: "Agent deleted"
+        },
+        editor: {
+            preview: "Agent Preview",
+            manualMode: "Switch to Manual Mode",
+            guidedMode: "Switch to Guided Mode",
+            providerConnection: "Provider Connection",
+            manualModelId: "Model ID (Manual)",
+            modelIdPlaceholder: "e.g. deepseek/deepseek-r1",
+            advanced: "Advanced Configuration",
+            temperature: "Temperature",
+            precise: "Precise (0)",
+            creative: "Creative (2)",
+            topP: "Top P",
+            narrow: "Narrow (0)",
+            broad: "Broad (1)",
+            maxTokens: "Max Output Tokens",
+            noLimit: "No Limit",
+            select: "Select...",
+            search: "Search...",
+            noOptions: "No options found",
+            selectBrand: "Select Brand (e.g. DeepSeek, OpenAI)",
+            selectModel: "Select Model",
+            noModelsFound: "No models found for this brand. Try syncing providers in the 'Providers' tab.",
+            selectConnection: "Select Connection (e.g. OpenRouter)"
         },
         providers: {
           title: "Providers",
@@ -198,7 +223,8 @@ export const resources = {
         startSuggestion: "从建议开始",
         updateAvailable: "发现新版本",
         clickToRefresh: "刷新以应用更新",
-        refresh: "立即刷新"
+        refresh: "立即刷新",
+        stop: "停止生成"
       },
       suggestions: {
         creative: {
@@ -260,6 +286,30 @@ export const resources = {
           agentNameRequired: "智能体名称必填",
           agentSaved: "智能体保存成功",
           agentDeleted: "智能体已删除"
+        },
+        editor: {
+            preview: "智能体预览",
+            manualMode: "切换到手动模式",
+            guidedMode: "切换到引导模式",
+            providerConnection: "提供商连接",
+            manualModelId: "模型 ID (手动)",
+            modelIdPlaceholder: "例如：deepseek/deepseek-r1",
+            advanced: "高级配置",
+            temperature: "温度 (Temperature)",
+            precise: "精确 (0)",
+            creative: "创造性 (2)",
+            topP: "核采样 (Top P)",
+            narrow: "集中 (0)",
+            broad: "多样 (1)",
+            maxTokens: "最大输出 Token",
+            noLimit: "无限制",
+            select: "请选择...",
+            search: "搜索...",
+            noOptions: "无选项",
+            selectBrand: "选择品牌 (例如 DeepSeek, OpenAI)",
+            selectModel: "选择模型",
+            noModelsFound: "该品牌下未找到模型。请尝试在“提供商”标签页同步。",
+            selectConnection: "选择连接 (例如 OpenRouter)"
         },
         providers: {
           title: "提供商",

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather, RefreshCw } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
@@ -352,7 +353,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                           <button
                             onClick={stopGeneration}
                             className="p-2.5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30 hover:scale-105 active:scale-95 transition-all duration-200"
-                            title="Stop Generating"
+                            title={t('app.stop')}
                           >
                             <Square size={20} fill="currentColor" />
                           </button>

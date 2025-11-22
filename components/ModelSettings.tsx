@@ -41,7 +41,7 @@ const IconSelect = ({
     value, 
     onChange, 
     options, 
-    placeholder = "Select...", 
+    placeholder, 
     disabled = false 
 }: { 
     value: string; 
@@ -50,6 +50,7 @@ const IconSelect = ({
     placeholder?: string;
     disabled?: boolean;
 }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const [search, setSearch] = useState('');
@@ -109,7 +110,7 @@ const IconSelect = ({
                             </div>
                         </>
                     ) : (
-                        <span className="text-gray-400">{placeholder}</span>
+                        <span className="text-gray-400">{placeholder || t('settings.editor.select')}</span>
                     )}
                 </div>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -126,7 +127,7 @@ const IconSelect = ({
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-blue-500"
-                                    placeholder="Search..."
+                                    placeholder={t('settings.editor.search')}
                                     autoFocus
                                 />
                             </div>
@@ -135,7 +136,7 @@ const IconSelect = ({
                     
                     <div className="overflow-y-auto custom-scrollbar flex-1">
                         {filteredOptions.length === 0 ? (
-                             <div className="p-3 text-xs text-gray-500 text-center">No options found</div>
+                             <div className="p-3 text-xs text-gray-500 text-center">{t('settings.editor.noOptions')}</div>
                         ) : (
                             filteredOptions.map((opt) => (
                                 <button
@@ -494,7 +495,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                      )}
                  </div>
                  <div>
-                     <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">Agent Preview</div>
+                     <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">{t('settings.editor.preview')}</div>
                      <div className="font-bold text-gray-900 dark:text-white">{previewName}</div>
                  </div>
             </div>
@@ -505,7 +506,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     className="text-[10px] flex items-center gap-1 text-gray-400 hover:text-blue-500 transition-colors"
                  >
                     <Wrench size={12} />
-                    {manualModelEntry ? "Switch to Guided Mode" : "Switch to Manual Mode"}
+                    {manualModelEntry ? t('settings.editor.guidedMode') : t('settings.editor.manualMode')}
                  </button>
             </div>
 
@@ -524,7 +525,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     setAgentForm({ ...agentForm, modelId: '' }); 
                                 }}
                                 options={brandOptions}
-                                placeholder="Select Brand (e.g. DeepSeek, OpenAI)"
+                                placeholder={t('settings.editor.selectBrand')}
                             />
                         </div>
 
@@ -548,12 +549,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     }
                                 }}
                                 options={modelOptions}
-                                placeholder="Select Model"
+                                placeholder={t('settings.editor.selectModel')}
                                 disabled={!selectedBrand}
                             />
                             {selectedBrand && filteredModels.length === 0 && (
                                 <div className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
-                                    <Info size={10}/> No models found for this brand. Try syncing providers in the 'Providers' tab.
+                                    <Info size={10}/> {t('settings.editor.noModelsFound')}
                                 </div>
                             )}
                         </div>
@@ -562,16 +563,16 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     /* MANUAL MODE: Provider -> Text Input */
                     <>
                         <div className="space-y-1 relative z-20">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Provider Connection</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase">{t('settings.editor.providerConnection')}</label>
                             <IconSelect 
                                 value={agentForm.providerId || ''}
                                 onChange={(val) => setAgentForm({ ...agentForm, providerId: val })}
                                 options={providerOptions}
-                                placeholder="Select Connection (e.g. OpenRouter)"
+                                placeholder={t('settings.editor.selectConnection')}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-gray-500 uppercase">Model ID (Manual)</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase">{t('settings.editor.manualModelId')}</label>
                             <input 
                                 type="text" 
                                 value={agentForm.modelId || ''} 
@@ -587,7 +588,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     })
                                 }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono"
-                                placeholder="e.g. deepseek/deepseek-r1"
+                                placeholder={t('settings.editor.modelIdPlaceholder')}
                             />
                         </div>
                     </>
@@ -623,14 +624,14 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
              <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                     <Sliders size={12} />
-                    Advanced Configuration
+                    {t('settings.editor.advanced')}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                     {/* Temperature Control */}
                     <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="flex justify-between mb-1">
-                            <label className="text-[10px] font-medium text-gray-500 uppercase">Temperature</label>
+                            <label className="text-[10px] font-medium text-gray-500 uppercase">{t('settings.editor.temperature')}</label>
                             <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">{agentForm.config?.temperature ?? 0.7}</span>
                         </div>
                         <input 
@@ -646,15 +647,15 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                         />
                         <div className="flex justify-between text-[8px] text-gray-400 mt-1">
-                            <span>Precise (0)</span>
-                            <span>Creative (2)</span>
+                            <span>{t('settings.editor.precise')}</span>
+                            <span>{t('settings.editor.creative')}</span>
                         </div>
                     </div>
 
                      {/* Top P Control */}
                     <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="flex justify-between mb-1">
-                            <label className="text-[10px] font-medium text-gray-500 uppercase">Top P</label>
+                            <label className="text-[10px] font-medium text-gray-500 uppercase">{t('settings.editor.topP')}</label>
                             <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400">{agentForm.config?.topP ?? 0.95}</span>
                         </div>
                         <input 
@@ -670,19 +671,19 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                         />
                         <div className="flex justify-between text-[8px] text-gray-400 mt-1">
-                            <span>Narrow (0)</span>
-                            <span>Broad (1)</span>
+                            <span>{t('settings.editor.narrow')}</span>
+                            <span>{t('settings.editor.broad')}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Max Tokens Input */}
                 <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                    <label className="text-[10px] font-medium text-gray-500 uppercase">Max Output Tokens</label>
+                    <label className="text-[10px] font-medium text-gray-500 uppercase">{t('settings.editor.maxTokens')}</label>
                     <input 
                         type="number"
                         min="1"
-                        placeholder="No Limit"
+                        placeholder={t('settings.editor.noLimit')}
                         value={agentForm.config?.maxOutputTokens || ''}
                         onChange={(e) => setAgentForm({
                              ...agentForm,
