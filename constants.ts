@@ -14,7 +14,13 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     type: 'google',
     apiKey: '', // Uses env if empty, or user input
     enabled: true,
-    suggestedModels: ['gemini-2.5-flash', 'gemini-2.0-pro-exp', 'gemini-1.5-pro', 'gemini-1.5-flash']
+    suggestedModels: [
+        'gemini-2.5-flash', 
+        'gemini-2.0-pro-exp', 
+        'gemini-1.5-pro', 
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b'
+    ]
   },
   {
     id: 'provider-openrouter',
@@ -29,7 +35,9 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
       'anthropic/claude-3.5-sonnet',
       'openai/gpt-4o',
       'meta-llama/llama-3.3-70b-instruct',
-      'google/gemini-pro-1.5'
+      'google/gemini-pro-1.5',
+      'mistralai/mistral-large',
+      'x-ai/grok-2'
     ]
   }
 ];
@@ -80,3 +88,51 @@ export const STORAGE_KEYS = {
   AGENTS: 'nexus_agents',
   SETTINGS: 'nexus_settings',
 };
+
+// --- UX Presets ---
+
+export const SYSTEM_PROMPT_TEMPLATES = [
+  {
+    label: 'Code Expert',
+    icon: '💻',
+    prompt: 'You are an expert software engineer. Provide clean, efficient, and well-documented code. Explain your logic clearly and prioritize best practices.'
+  },
+  {
+    label: 'Creative Writer',
+    icon: '✍️',
+    prompt: 'You are a creative writer with a flair for vivid imagery and emotional depth. Engage the reader with compelling narratives and unique perspectives.'
+  },
+  {
+    label: 'Concise Assistant',
+    icon: '⚡',
+    prompt: 'Be extremely concise. Answer directly without filler words or preamble.'
+  },
+  {
+    label: 'Translator',
+    icon: '🌐',
+    prompt: 'You are a professional translator. Translate the following content accurately, preserving the tone and cultural nuance of the original text.'
+  },
+  {
+    label: 'Socratic Tutor',
+    icon: '🎓',
+    prompt: 'You are a tutor who helps students learn by asking guiding questions. Do not give the answer directly; instead, lead the user to the solution.'
+  }
+];
+
+export const PROVIDER_PRESETS = [
+  {
+    name: 'Ollama',
+    baseUrl: 'http://localhost:11434/v1',
+    icon: '🦙'
+  },
+  {
+    name: 'LM Studio',
+    baseUrl: 'http://localhost:1234/v1',
+    icon: '🖥️'
+  },
+  {
+    name: 'LocalAI',
+    baseUrl: 'http://localhost:8080/v1',
+    icon: '🏠'
+  }
+];

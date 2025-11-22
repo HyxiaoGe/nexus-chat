@@ -36,30 +36,76 @@ export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> =>
   }
 };
 
-export const fetchOpenRouterModels = async (apiKey: string): Promise<string[]> => {
+// Generalized function to fetch models from any OpenAI-compatible endpoint
+export const fetchProviderModels = async (provider: LLMProvider): Promise<string[]> => {
   try {
-    // Note: OpenRouter /models is public, but we pass the key anyway for rate limits/personalized visibility
+    let baseUrl = provider.baseURL || 'https://api.openai.com/v1';
+    
+    // Clean URL logic to ensure we hit the /models endpoint correctly
+    // If user provided "http://localhost:11434", we want "http://localhost:11434/v1/models"
+    // If user provided "http://localhost:11434/v1", we want "http://localhost:11434/v1/models"
+    
+    if (baseUrl.endsWith('/chat/completions')) {
+        baseUrl = baseUrl.replace('/chat/completions', '');
+    }
+    if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.slice(0, -1);
+    }
+    
+    // Heuristic: if URL doesn't end in /v1 and isn't openrouter, append /v1 for standard openai compat
+    // But strictly speaking, we should trust the user's base URL. 
+    // We will append /models.
+    const modelsUrl = `${baseUrl}/models`;
+
     const headers: Record<string, string> = {
         'Content-Type': 'application/json'
     };
-    if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+    if (provider.apiKey) {
+        headers['Authorization'] = `Bearer ${provider.apiKey}`;
     }
 
-    const response = await fetch('https://openrouter.ai/api/v1/models', { headers });
+    // Fetch with timeout to prevent hanging on local offline servers
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    console.log(`Fetching models from: ${modelsUrl}`);
+
+    const response = await fetch(modelsUrl, { 
+        method: 'GET',
+        headers,
+        signal: controller.signal
+    });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch models: ${response.statusText}`);
+      throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    if (!data.data || !Array.isArray(data.data)) {
-        throw new Error("Invalid response format from API");
+    
+    // Handle different API response structures
+    // Standard OpenAI: { data: [{ id: '...' }, ...] }
+    // Ollama: { models: [{ name: '...' }, ...] } (sometimes) or { data: ... }
+    
+    let models: string[] = [];
+
+    if (Array.isArray(data.data)) {
+        models = data.data.map((m: any) => m.id);
+    } else if (Array.isArray(data.models)) {
+        // Ollama specific
+        models = data.models.map((m: any) => m.name || m.model || m.id);
+    } else if (Array.isArray(data)) {
+        // Rare edge case where root is array
+        models = data.map((m: any) => m.id || m.name);
+    } else {
+        console.warn("Unknown model list format", data);
+        throw new Error("Invalid API response format: could not find model list");
     }
 
-    return data.data.map((m: any) => m.id).sort();
+    // Filter out weird empty strings if any
+    return models.filter(m => m && typeof m === 'string').sort();
   } catch (error) {
-    console.error("Error fetching OpenRouter models:", error);
+    console.error("Error fetching models:", error);
     throw error;
   }
 };
@@ -109,8 +155,10 @@ export const generateContentStream = async ({
     const baseURL = provider.baseURL || 'https://api.openai.com/v1';
 
     if (!apiKey) {
-       // Some local endpoints might not need a key, but usually they do
-       if (!baseURL.includes('localhost') && !baseURL.includes('127.0.0.1') && !baseURL.includes('ollama')) {
+       // Some local endpoints might not need a key, but usually they do.
+       // We allow empty key for localhost (Ollama usually doesn't need it).
+       const isLocal = baseURL.includes('localhost') || baseURL.includes('127.0.0.1') || baseURL.includes('ollama');
+       if (!isLocal) {
           throw new Error(`Missing API Key for provider: ${provider.name}`);
        }
     }
@@ -125,7 +173,7 @@ export const generateContentStream = async ({
     // Standard headers
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${apiKey || 'nexus-chat'}`, // Some servers expect non-empty auth
     };
     
     // OpenRouter specific recommended headers
@@ -189,7 +237,6 @@ export const generateContentStream = async ({
                     }
                     
                     // Handle DeepSeek R1 reasoning content if present (OpenRouter often passes this through)
-                    // Some providers output reasoning inside the content, others in a specific field.
                     const reasoning = json.choices?.[0]?.delta?.reasoning_content;
                     if (reasoning) {
                          onChunk(`<think>${reasoning}</think>`);
