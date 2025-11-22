@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
-    Eye, EyeOff, Globe, Info
+    Eye, EyeOff, Globe, Info, ChevronDown, Search
 } from 'lucide-react';
 import { fetchProviderModels, validateOpenRouterKey } from '../services/geminiService';
 import { useToast } from './Toast';
@@ -27,6 +27,109 @@ interface ModelSettingsProps {
 }
 
 type Section = 'general' | 'agents' | 'providers' | 'data';
+
+// --- Custom Dropdown Component ---
+interface IconOption {
+    value: string;
+    label: string;
+    icon?: string | React.ReactNode;
+}
+
+const IconSelect = ({ 
+    value, 
+    onChange, 
+    options, 
+    placeholder = "Select...", 
+    disabled = false 
+}: { 
+    value: string; 
+    onChange: (val: string) => void; 
+    options: IconOption[]; 
+    placeholder?: string;
+    disabled?: boolean;
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(o => o.value === value);
+
+    const renderIcon = (icon: string | React.ReactNode) => {
+        if (!icon) return null;
+        if (typeof icon === 'string') return <img src={icon} alt="" className="w-5 h-5 object-contain" />;
+        return icon;
+    };
+
+    return (
+        <div className="relative w-full" ref={containerRef}>
+            <button
+                type="button"
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                disabled={disabled}
+                className={`
+                    w-full flex items-center justify-between bg-gray-50 dark:bg-gray-800 
+                    border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 
+                    text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all
+                    ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-gray-300 dark:hover:border-gray-600'}
+                `}
+            >
+                <div className="flex items-center gap-2.5 truncate">
+                    {selectedOption ? (
+                        <>
+                            <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                {renderIcon(selectedOption.icon)}
+                            </div>
+                            <span className="truncate">{selectedOption.label}</span>
+                        </>
+                    ) : (
+                        <span className="text-gray-400">{placeholder}</span>
+                    )}
+                </div>
+                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 custom-scrollbar">
+                    {options.length === 0 ? (
+                         <div className="p-3 text-xs text-gray-500 text-center">No options</div>
+                    ) : (
+                        options.map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => {
+                                    onChange(opt.value);
+                                    setIsOpen(false);
+                                }}
+                                className={`
+                                    w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-colors
+                                    ${value === opt.value 
+                                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                                `}
+                            >
+                                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                    {renderIcon(opt.icon)}
+                                </div>
+                                <span className="truncate">{opt.label}</span>
+                                {value === opt.value && <Check size={14} className="ml-auto text-blue-600" />}
+                            </button>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const ModelSettings: React.FC<ModelSettingsProps> = ({
   agents,
@@ -323,6 +426,47 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const effectiveAvatar = agentForm.avatar || BRAND_CONFIGS[brandFromId]?.logo || BRAND_CONFIGS.other.logo;
       const isImageAvatar = effectiveAvatar.startsWith('http') || effectiveAvatar.startsWith('data:');
 
+      // --- PREPARE OPTIONS FOR ICON SELECT ---
+      
+      // 1. Provider Options
+      const providerOptions: IconOption[] = providers.map(p => {
+        let icon: React.ReactNode = <Server size={16} />;
+        if (p.type === 'google') {
+            icon = BRAND_CONFIGS.google.logo;
+        } else if (p.id === 'provider-openrouter') {
+            icon = BRAND_CONFIGS.openai.logo; // OpenRouter generally hosts OpenAI style models, or use generic
+        } else if (p.name.toLowerCase().includes('ollama')) {
+            icon = BRAND_CONFIGS.meta.logo; // Using Meta/Llama icon for Ollama usually
+        }
+        
+        return {
+            value: p.id,
+            label: p.name,
+            icon: icon
+        };
+      });
+
+      // 2. Brand Options
+      const brandOptions: IconOption[] = availableBrands.map(b => ({
+        value: b,
+        label: BRAND_CONFIGS[b]?.name || b,
+        icon: BRAND_CONFIGS[b]?.logo
+      }));
+      // Add "All Brands" option if we have multiple
+      if (availableBrands.length > 1) {
+          brandOptions.unshift({ value: '', label: 'All Brands', icon: <Globe size={16}/> });
+      }
+
+      // 3. Model Options
+      const modelOptions: IconOption[] = filteredModels.map(m => {
+          const brand = getBrandFromModelId(m);
+          return {
+              value: m,
+              label: m,
+              icon: BRAND_CONFIGS[brand]?.logo
+          };
+      });
+
       return (
         <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 space-y-5 animate-in fade-in slide-in-from-bottom-2">
             <div className="flex items-center justify-between">
@@ -348,50 +492,41 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             <div className="grid grid-cols-1 gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
                  {/* 1. Provider Selection */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 relative z-20">
                         <label className="text-xs font-bold text-gray-500 uppercase">1. {t('settings.agents.provider')}</label>
-                        <select 
+                        <IconSelect 
                             value={agentForm.providerId || ''}
-                            onChange={e => {
-                                const newProvider = providers.find(p => p.id === e.target.value);
+                            onChange={(val) => {
+                                const newProvider = providers.find(p => p.id === val);
                                 const isNewGoogle = newProvider?.type === 'google';
                                 setAgentForm({
                                     ...agentForm, 
-                                    providerId: e.target.value, 
+                                    providerId: val, 
                                     modelId: '' 
                                 });
                                 setManualModelEntry(false);
                                 if (isNewGoogle) setSelectedBrandFilter('google');
                                 else setSelectedBrandFilter(null);
-                            }} 
-                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            {providers.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
+                            }}
+                            options={providerOptions}
+                            placeholder="Select Provider"
+                        />
                     </div>
 
                     {/* 2. Brand/Vendor Filter */}
-                    {!isGoogle && !useManualInput && (
-                         <div className="space-y-1">
-                             <label className="text-xs font-bold text-gray-500 uppercase">2. Filter by Brand</label>
-                             <select 
-                                value={selectedBrandFilter || ''}
-                                onChange={e => {
-                                    setSelectedBrandFilter(e.target.value);
-                                    setAgentForm({ ...agentForm, modelId: '' });
-                                }}
-                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                disabled={availableBrands.length === 0}
-                             >
-                                 <option value="" disabled>All Brands</option>
-                                 {availableBrands.map(b => (
-                                     <option key={b} value={b}>{BRAND_CONFIGS[b]?.name || b}</option>
-                                 ))}
-                             </select>
-                         </div>
-                    )}
+                    <div className="space-y-1 relative z-10">
+                         <label className="text-xs font-bold text-gray-500 uppercase">2. Filter by Brand</label>
+                         <IconSelect
+                            value={selectedBrandFilter || ''}
+                            onChange={(val) => {
+                                setSelectedBrandFilter(val === '' ? null : val);
+                                setAgentForm({ ...agentForm, modelId: '' });
+                            }}
+                            options={brandOptions}
+                            placeholder="All Brands"
+                            disabled={isGoogle || useManualInput}
+                         />
+                    </div>
                  </div>
                 
                 {/* 3. Model Selection */}
@@ -426,28 +561,22 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     
                     <div className="relative">
                          {!useManualInput ? (
-                             <select
-                                value={agentForm.modelId || ''} 
-                                onChange={e => {
-                                    const newModel = e.target.value;
-                                    const brand = getBrandFromModelId(newModel);
-                                    const autoName = newModel.split('/').pop() || newModel;
-
+                             <IconSelect
+                                value={agentForm.modelId || ''}
+                                onChange={(val) => {
+                                    const brand = getBrandFromModelId(val);
+                                    const autoName = val.split('/').pop() || val;
                                     setAgentForm({
                                         ...agentForm, 
-                                        modelId: newModel,
+                                        modelId: val,
                                         name: autoName,
                                         avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
                                     });
                                 }}
-                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                                options={modelOptions}
+                                placeholder="Select a model..."
                                 disabled={filteredModels.length === 0}
-                             >
-                                 <option value="" disabled>Select a model...</option>
-                                 {filteredModels.map(m => (
-                                     <option key={m} value={m}>{m}</option>
-                                 ))}
-                             </select>
+                             />
                          ) : (
                             <input 
                                 type="text" 
