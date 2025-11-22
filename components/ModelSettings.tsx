@@ -99,12 +99,16 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const handleNewAgent = () => {
     const newId = Math.random().toString(36).substring(2, 15);
     const defaultProvider = providers.find(p => p.enabled) || providers[0];
+    const defaultModel = defaultProvider?.suggestedModels?.[0] || '';
+    const brand = getBrandFromModelId(defaultModel);
+    const autoName = defaultModel ? (defaultModel.split('/').pop() || defaultModel) : 'New Agent';
+
     const newAgent: AgentConfig = {
         id: newId,
-        name: 'New Agent',
-        avatar: BRAND_CONFIGS.other.logo,
+        name: autoName,
+        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo,
         providerId: defaultProvider?.id || '',
-        modelId: defaultProvider?.suggestedModels[0] || '',
+        modelId: defaultModel,
         systemPrompt: 'You are a helpful assistant.',
         enabled: true,
     };
@@ -116,6 +120,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 
   const handleSaveAgent = () => {
     if (!editingAgentId || !agentForm.name) {
+        // Name is auto-generated now, but just in case
         error(t('settings.agents.agentNameRequired'));
         return;
     }
@@ -156,9 +161,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const applyAgentTemplate = (template: typeof SYSTEM_PROMPT_TEMPLATES[0]) => {
       setAgentForm(prev => ({
           ...prev,
-          // Don't override avatar from template, use brand logo
-          // avatar: template.icon, 
-          name: `${template.label}`, 
+          // We do NOT override the name/avatar anymore, as it should match the model
+          // Only update the behavior
           systemPrompt: template.prompt
       }));
   };
@@ -320,7 +324,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           : currentProvider?.suggestedModels) || [];
 
       // Detect available brands from the model list
-      // FIXED: Removed useMemo to prevent React #310 error (Hooks inside conditional rendering)
       const brands = new Set<string>();
       if (isGoogle) {
           brands.add('google');
@@ -332,7 +335,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const availableBrands = Array.from(brands).sort();
 
       // Filter models based on selected brand
-      // FIXED: Removed useMemo
       let filteredModels = allModels;
       if (!isGoogle && selectedBrandFilter) {
           filteredModels = allModels.filter(m => getBrandFromModelId(m) === selectedBrandFilter);
@@ -349,38 +351,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 <button onClick={() => setEditingAgentId(null)} className="text-gray-400 hover:text-red-500"><X size={18} /></button>
             </div>
 
-            <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-3 space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.name')}</label>
-                    <input 
-                        type="text" 
-                        value={agentForm.name || ''} 
-                        onChange={e => setAgentForm({...agentForm, name: e.target.value})}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder={t('settings.agents.placeholderName')}
-                    />
-                </div>
-                <div className="col-span-1 space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.avatar')}</label>
-                    <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                            {agentForm.avatar?.startsWith('http') ? (
-                                <img src={agentForm.avatar} alt="avatar" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-xl">{agentForm.avatar}</span>
-                            )}
-                        </div>
-                        <input 
-                            type="text" 
-                            value={agentForm.avatar || ''} 
-                            onChange={e => setAgentForm({...agentForm, avatar: e.target.value})}
-                            className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="URL/Emoji"
-                        />
-                    </div>
-                </div>
-            </div>
-
+            {/* Name and Avatar inputs removed as per user request - derived from model */}
+            
             <div className="grid grid-cols-1 gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
                  {/* 1. Provider Selection */}
                  <div className="grid grid-cols-2 gap-4">
@@ -468,11 +440,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 onChange={e => {
                                     const newModel = e.target.value;
                                     const brand = getBrandFromModelId(newModel);
-                                    // Auto-set Avatar based on Brand Logo
+                                    const autoName = newModel.split('/').pop() || newModel;
+
                                     setAgentForm({
                                         ...agentForm, 
                                         modelId: newModel,
-                                        avatar: BRAND_CONFIGS[brand]?.logo || agentForm.avatar
+                                        name: autoName, // Auto-update Name
+                                        avatar: BRAND_CONFIGS[brand]?.logo || agentForm.avatar // Auto-update Avatar
                                     });
                                 }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
@@ -487,7 +461,17 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             <input 
                                 type="text" 
                                 value={agentForm.modelId || ''} 
-                                onChange={e => setAgentForm({...agentForm, modelId: e.target.value})}
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    const brand = getBrandFromModelId(val);
+                                    const autoName = val.split('/').pop() || val;
+                                    setAgentForm({
+                                        ...agentForm, 
+                                        modelId: val,
+                                        name: autoName, // Auto-update Name
+                                        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo // Auto-update Avatar
+                                    })
+                                }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                                 placeholder="e.g., deepseek/deepseek-chat"
                             />
