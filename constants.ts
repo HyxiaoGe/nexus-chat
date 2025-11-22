@@ -8,14 +8,14 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 };
 
 // --- Brand & Logo Assets (Powered by LobeHub Icons) ---
-// Using jsDelivr CDN for LobeHub static assets which are high quality, consistent and fast
-const LOBEHUB_ICON_BASE = "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/dark";
+// Switched to 'origin' directory for official brand colors instead of monochrome
+const LOBEHUB_ICON_BASE = "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/origin";
 
 export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
   openai: {
     name: 'OpenAI',
     logo: `${LOBEHUB_ICON_BASE}/openai.png`,
-    keywords: ['openai', 'gpt']
+    keywords: ['openai', 'gpt', 'o1-', 'o1-mini', 'o1-preview']
   },
   google: {
     name: 'Google Gemini',
@@ -29,7 +29,7 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   },
   deepseek: {
     name: 'DeepSeek',
-    logo: `${LOBEHUB_ICON_BASE}/deepseek.png`, // DeepSeek icon
+    logo: `${LOBEHUB_ICON_BASE}/deepseek.png`,
     keywords: ['deepseek']
   },
   meta: {
@@ -40,7 +40,7 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   mistral: {
     name: 'Mistral AI',
     logo: `${LOBEHUB_ICON_BASE}/mistral.png`,
-    keywords: ['mistral', 'mixtral']
+    keywords: ['mistral', 'mixtral', 'pixtral']
   },
   xai: {
     name: 'xAI (Grok)',
@@ -62,9 +62,15 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
     logo: `${LOBEHUB_ICON_BASE}/minimax.png`,
     keywords: ['minimax']
   },
+  microsoft: {
+    name: 'Microsoft',
+    logo: `${LOBEHUB_ICON_BASE}/microsoft.png`,
+    keywords: ['microsoft', 'phi']
+  },
   other: {
     name: 'Assistant',
-    logo: `${LOBEHUB_ICON_BASE}/llm.png`, // Generic LLM icon
+    // Use OpenAI icon as a generic high-quality fallback for "AI Assistant" if specific logo missing
+    logo: `${LOBEHUB_ICON_BASE}/openai.png`, 
     keywords: []
   }
 };
@@ -94,11 +100,12 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     id: 'provider-google',
     name: 'Google Gemini',
     type: 'google',
-    apiKey: '', // Uses env if empty, or user input
+    apiKey: '', // Uses env if empty
     enabled: true,
     suggestedModels: [
         'gemini-2.5-flash', 
-        'gemini-2.0-pro-exp', 
+        'gemini-2.0-flash-thinking-exp-01-21',
+        'gemini-2.0-pro-exp-02-05',
         'gemini-1.5-pro', 
         'gemini-1.5-flash'
     ]
@@ -110,25 +117,67 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: '',
     enabled: true,
+    // Comprehensive list of mainstream models
     suggestedModels: [
-      'deepseek/deepseek-r1',
-      'anthropic/claude-3.5-sonnet',
+      // OpenAI
       'openai/gpt-4o',
+      'openai/gpt-4o-mini',
+      'openai/o1-preview',
+      'openai/o1-mini',
+      
+      // Anthropic
+      'anthropic/claude-3.5-sonnet',
+      'anthropic/claude-3.5-haiku',
+      'anthropic/claude-3-opus',
+      
+      // DeepSeek
+      'deepseek/deepseek-r1',
+      'deepseek/deepseek-v3',
+      
+      // Google (via OpenRouter)
       'google/gemini-2.0-flash-001',
+      'google/gemini-2.0-pro-exp-02-05',
+      
+      // Meta
       'meta-llama/llama-3.3-70b-instruct',
+      'meta-llama/llama-3.1-405b-instruct',
+      'meta-llama/llama-3.1-70b-instruct',
+      'meta-llama/llama-3.1-8b-instruct',
+      
+      // Mistral
+      'mistralai/mistral-large-2411',
+      'mistralai/pixtral-large-2411',
+      'mistralai/mistral-small-2402',
+      
+      // Perplexity
+      'perplexity/llama-3.1-sonar-huge-128k-online',
+      
+      // xAI
+      'x-ai/grok-2-1212',
+      
+      // Qwen
+      'qwen/qwen-2.5-72b-instruct',
+      'qwen/qwen-2.5-coder-32b-instruct',
+      
+      // Microsoft
+      'microsoft/phi-4',
     ]
   }
 ];
 
 export const DEFAULT_AGENTS: AgentConfig[] = [
   {
-    id: 'agent-analyst',
+    id: 'agent-gemini-flash',
     name: 'Gemini Flash',
     avatar: BRAND_CONFIGS.google.logo,
     providerId: 'provider-google',
     modelId: 'gemini-2.5-flash',
-    systemPrompt: 'You are a helpful assistant.',
+    systemPrompt: 'You are a helpful and fast assistant.',
     enabled: true,
+    config: {
+      temperature: 0.7,
+      maxOutputTokens: 8192
+    }
   },
   {
     id: 'agent-deepseek-r1',
@@ -136,8 +185,23 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: BRAND_CONFIGS.deepseek.logo,
     providerId: 'provider-openrouter',
     modelId: 'deepseek/deepseek-r1',
-    systemPrompt: 'You are a reasoning engine. Show your chain of thought clearly.',
+    systemPrompt: 'You are a reasoning engine. Show your chain of thought clearly inside <think> tags.',
     enabled: true,
+    config: {
+      temperature: 0.6
+    }
+  },
+  {
+    id: 'agent-claude-sonnet',
+    name: 'Claude Sonnet',
+    avatar: BRAND_CONFIGS.anthropic.logo,
+    providerId: 'provider-openrouter',
+    modelId: 'anthropic/claude-3.5-sonnet',
+    systemPrompt: 'You are Claude, a helpful AI assistant created by Anthropic.',
+    enabled: false, // Disabled by default to save slots
+    config: {
+      temperature: 0.7
+    }
   }
 ];
 

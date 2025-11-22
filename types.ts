@@ -19,6 +19,13 @@ export interface LLMProvider {
   fetchedModels?: string[]; // Models fetched dynamically from the API (e.g. OpenRouter)
 }
 
+export interface GenerationConfig {
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  maxOutputTokens?: number;
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
@@ -27,6 +34,7 @@ export interface AgentConfig {
   modelId: string; // e.g., gemini-2.5-flash, deepseek-chat
   systemPrompt: string;
   enabled: boolean;
+  config?: GenerationConfig; // New field for advanced settings
 }
 
 export interface Message {

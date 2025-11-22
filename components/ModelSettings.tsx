@@ -5,7 +5,7 @@ import {
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
-    Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench
+    Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench, Sliders
 } from 'lucide-react';
 import { fetchProviderModels } from '../services/geminiService';
 import { useToast } from './Toast';
@@ -259,6 +259,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         modelId: '',
         systemPrompt: 'You are a helpful assistant.',
         enabled: true,
+        config: { temperature: 0.7 }
     };
 
     if (defaultModelEntry) {
@@ -608,6 +609,80 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none font-mono leading-relaxed"
                     placeholder={t('settings.agents.placeholderPrompt')}
                 />
+            </div>
+
+            {/* --- Advanced Configuration (New Section) --- */}
+             <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                    <Sliders size={12} />
+                    Advanced Configuration
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Temperature Control */}
+                    <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between mb-1">
+                            <label className="text-[10px] font-medium text-gray-500 uppercase">Temperature</label>
+                            <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">{agentForm.config?.temperature ?? 0.7}</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="2" 
+                            step="0.1"
+                            value={agentForm.config?.temperature ?? 0.7}
+                            onChange={(e) => setAgentForm({
+                                ...agentForm,
+                                config: { ...agentForm.config, temperature: parseFloat(e.target.value) }
+                            })}
+                            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                        />
+                        <div className="flex justify-between text-[8px] text-gray-400 mt-1">
+                            <span>Precise (0)</span>
+                            <span>Creative (2)</span>
+                        </div>
+                    </div>
+
+                     {/* Top P Control */}
+                    <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between mb-1">
+                            <label className="text-[10px] font-medium text-gray-500 uppercase">Top P</label>
+                            <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400">{agentForm.config?.topP ?? 0.95}</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="1" 
+                            step="0.05"
+                            value={agentForm.config?.topP ?? 0.95}
+                            onChange={(e) => setAgentForm({
+                                ...agentForm,
+                                config: { ...agentForm.config, topP: parseFloat(e.target.value) }
+                            })}
+                            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                        />
+                        <div className="flex justify-between text-[8px] text-gray-400 mt-1">
+                            <span>Narrow (0)</span>
+                            <span>Broad (1)</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Max Tokens Input */}
+                <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <label className="text-[10px] font-medium text-gray-500 uppercase">Max Output Tokens</label>
+                    <input 
+                        type="number"
+                        min="1"
+                        placeholder="No Limit"
+                        value={agentForm.config?.maxOutputTokens || ''}
+                        onChange={(e) => setAgentForm({
+                             ...agentForm,
+                             config: { ...agentForm.config, maxOutputTokens: e.target.value ? parseInt(e.target.value) : undefined }
+                        })}
+                        className="w-24 text-right bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    />
+                </div>
             </div>
 
             <div className="flex gap-3 pt-2">

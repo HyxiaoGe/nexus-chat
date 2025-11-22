@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { AgentConfig, LLMProvider } from "../types";
 
@@ -120,7 +121,7 @@ export const generateContentStream = async ({
   
   // 1. Handle Google GenAI Models
   if (provider.type === 'google') {
-    // Fixed: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+    // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
@@ -129,6 +130,11 @@ export const generateContentStream = async ({
         contents: prompt,
         config: {
           systemInstruction: agent.systemPrompt,
+          // Map Agent Config to Gemini Generation Config
+          temperature: agent.config?.temperature,
+          topP: agent.config?.topP,
+          topK: agent.config?.topK,
+          maxOutputTokens: agent.config?.maxOutputTokens
         }
       });
 
@@ -194,6 +200,10 @@ export const generateContentStream = async ({
                     { role: 'user', content: prompt }
                 ],
                 stream: true,
+                // Inject Config
+                temperature: agent.config?.temperature,
+                top_p: agent.config?.topP,
+                max_tokens: agent.config?.maxOutputTokens
             }),
         });
 
