@@ -1,13 +1,13 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
-    Eye, EyeOff, Globe, Info, ChevronDown, Search
+    Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench
 } from 'lucide-react';
-import { fetchProviderModels, validateOpenRouterKey } from '../services/geminiService';
+import { fetchProviderModels } from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,7 @@ type Section = 'general' | 'agents' | 'providers' | 'data';
 interface IconOption {
     value: string;
     label: string;
+    subLabel?: string;
     icon?: string | React.ReactNode;
 }
 
@@ -50,6 +51,7 @@ const IconSelect = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +63,14 @@ const IconSelect = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Reset search when closed
+    useEffect(() => { if (!isOpen) setSearch(''); }, [isOpen]);
+
     const selectedOption = options.find(o => o.value === value);
+    const filteredOptions = options.filter(o => 
+        o.label.toLowerCase().includes(search.toLowerCase()) || 
+        (o.subLabel && o.subLabel.toLowerCase().includes(search.toLowerCase()))
+    );
 
     const renderIcon = (icon: string | React.ReactNode) => {
         if (!icon) return null;
@@ -88,7 +97,9 @@ const IconSelect = ({
                             <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
                                 {renderIcon(selectedOption.icon)}
                             </div>
-                            <span className="truncate">{selectedOption.label}</span>
+                            <div className="flex flex-col items-start truncate">
+                                <span className="truncate font-medium">{selectedOption.label}</span>
+                            </div>
                         </>
                     ) : (
                         <span className="text-gray-400">{placeholder}</span>
@@ -98,33 +109,54 @@ const IconSelect = ({
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 custom-scrollbar">
-                    {options.length === 0 ? (
-                         <div className="p-3 text-xs text-gray-500 text-center">No options</div>
-                    ) : (
-                        options.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => {
-                                    onChange(opt.value);
-                                    setIsOpen(false);
-                                }}
-                                className={`
-                                    w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-colors
-                                    ${value === opt.value 
-                                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                                        : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}
-                                `}
-                            >
-                                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                                    {renderIcon(opt.icon)}
-                                </div>
-                                <span className="truncate">{opt.label}</span>
-                                {value === opt.value && <Check size={14} className="ml-auto text-blue-600" />}
-                            </button>
-                        ))
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-72 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100">
+                    {options.length > 10 && (
+                        <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                            <div className="relative">
+                                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
+                                <input 
+                                    type="text" 
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                                    placeholder="Search..."
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
                     )}
+                    
+                    <div className="overflow-y-auto custom-scrollbar flex-1">
+                        {filteredOptions.length === 0 ? (
+                             <div className="p-3 text-xs text-gray-500 text-center">No options found</div>
+                        ) : (
+                            filteredOptions.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(opt.value);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`
+                                        w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors
+                                        ${value === opt.value 
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                                    `}
+                                >
+                                    <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                        {renderIcon(opt.icon)}
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="truncate font-medium">{opt.label}</span>
+                                        {opt.subLabel && <span className="text-[10px] text-gray-400 truncate">{opt.subLabel}</span>}
+                                    </div>
+                                    {value === opt.value && <Check size={14} className="ml-auto text-blue-600 flex-shrink-0" />}
+                                </button>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
         </div>
@@ -150,7 +182,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   // Agent Editing State
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentForm, setAgentForm] = useState<Partial<AgentConfig>>({});
-  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   
   // Provider Editing State
   const [expandedProviderId, setExpandedProviderId] = useState<string | null>(null);
@@ -158,9 +190,40 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const [showApiKey, setShowApiKey] = useState(false);
   
   const [isSyncingModels, setIsSyncingModels] = useState(false);
-  const [fetchingModelsForAgent, setFetchingModelsForAgent] = useState(false);
   const [manualModelEntry, setManualModelEntry] = useState(false); 
   const { success, error, info } = useToast();
+
+  // --- Aggregated Models Logic ---
+  // Combine models from ALL providers into a single searchable list
+  const allAggregatedModels = useMemo(() => {
+      const list: { modelId: string; providerId: string; providerName: string; brand: string }[] = [];
+      
+      providers.forEach(p => {
+          if (!p.enabled) return;
+          
+          // Use fetched models if available, otherwise defaults
+          const sourceModels = (p.fetchedModels && p.fetchedModels.length > 0) 
+              ? p.fetchedModels 
+              : p.suggestedModels;
+              
+          sourceModels.forEach(m => {
+              list.push({
+                  modelId: m,
+                  providerId: p.id,
+                  providerName: p.name,
+                  brand: getBrandFromModelId(m)
+              });
+          });
+      });
+      return list;
+  }, [providers]);
+
+  // Extract unique brands from the aggregated list
+  const availableBrands = useMemo(() => {
+      const brands = new Set<string>(allAggregatedModels.map(m => m.brand));
+      // Always ensure Google/OpenAI/Anthropic are present if they exist in config, even if no models fetched yet
+      return Array.from(brands).sort();
+  }, [allAggregatedModels]);
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -172,59 +235,50 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 
   // --- Agent Logic ---
   
-  // AUTO-FETCH MODELS: When selecting a provider in Agent Edit mode, try to fetch models automatically
-  useEffect(() => {
-    if (editingAgentId && agentForm.providerId) {
-        const provider = providers.find(p => p.id === agentForm.providerId);
-        
-        // Auto-fetch if not fetched yet, provider enabled, not Google (static), and not manual mode
-        if (provider && !provider.fetchedModels && provider.type !== 'google' && provider.baseURL && !manualModelEntry) {
-            handleRefreshModelsForAgent(provider.id, true);
-        }
-    }
-  }, [agentForm.providerId, editingAgentId]);
-
-  // When opening an agent, try to detect the brand from the current modelId to set initial filter
-  useEffect(() => {
-      if (editingAgentId && agentForm.modelId) {
-          const brandKey = getBrandFromModelId(agentForm.modelId);
-          setSelectedBrandFilter(brandKey);
-      }
-  }, [editingAgentId]);
-
   const handleEditAgent = (agent: AgentConfig) => {
     setEditingAgentId(agent.id);
     setAgentForm({ ...agent });
+    
+    // Attempt to match existing model to brand
+    const brand = getBrandFromModelId(agent.modelId);
+    setSelectedBrand(brand);
     setManualModelEntry(false);
   };
 
   const handleNewAgent = () => {
     const newId = Math.random().toString(36).substring(2, 15);
-    const defaultProvider = providers.find(p => p.enabled) || providers[0];
-    const defaultModel = defaultProvider?.suggestedModels?.[0] || '';
     
-    // Auto derive info
-    const brand = getBrandFromModelId(defaultModel);
-    const autoName = defaultModel ? (defaultModel.split('/').pop() || defaultModel) : 'New Agent';
-
+    // Default to Google Flash if available, else first available
+    const defaultModelEntry = allAggregatedModels.find(m => m.modelId.includes('gemini-2.5-flash')) || allAggregatedModels[0];
+    
     const newAgent: AgentConfig = {
         id: newId,
-        name: autoName,
-        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo,
-        providerId: defaultProvider?.id || '',
-        modelId: defaultModel,
+        name: 'New Agent',
+        avatar: BRAND_CONFIGS.other.logo,
+        providerId: '', // Will be set below
+        modelId: '',
         systemPrompt: 'You are a helpful assistant.',
         enabled: true,
     };
+
+    if (defaultModelEntry) {
+        newAgent.providerId = defaultModelEntry.providerId;
+        newAgent.modelId = defaultModelEntry.modelId;
+        newAgent.name = 'Gemini Flash';
+        newAgent.avatar = BRAND_CONFIGS.google.logo;
+        setSelectedBrand('google');
+    } else {
+        setSelectedBrand(null);
+    }
+
     setAgentForm(newAgent);
     setEditingAgentId(newId);
     setManualModelEntry(false);
-    setSelectedBrandFilter(brand);
   };
 
   const handleSaveAgent = () => {
-    if (!editingAgentId || !agentForm.modelId) {
-        error(t('settings.agents.agentNameRequired')); // Reusing error message key for Model ID check implicitly
+    if (!editingAgentId || !agentForm.modelId || !agentForm.providerId) {
+        error(t('settings.agents.agentNameRequired'));
         return;
     }
     const updatedAgent = agentForm as AgentConfig;
@@ -266,27 +320,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           ...prev,
           systemPrompt: template.prompt
       }));
-  };
-
-  const handleRefreshModelsForAgent = async (providerId: string, silent = false) => {
-      const provider = providers.find(p => p.id === providerId);
-      if (!provider) return;
-      
-      setFetchingModelsForAgent(true);
-      try {
-          const models = await fetchProviderModels(provider);
-          if (models.length > 0) {
-              const updatedProvider = { ...provider, fetchedModels: models };
-              onUpdateProviders(providers.map(p => p.id === providerId ? updatedProvider : p));
-              if (!silent) success(t('settings.providers.syncSuccess'));
-          } else {
-              if (!silent) info(t('settings.providers.noModels'));
-          }
-      } catch (e: any) {
-          if (!silent) error(`${t('common.error')}: ${e.message}`);
-      } finally {
-          setFetchingModelsForAgent(false);
-      }
   };
 
   // --- Provider Logic ---
@@ -392,32 +425,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   );
 
   const renderAgentForm = () => {
-      const currentProvider = providers.find(p => p.id === agentForm.providerId);
-      const isGoogle = currentProvider?.type === 'google';
-      const hasFetchedModels = !!(currentProvider?.fetchedModels && currentProvider.fetchedModels.length > 0);
-      
-      const allModels: string[] = (hasFetchedModels 
-          ? currentProvider?.fetchedModels 
-          : currentProvider?.suggestedModels) || [];
-
-      const brands = new Set<string>();
-      if (isGoogle) {
-          brands.add('google');
-      } else {
-          allModels.forEach(m => {
-              brands.add(getBrandFromModelId(m));
-          });
-      }
-      const availableBrands = Array.from(brands).sort();
-
-      let filteredModels = allModels;
-      if (!isGoogle && selectedBrandFilter) {
-          filteredModels = allModels.filter(m => getBrandFromModelId(m) === selectedBrandFilter);
-      }
-
-      const useManualInput = manualModelEntry || (!hasFetchedModels && allModels.length === 0);
-      const canFetchModels = !isGoogle && currentProvider?.baseURL;
-
       // Preview what the agent will look like
       const previewName = agentForm.modelId ? (agentForm.modelId.split('/').pop() || agentForm.modelId) : 'New Agent';
       
@@ -426,45 +433,39 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const effectiveAvatar = agentForm.avatar || BRAND_CONFIGS[brandFromId]?.logo || BRAND_CONFIGS.other.logo;
       const isImageAvatar = effectiveAvatar.startsWith('http') || effectiveAvatar.startsWith('data:');
 
+      // --- FILTER MODELS BY BRAND ---
+      const filteredModels = selectedBrand 
+        ? allAggregatedModels.filter(m => m.brand === selectedBrand)
+        : allAggregatedModels;
+
       // --- PREPARE OPTIONS FOR ICON SELECT ---
       
-      // 1. Provider Options
-      const providerOptions: IconOption[] = providers.map(p => {
-        let icon: React.ReactNode = <Server size={16} />;
-        if (p.type === 'google') {
-            icon = BRAND_CONFIGS.google.logo;
-        } else if (p.id === 'provider-openrouter') {
-            icon = BRAND_CONFIGS.openai.logo; // OpenRouter generally hosts OpenAI style models, or use generic
-        } else if (p.name.toLowerCase().includes('ollama')) {
-            icon = BRAND_CONFIGS.meta.logo; // Using Meta/Llama icon for Ollama usually
-        }
-        
-        return {
-            value: p.id,
-            label: p.name,
-            icon: icon
-        };
-      });
-
-      // 2. Brand Options
+      // 1. Brand Options
       const brandOptions: IconOption[] = availableBrands.map(b => ({
         value: b,
         label: BRAND_CONFIGS[b]?.name || b,
         icon: BRAND_CONFIGS[b]?.logo
       }));
-      // Add "All Brands" option if we have multiple
-      if (availableBrands.length > 1) {
-          brandOptions.unshift({ value: '', label: 'All Brands', icon: <Globe size={16}/> });
-      }
-
-      // 3. Model Options
+      
+      // 2. Model Options
       const modelOptions: IconOption[] = filteredModels.map(m => {
-          const brand = getBrandFromModelId(m);
+          const brand = getBrandFromModelId(m.modelId);
           return {
-              value: m,
-              label: m,
+              value: m.modelId, // Note: modelId must be unique across providers for this simple logic, or we need a composite key
+              label: m.modelId,
+              subLabel: m.providerName, // Show which provider hosts this model
               icon: BRAND_CONFIGS[brand]?.logo
           };
+      });
+
+      // 3. Provider Options (Only for Manual Mode)
+      const providerOptions: IconOption[] = providers.map(p => {
+        let icon: React.ReactNode = <Server size={16} />;
+        if (p.type === 'google') icon = BRAND_CONFIGS.google.logo;
+        else if (p.name.toLowerCase().includes('ollama')) icon = BRAND_CONFIGS.meta.logo;
+        else if (p.id === 'provider-openrouter') icon = BRAND_CONFIGS.openai.logo;
+        
+        return { value: p.id, label: p.name, icon };
       });
 
       return (
@@ -488,96 +489,80 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                      <div className="font-bold text-gray-900 dark:text-white">{previewName}</div>
                  </div>
             </div>
+            
+            <div className="flex justify-end">
+                 <button 
+                    onClick={() => setManualModelEntry(!manualModelEntry)} 
+                    className="text-[10px] flex items-center gap-1 text-gray-400 hover:text-blue-500 transition-colors"
+                 >
+                    <Wrench size={12} />
+                    {manualModelEntry ? "Switch to Guided Mode" : "Switch to Manual Mode"}
+                 </button>
+            </div>
 
             <div className="grid grid-cols-1 gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-                 {/* 1. Provider Selection */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1 relative z-20">
-                        <label className="text-xs font-bold text-gray-500 uppercase">1. {t('settings.agents.provider')}</label>
-                        <IconSelect 
-                            value={agentForm.providerId || ''}
-                            onChange={(val) => {
-                                const newProvider = providers.find(p => p.id === val);
-                                const isNewGoogle = newProvider?.type === 'google';
-                                setAgentForm({
-                                    ...agentForm, 
-                                    providerId: val, 
-                                    modelId: '' 
-                                });
-                                setManualModelEntry(false);
-                                if (isNewGoogle) setSelectedBrandFilter('google');
-                                else setSelectedBrandFilter(null);
-                            }}
-                            options={providerOptions}
-                            placeholder="Select Provider"
-                        />
-                    </div>
-
-                    {/* 2. Brand/Vendor Filter */}
-                    <div className="space-y-1 relative z-10">
-                         <label className="text-xs font-bold text-gray-500 uppercase">2. Filter by Brand</label>
-                         <IconSelect
-                            value={selectedBrandFilter || ''}
-                            onChange={(val) => {
-                                setSelectedBrandFilter(val === '' ? null : val);
-                                setAgentForm({ ...agentForm, modelId: '' });
-                            }}
-                            options={brandOptions}
-                            placeholder="All Brands"
-                            disabled={isGoogle || useManualInput}
-                         />
-                    </div>
-                 </div>
-                
-                {/* 3. Model Selection */}
-                <div className="space-y-1 mt-2">
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-gray-500 uppercase">
-                             {isGoogle ? '2. ' : '3. '} {t('settings.agents.modelId')}
-                        </label>
-                        <div className="flex items-center gap-2">
-                            {!useManualInput && canFetchModels && (
-                                <button onClick={() => setManualModelEntry(true)} className="text-[10px] text-gray-400 hover:text-blue-500 underline">
-                                    Type manually
-                                </button>
-                            )}
-                            {useManualInput && (allModels.length > 0) && (
-                                <button onClick={() => setManualModelEntry(false)} className="text-[10px] text-gray-400 hover:text-blue-500 underline">
-                                    Select from list
-                                </button>
-                            )}
-                            {canFetchModels && (
-                                <button 
-                                    onClick={() => agentForm.providerId && handleRefreshModelsForAgent(agentForm.providerId)}
-                                    disabled={fetchingModelsForAgent}
-                                    className="text-[10px] flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
-                                >
-                                    {fetchingModelsForAgent ? <Loader2 size={10} className="animate-spin"/> : <RefreshCw size={10} />}
-                                    {hasFetchedModels ? 'Refresh List' : 'Load Models'}
-                                </button>
-                            )}
+                 
+                 {!manualModelEntry ? (
+                    /* GUIDED MODE: Brand -> Model */
+                    <>
+                        <div className="space-y-1 relative z-20">
+                            <label className="text-xs font-bold text-gray-500 uppercase">1. {t('settings.agents.provider')}</label>
+                            <IconSelect 
+                                value={selectedBrand || ''}
+                                onChange={(val) => {
+                                    setSelectedBrand(val);
+                                    // Clear model when brand changes to force re-selection
+                                    setAgentForm({ ...agentForm, modelId: '' }); 
+                                }}
+                                options={brandOptions}
+                                placeholder="Select Brand (e.g. DeepSeek, OpenAI)"
+                            />
                         </div>
-                    </div>
-                    
-                    <div className="relative">
-                         {!useManualInput ? (
-                             <IconSelect
+
+                        <div className="space-y-1 relative z-10">
+                            <label className="text-xs font-bold text-gray-500 uppercase">2. {t('settings.agents.modelId')}</label>
+                            <IconSelect
                                 value={agentForm.modelId || ''}
                                 onChange={(val) => {
-                                    const brand = getBrandFromModelId(val);
-                                    const autoName = val.split('/').pop() || val;
-                                    setAgentForm({
-                                        ...agentForm, 
-                                        modelId: val,
-                                        name: autoName,
-                                        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
-                                    });
+                                    // Find the model entry to get the correct providerId
+                                    const entry = allAggregatedModels.find(m => m.modelId === val);
+                                    if (entry) {
+                                        const brand = getBrandFromModelId(val);
+                                        const autoName = val.split('/').pop() || val;
+                                        setAgentForm({
+                                            ...agentForm,
+                                            modelId: val,
+                                            providerId: entry.providerId, // AUTO-ROUTE to correct provider
+                                            name: autoName,
+                                            avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
+                                        });
+                                    }
                                 }}
                                 options={modelOptions}
-                                placeholder="Select a model..."
-                                disabled={filteredModels.length === 0}
-                             />
-                         ) : (
+                                placeholder="Select Model"
+                                disabled={!selectedBrand}
+                            />
+                            {selectedBrand && filteredModels.length === 0 && (
+                                <div className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                                    <Info size={10}/> No models found for this brand. Try syncing providers in the 'Providers' tab.
+                                </div>
+                            )}
+                        </div>
+                    </>
+                 ) : (
+                    /* MANUAL MODE: Provider -> Text Input */
+                    <>
+                        <div className="space-y-1 relative z-20">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Provider Connection</label>
+                            <IconSelect 
+                                value={agentForm.providerId || ''}
+                                onChange={(val) => setAgentForm({ ...agentForm, providerId: val })}
+                                options={providerOptions}
+                                placeholder="Select Connection (e.g. OpenRouter)"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Model ID (Manual)</label>
                             <input 
                                 type="text" 
                                 value={agentForm.modelId || ''} 
@@ -592,12 +577,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                         avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
                                     })
                                 }}
-                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                placeholder="e.g., deepseek/deepseek-chat"
+                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                                placeholder="e.g. deepseek/deepseek-r1"
                             />
-                         )}
-                    </div>
-                </div>
+                        </div>
+                    </>
+                 )}
+
             </div>
 
             <div className="space-y-2">
