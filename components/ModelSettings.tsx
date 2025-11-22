@@ -314,10 +314,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const renderAgentForm = () => {
       const currentProvider = providers.find(p => p.id === agentForm.providerId);
       // Logic to determine which models to show
-      const hasFetchedModels = currentProvider?.fetchedModels && currentProvider.fetchedModels.length > 0;
-      const availableModels = hasFetchedModels 
-          ? currentProvider.fetchedModels 
-          : currentProvider?.suggestedModels || [];
+      const hasFetchedModels = !!(currentProvider?.fetchedModels && currentProvider.fetchedModels.length > 0);
+      
+      // Fix: TypeScript strict check requires ensuring this is always an array
+      const availableModels: string[] = (hasFetchedModels 
+          ? currentProvider?.fetchedModels 
+          : currentProvider?.suggestedModels) || [];
       
       const isGoogle = currentProvider?.type === 'google';
       const canFetchModels = !isGoogle && currentProvider?.baseURL;
