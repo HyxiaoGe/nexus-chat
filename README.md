@@ -1,7 +1,7 @@
 
 # NexusChat - Multi-LLM Orchestrator
 
-[![中文文档](https://img.shields.io/badge/文档-中文版-blue)](./README.zh-CN.md)
+[![中文文档](https://img.shields.io/badge/Docs-中文版-blue)](./README.zh-CN.md)
 
 **NexusChat** is a professional, multi-agent chat interface that allows you to converse with multiple Large Language Models (LLMs) simultaneously. It mimics the user experience of Telegram/WhatsApp but assigns a unique "Persona" (Agent) to different AI models, allowing for parallel generation, comparing outputs, and orchestrated reasoning.
 

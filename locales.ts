@@ -42,7 +42,30 @@ export const resources = {
         typing: "typing...",
         emptyResponse: "Empty response",
         thinking: "Deep Reasoning",
-        chainOfThought: "Chain of Thought"
+        chainOfThought: "Chain of Thought",
+        systemPrompt: "System Prompt",
+        startSuggestion: "Start with a suggestion",
+        updateAvailable: "New version available",
+        clickToRefresh: "Refresh to apply updates",
+        refresh: "Refresh"
+      },
+      suggestions: {
+        creative: {
+          label: "Creative Writing",
+          prompt: "Write a short sci-fi story about a robot who loves gardening."
+        },
+        code: {
+          label: "Code Assistant",
+          prompt: "Explain the difference between React useMemo and useCallback with examples."
+        },
+        brainstorm: {
+          label: "Brainstorming",
+          prompt: "Give me 5 unique marketing ideas for a coffee shop."
+        },
+        philosophy: {
+          label: "Philosophy",
+          prompt: "Summarize the core concepts of Stoicism in simple terms."
+        }
       },
       settings: {
         title: "Settings",
@@ -170,7 +193,30 @@ export const resources = {
         typing: "输入中...",
         emptyResponse: "空回复",
         thinking: "深度思考中",
-        chainOfThought: "思维链"
+        chainOfThought: "思维链",
+        systemPrompt: "系统提示词",
+        startSuggestion: "从建议开始",
+        updateAvailable: "发现新版本",
+        clickToRefresh: "刷新以应用更新",
+        refresh: "立即刷新"
+      },
+      suggestions: {
+        creative: {
+          label: "创意写作",
+          prompt: "写一个关于喜欢园艺的机器人的短篇科幻故事。"
+        },
+        code: {
+          label: "代码助手",
+          prompt: "举例解释 React useMemo 和 useCallback 的区别。"
+        },
+        brainstorm: {
+          label: "头脑风暴",
+          prompt: "为咖啡店提供5个独特的营销创意。"
+        },
+        philosophy: {
+          label: "哲学思考",
+          prompt: "用通俗的语言总结斯多葛学派的核心概念。"
+        }
       },
       settings: {
         title: "设置",

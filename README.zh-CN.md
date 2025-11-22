@@ -1,6 +1,8 @@
 
 # NexusChat - 多模型协作平台
 
+[![English Documentation](https://img.shields.io/badge/Docs-English-blue)](./README.md)
+
 **NexusChat** 是一个专业的多智能体聊天界面，允许您同时与多个大语言模型（LLM）进行对话。它模仿了 Telegram/WhatsApp 的用户体验，但为不同的 AI 模型分配了独立的“角色”（Agent），从而实现并行生成、观点对比和协同推理。
 
 ![NexusChat 界面预览](https://placehold.co/1200x600/1a202c/ffffff?text=NexusChat+Interface+Preview)

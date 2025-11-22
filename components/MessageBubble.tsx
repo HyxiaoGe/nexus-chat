@@ -55,7 +55,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
                     <div className="relative group/info">
                         <Info size={13} className="text-gray-300 dark:text-gray-600 hover:text-blue-500 dark:hover:text-blue-400 cursor-help transition-colors" />
                         <div className="absolute left-0 bottom-full mb-2 w-72 p-3 bg-gray-900/95 dark:bg-black/95 backdrop-blur text-white text-xs rounded-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-10 shadow-2xl border border-gray-700">
-                             <div className="font-bold mb-1.5 text-gray-300 uppercase text-[10px] tracking-wider">System Prompt</div>
+                             <div className="font-bold mb-1.5 text-gray-300 uppercase text-[10px] tracking-wider">{t('app.systemPrompt')}</div>
                              <div className="line-clamp-6 italic text-gray-300 font-serif leading-relaxed">{config.systemPrompt}</div>
                              {/* Arrow */}
                              <div className="absolute top-full left-1.5 -mt-1 border-4 border-transparent border-t-gray-900/95"></div>

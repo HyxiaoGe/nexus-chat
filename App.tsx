@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather } from 'lucide-react';
+import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather, RefreshCw } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
 
@@ -13,18 +12,12 @@ import { Message, Session, AgentConfig, LLMProvider, AppSettings } from './types
 import { generateId } from './utils/common';
 import { useChatOrchestrator } from './hooks/useChatOrchestrator';
 import { useScrollToBottom } from './hooks/useScrollToBottom';
+import { useVersionCheck } from './hooks/useVersionCheck';
 
 interface NexusChatProps {
   appSettings: AppSettings;
   setAppSettings: (settings: AppSettings) => void;
 }
-
-const SUGGESTIONS = [
-    { icon: <Sparkles size={20} className="text-yellow-500" />, label: "Creative Writing", prompt: "Write a short sci-fi story about a robot who loves gardening." },
-    { icon: <Code size={20} className="text-blue-500" />, label: "Code Assistant", prompt: "Explain the difference between React useMemo and useCallback with examples." },
-    { icon: <Zap size={20} className="text-purple-500" />, label: "Brainstorming", prompt: "Give me 5 unique marketing ideas for a coffee shop." },
-    { icon: <Feather size={20} className="text-green-500" />, label: "Philosophy", prompt: "Summarize the core concepts of Stoicism in simple terms." },
-];
 
 const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) => {
   const { t, i18n } = useTranslation();
@@ -42,6 +35,14 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Suggestions with translation
+  const suggestions = [
+      { icon: <Sparkles size={20} className="text-yellow-500" />, label: t('suggestions.creative.label'), prompt: t('suggestions.creative.prompt') },
+      { icon: <Code size={20} className="text-blue-500" />, label: t('suggestions.code.label'), prompt: t('suggestions.code.prompt') },
+      { icon: <Zap size={20} className="text-purple-500" />, label: t('suggestions.brainstorm.label'), prompt: t('suggestions.brainstorm.prompt') },
+      { icon: <Feather size={20} className="text-green-500" />, label: t('suggestions.philosophy.label'), prompt: t('suggestions.philosophy.prompt') },
+  ];
 
   // Sync language with i18next
   useEffect(() => {
@@ -105,6 +106,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   // --- Scrolling ---
   // Use custom hook for smart scrolling (only auto-scroll if already at bottom)
   const { scrollRef, onScroll, scrollToBottom, showScrollButton } = useScrollToBottom([messages]);
+
+  // --- Version Check ---
+  const { hasUpdate, reloadPage } = useVersionCheck();
 
   // --- Hooks ---
   const { isStreaming, sendMessage, stopGeneration } = useChatOrchestrator({
@@ -240,6 +244,25 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
           </button>
         </header>
 
+        {/* UPDATE NOTIFICATION */}
+        {hasUpdate && (
+          <div className="absolute top-20 right-4 z-50 animate-in fade-in slide-in-from-right-10 duration-500">
+             <div className="flex items-center gap-3 p-3 bg-blue-600 text-white rounded-xl shadow-xl shadow-blue-500/30 border border-blue-500 backdrop-blur-md">
+                 <div className="flex flex-col">
+                     <span className="text-xs font-bold uppercase tracking-wider opacity-90">{t('app.updateAvailable')}</span>
+                     <span className="text-xs opacity-80">{t('app.clickToRefresh')}</span>
+                 </div>
+                 <button 
+                    onClick={reloadPage}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white"
+                    title={t('app.refresh')}
+                 >
+                     <RefreshCw size={18} className="animate-spin-slow" style={{ animationDuration: '3s' }} />
+                 </button>
+             </div>
+          </div>
+        )}
+
         {/* Chat Area */}
         <div 
             ref={scrollRef}
@@ -262,9 +285,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
 
                     {/* Suggestions Carousel */}
                     <div className="w-full max-w-3xl mt-8">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Start with a suggestion</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{t('app.startSuggestion')}</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-                            {SUGGESTIONS.map((s, i) => (
+                            {suggestions.map((s, i) => (
                                 <button 
                                     key={i}
                                     onClick={() => handleSuggestionClick(s.prompt)}
