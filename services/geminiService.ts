@@ -1,9 +1,5 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { AgentConfig, LLMProvider } from "../types";
-
-// Default env key for Gemini. 
-const ENV_API_KEY = process.env.API_KEY || '';
 
 interface GenerateStreamParams {
   agent: AgentConfig;
@@ -76,14 +72,8 @@ export const generateContentStream = async ({
   
   // 1. Handle Google GenAI Models
   if (provider.type === 'google') {
-    // Use the provided key if available, otherwise fall back to env
-    const apiKey = provider.apiKey || ENV_API_KEY;
-    
-    if (!apiKey) {
-        throw new Error(`No API Key configured for ${provider.name}. Please check Settings > Providers.`);
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    // Fixed: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     try {
       const response = await ai.models.generateContentStream({
