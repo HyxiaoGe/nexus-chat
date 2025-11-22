@@ -12,6 +12,7 @@ import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
 import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId } from '../constants';
+import { BrandIcon } from './BrandIcons';
 
 interface ModelSettingsProps {
   agents: AgentConfig[];
@@ -73,8 +74,14 @@ const IconSelect = ({
     );
 
     const renderIcon = (icon: string | React.ReactNode) => {
-        if (!icon) return null;
+        if (!icon) return <Bot size={16} className="text-gray-400"/>;
+        // If it's a string key like 'deepseek'
+        if (typeof icon === 'string' && !icon.startsWith('http') && !icon.startsWith('<')) {
+            return <BrandIcon brand={icon} size={20} />;
+        }
+        // If it's a URL
         if (typeof icon === 'string') return <img src={icon} alt="" className="w-5 h-5 object-contain" />;
+        // React Node
         return icon;
     };
 
@@ -266,7 +273,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         newAgent.providerId = defaultModelEntry.providerId;
         newAgent.modelId = defaultModelEntry.modelId;
         newAgent.name = 'Gemini Flash';
-        newAgent.avatar = BRAND_CONFIGS.google.logo;
+        newAgent.avatar = 'google';
         setSelectedBrand('google');
     } else {
         setSelectedBrand(null);
@@ -431,7 +438,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       
       // Use the avatar from the form state if it exists, otherwise calculate it (fallback)
       const brandFromId = getBrandFromModelId(agentForm.modelId || '');
-      const effectiveAvatar = agentForm.avatar || BRAND_CONFIGS[brandFromId]?.logo || BRAND_CONFIGS.other.logo;
+      const effectiveAvatar = agentForm.avatar || BRAND_CONFIGS[brandFromId]?.logo || 'other';
+      
       const isImageAvatar = effectiveAvatar.startsWith('http') || effectiveAvatar.startsWith('data:');
 
       // --- FILTER MODELS BY BRAND ---
@@ -445,28 +453,28 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const brandOptions: IconOption[] = availableBrands.map(b => ({
         value: b,
         label: BRAND_CONFIGS[b]?.name || b,
-        icon: BRAND_CONFIGS[b]?.logo
+        icon: BRAND_CONFIGS[b]?.logo // Now returns a string key like 'deepseek'
       }));
       
       // 2. Model Options
       const modelOptions: IconOption[] = filteredModels.map(m => {
           const brand = getBrandFromModelId(m.modelId);
           return {
-              value: m.modelId, // Note: modelId must be unique across providers for this simple logic, or we need a composite key
+              value: m.modelId,
               label: m.modelId,
-              subLabel: m.providerName, // Show which provider hosts this model
+              subLabel: m.providerName,
               icon: BRAND_CONFIGS[brand]?.logo
           };
       });
 
       // 3. Provider Options (Only for Manual Mode)
       const providerOptions: IconOption[] = providers.map(p => {
-        let icon: React.ReactNode = <Server size={16} />;
-        if (p.type === 'google') icon = BRAND_CONFIGS.google.logo;
-        else if (p.name.toLowerCase().includes('ollama')) icon = BRAND_CONFIGS.meta.logo;
-        else if (p.id === 'provider-openrouter') icon = BRAND_CONFIGS.openai.logo;
+        let iconKey = 'other';
+        if (p.type === 'google') iconKey = 'google';
+        else if (p.name.toLowerCase().includes('ollama')) iconKey = 'meta';
+        else if (p.id === 'provider-openrouter') iconKey = 'openai';
         
-        return { value: p.id, label: p.name, icon };
+        return { value: p.id, label: p.name, icon: iconKey };
       });
 
       return (
@@ -482,7 +490,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                      {isImageAvatar ? (
                         <img src={effectiveAvatar} alt="logo" className="w-10 h-10 object-contain" />
                      ) : (
-                        <span className="text-2xl select-none">{effectiveAvatar}</span>
+                        <BrandIcon brand={effectiveAvatar} size={28} />
                      )}
                  </div>
                  <div>
@@ -535,7 +543,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                             modelId: val,
                                             providerId: entry.providerId, // AUTO-ROUTE to correct provider
                                             name: autoName,
-                                            avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
+                                            avatar: BRAND_CONFIGS[brand]?.logo || 'other'
                                         });
                                     }
                                 }}
@@ -575,7 +583,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                         ...agentForm, 
                                         modelId: val,
                                         name: autoName,
-                                        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
+                                        avatar: BRAND_CONFIGS[brand]?.logo || 'other'
                                     })
                                 }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono"
@@ -919,7 +927,11 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                                                    {agent.avatar?.startsWith('http') ? <img src={agent.avatar} className="w-9 h-9 object-contain" alt="avatar"/> : <span className="text-2xl">{agent.avatar}</span>}
+                                                    {agent.avatar?.startsWith('http') ? (
+                                                        <img src={agent.avatar} className="w-9 h-9 object-contain" alt="avatar"/> 
+                                                    ) : (
+                                                        <BrandIcon brand={agent.avatar} size={24} />
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-gray-900 dark:text-white text-sm">{agent.name}</h3>
@@ -969,7 +981,11 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-sm ${provider.type === 'google' ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400'}`}>
-                                                {provider.type === 'google' ? 'G' : <Server size={20} />}
+                                                {provider.type === 'google' ? (
+                                                     <BrandIcon brand="google" size={20} />
+                                                ) : (
+                                                    <Server size={20} />
+                                                )}
                                             </div>
                                             <div>
                                                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">

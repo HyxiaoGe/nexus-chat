@@ -7,70 +7,67 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   language: 'en'
 };
 
-// --- Brand & Logo Assets (Powered by LobeHub Icons) ---
-// Switched to 'origin' directory to get the OFFICIAL BRAND COLORS (not monochrome)
-const LOBEHUB_ICON_BASE = "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/origin";
-
+// We now use keys to reference the SVG components in BrandIcons.tsx
+// keywords: helper to auto-detect brand from model ID
 export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
   openai: {
     name: 'OpenAI',
-    logo: `${LOBEHUB_ICON_BASE}/openai.png`,
+    logo: 'openai', 
     keywords: ['openai', 'gpt', 'o1-', 'o1-mini', 'o1-preview']
   },
   google: {
     name: 'Google Gemini',
-    logo: `${LOBEHUB_ICON_BASE}/gemini.png`,
+    logo: 'google',
     keywords: ['google', 'gemini']
   },
   anthropic: {
     name: 'Anthropic',
-    logo: `${LOBEHUB_ICON_BASE}/claude.png`,
+    logo: 'anthropic',
     keywords: ['anthropic', 'claude']
   },
   deepseek: {
     name: 'DeepSeek',
-    logo: `${LOBEHUB_ICON_BASE}/deepseek.png`,
+    logo: 'deepseek',
     keywords: ['deepseek']
   },
   meta: {
     name: 'Meta Llama',
-    logo: `${LOBEHUB_ICON_BASE}/meta.png`,
+    logo: 'meta',
     keywords: ['meta', 'llama', 'facebook']
   },
   mistral: {
     name: 'Mistral AI',
-    logo: `${LOBEHUB_ICON_BASE}/mistral.png`,
+    logo: 'mistral',
     keywords: ['mistral', 'mixtral', 'pixtral']
   },
   xai: {
     name: 'xAI (Grok)',
-    logo: `${LOBEHUB_ICON_BASE}/grok.png`,
+    logo: 'xai',
     keywords: ['x-ai', 'grok']
   },
   perplexity: {
     name: 'Perplexity',
-    logo: `${LOBEHUB_ICON_BASE}/perplexity.png`,
+    logo: 'perplexity',
     keywords: ['perplexity', 'sonar']
   },
   qwen: {
     name: 'Qwen (Alibaba)',
-    logo: `${LOBEHUB_ICON_BASE}/qwen.png`,
+    logo: 'qwen',
     keywords: ['qwen']
   },
   minimax: {
     name: 'MiniMax',
-    logo: `${LOBEHUB_ICON_BASE}/minimax.png`,
+    logo: 'qwen', // Fallback or add specific if needed
     keywords: ['minimax']
   },
   microsoft: {
     name: 'Microsoft',
-    logo: `${LOBEHUB_ICON_BASE}/microsoft.png`,
+    logo: 'openai', // Often uses Azure/OpenAI logo for generic MS models
     keywords: ['microsoft', 'phi']
   },
   other: {
     name: 'Assistant',
-    // Use OpenAI icon as a generic high-quality fallback for "AI Assistant" if specific logo missing
-    logo: `${LOBEHUB_ICON_BASE}/openai.png`, 
+    logo: 'openai', 
     keywords: []
   }
 };
@@ -169,7 +166,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-gemini-flash',
     name: 'Gemini Flash',
-    avatar: BRAND_CONFIGS.google.logo,
+    avatar: 'google', // Uses Key
     providerId: 'provider-google',
     modelId: 'gemini-2.5-flash',
     systemPrompt: 'You are a helpful and fast assistant.',
@@ -182,7 +179,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-deepseek-r1',
     name: 'DeepSeek R1',
-    avatar: BRAND_CONFIGS.deepseek.logo,
+    avatar: 'deepseek', // Uses Key
     providerId: 'provider-openrouter',
     modelId: 'deepseek/deepseek-r1',
     systemPrompt: 'You are a reasoning engine. Show your chain of thought clearly inside <think> tags.',
@@ -194,7 +191,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-claude-sonnet',
     name: 'Claude Sonnet',
-    avatar: BRAND_CONFIGS.anthropic.logo,
+    avatar: 'anthropic', // Uses Key
     providerId: 'provider-openrouter',
     modelId: 'anthropic/claude-3.5-sonnet',
     systemPrompt: 'You are Claude, a helpful AI assistant created by Anthropic.',
@@ -206,7 +203,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-gpt4o',
     name: 'GPT-4o',
-    avatar: BRAND_CONFIGS.openai.logo,
+    avatar: 'openai', // Uses Key
     providerId: 'provider-openrouter',
     modelId: 'openai/gpt-4o',
     systemPrompt: 'You are a helpful assistant.',

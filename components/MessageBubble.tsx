@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Message, AgentConfig } from '../types';
-import { Bot, User, Copy, AlertCircle, Info } from 'lucide-react';
+import { User, Copy, AlertCircle, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SmartContentRenderer } from './SmartContentRenderer';
+import { BrandIcon } from './BrandIcons';
 
 interface MessageBubbleProps {
   message: Message;
@@ -18,6 +19,23 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
     navigator.clipboard.writeText(message.content);
   };
 
+  // Helper to determine what to render for avatar
+  const renderAvatar = () => {
+      if (isUser) return <User size={20} />;
+      
+      const avatarStr = config?.avatar || 'other';
+      
+      // 1. Check if it's a URL (custom user avatar)
+      if (avatarStr.startsWith('http') || avatarStr.startsWith('data:')) {
+          return <img src={avatarStr} alt={config?.name} className="w-full h-full object-cover" />;
+      }
+      
+      // 2. Check if it's a known brand key (Official Icon)
+      // We assume anything else that isn't an emoji is a brand key
+      // Simple heuristic: If it's long and has no emoji-like chars, or matches our known keys
+      return <BrandIcon brand={avatarStr} size={22} />;
+  };
+
   return (
     <div className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
       <div className={`flex max-w-[95%] md:max-w-[85%] lg:max-w-[80%] gap-3 md:gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -29,17 +47,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
                 ? 'bg-indigo-600 border-indigo-500 text-white' 
                 : 'bg-white dark:bg-[#1e2530] border-gray-200 dark:border-gray-700/50'}
         `}>
-          {isUser ? (
-            <User size={20} />
-          ) : (
-            config?.avatar && config.avatar.startsWith('http') ? (
-                <img src={config.avatar} alt={config.name} className="w-full h-full object-cover" />
-            ) : (
-                <span className="text-2xl select-none flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform duration-200">
-                    {config?.avatar || <Bot size={20} className="text-gray-400"/>}
-                </span>
-            )
-          )}
+          {renderAvatar()}
         </div>
 
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0 w-full max-w-full`}>
