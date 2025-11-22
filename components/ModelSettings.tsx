@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
-    Eye, EyeOff, Globe, Image as ImageIcon, Link2
+    Eye, EyeOff, Globe, Info
 } from 'lucide-react';
 import { fetchProviderModels, validateOpenRouterKey } from '../services/geminiService';
 import { useToast } from './Toast';
@@ -87,19 +86,20 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           const brandKey = getBrandFromModelId(agentForm.modelId);
           setSelectedBrandFilter(brandKey);
       }
-  }, [editingAgentId]); // Run once when edit starts
+  }, [editingAgentId]);
 
   const handleEditAgent = (agent: AgentConfig) => {
     setEditingAgentId(agent.id);
     setAgentForm({ ...agent });
     setManualModelEntry(false);
-    // Filter is set by the useEffect above
   };
 
   const handleNewAgent = () => {
     const newId = Math.random().toString(36).substring(2, 15);
     const defaultProvider = providers.find(p => p.enabled) || providers[0];
     const defaultModel = defaultProvider?.suggestedModels?.[0] || '';
+    
+    // Auto derive info
     const brand = getBrandFromModelId(defaultModel);
     const autoName = defaultModel ? (defaultModel.split('/').pop() || defaultModel) : 'New Agent';
 
@@ -115,13 +115,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     setAgentForm(newAgent);
     setEditingAgentId(newId);
     setManualModelEntry(false);
-    setSelectedBrandFilter(getBrandFromModelId(newAgent.modelId));
+    setSelectedBrandFilter(brand);
   };
 
   const handleSaveAgent = () => {
-    if (!editingAgentId || !agentForm.name) {
-        // Name is auto-generated now, but just in case
-        error(t('settings.agents.agentNameRequired'));
+    if (!editingAgentId || !agentForm.modelId) {
+        error(t('settings.agents.agentNameRequired')); // Reusing error message key for Model ID check implicitly
         return;
     }
     const updatedAgent = agentForm as AgentConfig;
@@ -161,8 +160,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const applyAgentTemplate = (template: typeof SYSTEM_PROMPT_TEMPLATES[0]) => {
       setAgentForm(prev => ({
           ...prev,
-          // We do NOT override the name/avatar anymore, as it should match the model
-          // Only update the behavior
           systemPrompt: template.prompt
       }));
   };
@@ -201,23 +198,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 
   const handleSaveProvider = async () => {
       if (!expandedProviderId) return;
-      if (providerForm.type === 'openai-compatible' && providerForm.id === 'provider-openrouter') {
-         if (!providerForm.apiKey) {
-             error(t('settings.providers.apiKeyRequired'));
-             return;
-         }
-         try {
-             const isValid = await validateOpenRouterKey(providerForm.apiKey);
-             if (!isValid) {
-                 error(t('settings.providers.invalidKey'));
-                 return;
-             }
-             success(t('settings.providers.keyVerified'));
-         } catch (e: any) {
-             error(`${t('common.error')}: ${e.message}`);
-             return;
-         }
-      }
       const updatedProvider = providerForm as LLMProvider;
       onUpdateProviders(providers.map(p => p.id === expandedProviderId ? updatedProvider : p));
       setExpandedProviderId(null);
@@ -227,10 +207,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const handleSyncModels = async (providerId: string, providerConfig: LLMProvider) => {
       setIsSyncingModels(true);
       try {
-          if (providerId === 'provider-openrouter' && providerConfig.apiKey) {
-              const isValid = await validateOpenRouterKey(providerConfig.apiKey);
-              if (!isValid) throw new Error(t('settings.providers.invalidKey'));
-          }
           const models = await fetchProviderModels(providerConfig);
           if (models.length > 0) {
              const updatedProviders = providers.map(p => 
@@ -299,7 +275,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       if (isConfirmed) onClearData();
   }
 
-  // --- Renders ---
   const NavItem = ({ section, icon: Icon, label }: { section: Section, icon: any, label: string }) => (
       <button 
         onClick={() => setActiveSection(section)}
@@ -312,18 +287,15 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       </button>
   );
 
-  // --- RENDER AGENT FORM (The Complex Part) ---
   const renderAgentForm = () => {
       const currentProvider = providers.find(p => p.id === agentForm.providerId);
       const isGoogle = currentProvider?.type === 'google';
       const hasFetchedModels = !!(currentProvider?.fetchedModels && currentProvider.fetchedModels.length > 0);
       
-      // All models available for this provider
       const allModels: string[] = (hasFetchedModels 
           ? currentProvider?.fetchedModels 
           : currentProvider?.suggestedModels) || [];
 
-      // Detect available brands from the model list
       const brands = new Set<string>();
       if (isGoogle) {
           brands.add('google');
@@ -334,15 +306,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       }
       const availableBrands = Array.from(brands).sort();
 
-      // Filter models based on selected brand
       let filteredModels = allModels;
       if (!isGoogle && selectedBrandFilter) {
           filteredModels = allModels.filter(m => getBrandFromModelId(m) === selectedBrandFilter);
       }
 
-      // Use manual entry if requested, or if no models found
       const useManualInput = manualModelEntry || (!hasFetchedModels && allModels.length === 0);
       const canFetchModels = !isGoogle && currentProvider?.baseURL;
+
+      // Preview what the agent will look like
+      const previewBrand = getBrandFromModelId(agentForm.modelId || '');
+      const previewLogo = BRAND_CONFIGS[previewBrand]?.logo || BRAND_CONFIGS.other.logo;
+      const previewName = agentForm.modelId ? (agentForm.modelId.split('/').pop() || agentForm.modelId) : 'New Agent';
 
       return (
         <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 space-y-5 animate-in fade-in slide-in-from-bottom-2">
@@ -351,11 +326,20 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 <button onClick={() => setEditingAgentId(null)} className="text-gray-400 hover:text-red-500"><X size={18} /></button>
             </div>
 
-            {/* Name and Avatar inputs removed as per user request - derived from model */}
-            
+            {/* LIVE PREVIEW CARD */}
+            <div className="bg-white dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-4 shadow-sm">
+                 <div className="w-12 h-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                     <img src={previewLogo} alt="logo" className="w-10 h-10 object-contain" />
+                 </div>
+                 <div>
+                     <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">Agent Preview</div>
+                     <div className="font-bold text-gray-900 dark:text-white">{previewName}</div>
+                 </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
                  {/* 1. Provider Selection */}
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase">1. {t('settings.agents.provider')}</label>
                         <select 
@@ -366,10 +350,9 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 setAgentForm({
                                     ...agentForm, 
                                     providerId: e.target.value, 
-                                    modelId: '' // Reset model when provider changes
+                                    modelId: '' 
                                 });
                                 setManualModelEntry(false);
-                                // If Google, reset filter
                                 if (isNewGoogle) setSelectedBrandFilter('google');
                                 else setSelectedBrandFilter(null);
                             }} 
@@ -381,20 +364,20 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         </select>
                     </div>
 
-                    {/* 2. Brand/Vendor Filter (Only if not Google and models available) */}
+                    {/* 2. Brand/Vendor Filter */}
                     {!isGoogle && !useManualInput && (
                          <div className="space-y-1">
-                             <label className="text-xs font-bold text-gray-500 uppercase">2. Brand</label>
+                             <label className="text-xs font-bold text-gray-500 uppercase">2. Filter by Brand</label>
                              <select 
                                 value={selectedBrandFilter || ''}
                                 onChange={e => {
                                     setSelectedBrandFilter(e.target.value);
-                                    setAgentForm({ ...agentForm, modelId: '' }); // Reset model when brand changes
+                                    setAgentForm({ ...agentForm, modelId: '' });
                                 }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                                 disabled={availableBrands.length === 0}
                              >
-                                 <option value="" disabled>Select Brand</option>
+                                 <option value="" disabled>All Brands</option>
                                  {availableBrands.map(b => (
                                      <option key={b} value={b}>{BRAND_CONFIGS[b]?.name || b}</option>
                                  ))}
@@ -427,7 +410,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     className="text-[10px] flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
                                 >
                                     {fetchingModelsForAgent ? <Loader2 size={10} className="animate-spin"/> : <RefreshCw size={10} />}
-                                    {hasFetchedModels ? 'Refresh' : 'Load API'}
+                                    {hasFetchedModels ? 'Refresh List' : 'Load Models'}
                                 </button>
                             )}
                         </div>
@@ -445,8 +428,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     setAgentForm({
                                         ...agentForm, 
                                         modelId: newModel,
-                                        name: autoName, // Auto-update Name
-                                        avatar: BRAND_CONFIGS[brand]?.logo || agentForm.avatar // Auto-update Avatar
+                                        name: autoName,
+                                        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
                                     });
                                 }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
@@ -468,8 +451,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     setAgentForm({
                                         ...agentForm, 
                                         modelId: val,
-                                        name: autoName, // Auto-update Name
-                                        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo // Auto-update Avatar
+                                        name: autoName,
+                                        avatar: BRAND_CONFIGS[brand]?.logo || BRAND_CONFIGS.other.logo
                                     })
                                 }}
                                 className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
@@ -477,28 +460,24 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             />
                          )}
                     </div>
-                    {!useManualInput && filteredModels.length === 0 && (
-                        <p className="text-[10px] text-orange-500 mt-1">No models found for this brand. Try clicking "Load API" or check Provider settings.</p>
-                    )}
                 </div>
             </div>
 
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.systemPrompt')}</label>
-                    <span className="text-[10px] text-gray-400">Templates</span>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                    {SYSTEM_PROMPT_TEMPLATES.map(tpl => (
-                        <button
-                            key={tpl.label}
-                            onClick={() => applyAgentTemplate(tpl)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-full text-xs font-medium transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
-                        >
-                            <span>{tpl.icon}</span>
-                            {tpl.label}
-                        </button>
-                    ))}
+                    <div className="flex gap-1">
+                        {SYSTEM_PROMPT_TEMPLATES.map(tpl => (
+                            <button
+                                key={tpl.label}
+                                onClick={() => applyAgentTemplate(tpl)}
+                                className="text-[10px] px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 rounded transition-colors"
+                                title={tpl.label}
+                            >
+                                {tpl.icon}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 <textarea 
                     value={agentForm.systemPrompt || ''} 
@@ -600,12 +579,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         </button>
                     )}
                 </div>
-                {isOpenRouter && (
-                    <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
-                        <ShieldCheck size={10} className="text-green-500" /> 
-                        {t('settings.providers.validating')}
-                    </p>
-                )}
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
@@ -620,8 +593,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         </div>
       );
   };
-  
-  // Fix: Modal render guard
+
   if (!isOpen) return null;
 
   return (
@@ -748,8 +720,8 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     <div key={agent.id} className={`relative group border rounded-xl p-4 transition-all duration-200 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md ${agent.enabled ? 'border-blue-200 dark:border-blue-900' : 'border-gray-200 dark:border-gray-800 opacity-60'}`}>
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl shadow-inner overflow-hidden">
-                                                    {agent.avatar?.startsWith('http') ? <img src={agent.avatar} className="w-full h-full object-cover" alt="avatar"/> : agent.avatar}
+                                                <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                                                    {agent.avatar?.startsWith('http') ? <img src={agent.avatar} className="w-9 h-9 object-contain" alt="avatar"/> : agent.avatar}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-gray-900 dark:text-white text-sm">{agent.name}</h3>

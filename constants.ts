@@ -1,4 +1,3 @@
-
 import { AgentConfig, LLMProvider, AppSettings } from "./types";
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -7,47 +6,64 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   language: 'en'
 };
 
-// --- Brand & Logo Assets ---
-// Using high-availability CDNs (Wikimedia Commons, etc.)
+// --- Brand & Logo Assets (Powered by LobeHub Icons) ---
+// Using unpkg CDN for LobeHub static assets which are high quality and consistent
+const LOBEHUB_ICON_BASE = "https://unpkg.com/@lobehub/icons-static-png@latest/dark";
+
 export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
   openai: {
     name: 'OpenAI',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg',
+    logo: `${LOBEHUB_ICON_BASE}/openai.png`,
     keywords: ['openai', 'gpt']
   },
   google: {
-    name: 'Google',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg',
+    name: 'Google Gemini',
+    logo: `${LOBEHUB_ICON_BASE}/gemini.png`,
     keywords: ['google', 'gemini']
   },
   anthropic: {
     name: 'Anthropic',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/7/78/Anthropic_logo.svg',
+    logo: `${LOBEHUB_ICON_BASE}/claude.png`,
     keywords: ['anthropic', 'claude']
   },
   deepseek: {
     name: 'DeepSeek',
-    logo: 'https://avatars.githubusercontent.com/u/148330874?s=200&v=4', // Official GitHub Avatar
+    logo: `${LOBEHUB_ICON_BASE}/deepseek.png`, // DeepSeek icon
     keywords: ['deepseek']
   },
   meta: {
-    name: 'Meta (Llama)',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meta-Logo.png',
+    name: 'Meta Llama',
+    logo: `${LOBEHUB_ICON_BASE}/meta.png`,
     keywords: ['meta', 'llama', 'facebook']
   },
   mistral: {
-    name: 'Mistral',
-    logo: 'https://assets-global.website-files.com/65107f01d670595d376056b9/651082c1182b8592c324216e_Mistral%20AI%20Symbol%20(1).svg',
+    name: 'Mistral AI',
+    logo: `${LOBEHUB_ICON_BASE}/mistral.png`,
     keywords: ['mistral', 'mixtral']
   },
   xai: {
     name: 'xAI (Grok)',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/5/57/X_logo_2023_%28white%29.png',
+    logo: `${LOBEHUB_ICON_BASE}/grok.png`,
     keywords: ['x-ai', 'grok']
   },
+  perplexity: {
+    name: 'Perplexity',
+    logo: `${LOBEHUB_ICON_BASE}/perplexity.png`,
+    keywords: ['perplexity', 'sonar']
+  },
+  qwen: {
+    name: 'Qwen (Alibaba)',
+    logo: `${LOBEHUB_ICON_BASE}/qwen.png`,
+    keywords: ['qwen']
+  },
+  minimax: {
+    name: 'MiniMax',
+    logo: `${LOBEHUB_ICON_BASE}/minimax.png`,
+    keywords: ['minimax']
+  },
   other: {
-    name: 'Other',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/9/99/Unofficial_JavaScript_logo_2.svg', // Generic placeholder
+    name: 'Assistant',
+    logo: `${LOBEHUB_ICON_BASE}/llm.png`, // Generic LLM icon
     keywords: []
   }
 };
@@ -55,17 +71,18 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
 export const getBrandFromModelId = (modelId: string): keyof typeof BRAND_CONFIGS => {
   const lower = modelId.toLowerCase();
   
-  // 1. Check for OpenRouter style prefix (vendor/model)
+  // 1. Check for specific keywords first
+  for (const [key, config] of Object.entries(BRAND_CONFIGS)) {
+      if (config.keywords.some(k => lower.includes(k))) return key;
+  }
+
+  // 2. Fallback for OpenRouter prefixes (vendor/model)
   if (lower.includes('/')) {
       const prefix = lower.split('/')[0];
+      // Try to match prefix again
       for (const [key, config] of Object.entries(BRAND_CONFIGS)) {
           if (config.keywords.some(k => prefix.includes(k))) return key;
       }
-  }
-
-  // 2. Keyword search
-  for (const [key, config] of Object.entries(BRAND_CONFIGS)) {
-      if (config.keywords.some(k => lower.includes(k))) return key;
   }
 
   return 'other';
@@ -94,10 +111,9 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     enabled: true,
     suggestedModels: [
       'deepseek/deepseek-r1',
-      'deepseek/deepseek-chat',
       'anthropic/claude-3.5-sonnet',
       'openai/gpt-4o',
-      'google/gemini-pro-1.5',
+      'google/gemini-2.0-flash-001',
       'meta-llama/llama-3.3-70b-instruct',
     ]
   }
@@ -106,11 +122,11 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
 export const DEFAULT_AGENTS: AgentConfig[] = [
   {
     id: 'agent-analyst',
-    name: 'Gemini Analyst',
+    name: 'Gemini Flash',
     avatar: BRAND_CONFIGS.google.logo,
     providerId: 'provider-google',
     modelId: 'gemini-2.5-flash',
-    systemPrompt: 'You are a rigorous logic analyst. Break down the user query into facts, analyze pros/cons, and provide a structured, objective response. Avoid emotional language.',
+    systemPrompt: 'You are a helpful assistant.',
     enabled: true,
   },
   {
@@ -121,15 +137,6 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     modelId: 'deepseek/deepseek-r1',
     systemPrompt: 'You are a reasoning engine. Show your chain of thought clearly.',
     enabled: true,
-  },
-  {
-    id: 'agent-claude',
-    name: 'Claude Sonnet',
-    avatar: BRAND_CONFIGS.anthropic.logo,
-    providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-3.5-sonnet',
-    systemPrompt: 'You are a helpful assistant with a focus on high-quality writing and nuance.',
-    enabled: false,
   }
 ];
 
