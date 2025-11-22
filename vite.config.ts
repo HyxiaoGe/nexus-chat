@@ -6,18 +6,24 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Custom plugin to generate version.json on build
+// Generate a shared build timestamp
+const BUILD_TIMESTAMP = Date.now();
+
+// Custom plugin to generate version.json on build using the shared timestamp
 const versionGenPlugin = () => {
   return {
     name: 'version-gen',
     writeBundle() {
       const version = {
-        version: Date.now(), // Use timestamp as version ID
+        version: BUILD_TIMESTAMP, 
         builtAt: new Date().toISOString()
       };
       // Write to dist/version.json
       const outputPath = path.resolve(__dirname, 'dist', 'version.json');
       try {
+        if (!fs.existsSync(path.resolve(__dirname, 'dist'))) {
+            fs.mkdirSync(path.resolve(__dirname, 'dist'));
+        }
         fs.writeFileSync(outputPath, JSON.stringify(version, null, 2));
         console.log(`✓ Generated version.json: ${version.version}`);
       } catch (error) {
@@ -36,7 +42,8 @@ export default defineConfig(({ mode }) => {
       versionGenPlugin()
     ],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+      'process.env.API_KEY': JSON.stringify(env.API_KEY),
+      '__APP_VERSION__': JSON.stringify(BUILD_TIMESTAMP.toString())
     },
     server: {
       port: 3000

@@ -1,45 +1,46 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 export const useVersionCheck = () => {
   const [hasUpdate, setHasUpdate] = useState(false);
-  const initialVersionRef = useRef<number | null>(null);
+
+  // __APP_VERSION__ is injected by Vite at build time
+  const currentVersion = typeof __APP_VERSION__ !== 'undefined' ? Number(__APP_VERSION__) : Date.now();
 
   const checkForUpdate = async () => {
     try {
-      // Append timestamp to prevent caching
+      // Append timestamp to query to prevent caching of the JSON file itself
       const response = await fetch(`/version.json?t=${Date.now()}`);
       if (!response.ok) return;
 
       const data = await response.json();
-      const latestVersion = data.version;
+      const latestVersion = Number(data.version);
 
-      if (initialVersionRef.current === null) {
-        // First load: set the initial version
-        initialVersionRef.current = latestVersion;
-      } else if (latestVersion !== initialVersionRef.current) {
-        // Subsequent loads: check if version changed
+      // Compare the version embedded in the running JS code with the version on the server
+      if (latestVersion > currentVersion) {
+        console.log(`Update available: ${currentVersion} -> ${latestVersion}`);
         setHasUpdate(true);
       }
     } catch (error) {
-      // Ignore errors (e.g., network offline, file not found in dev)
-      console.debug('Version check skipped');
+      console.debug('Version check skipped or failed');
     }
   };
 
   const reloadPage = () => {
-    window.location.reload();
+    // Force a reload by appending the new version as a query parameter.
+    // This bypasses the browser cache for index.html without needing Ctrl+F5.
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', Date.now().toString());
+    window.location.href = url.toString();
   };
 
   useEffect(() => {
     // Check immediately on mount
     checkForUpdate();
 
-    // Then check every 60 seconds
-    // Increased frequency slightly to ensure users get updates reasonably fast
-    // but not too aggressive to spam the server.
+    // Check every 60 seconds
     const interval = setInterval(checkForUpdate, 60 * 1000);
 
-    // Also check when the window regains focus (user comes back to tab)
+    // Check when window regains focus
     const onFocus = () => checkForUpdate();
     window.addEventListener('focus', onFocus);
 

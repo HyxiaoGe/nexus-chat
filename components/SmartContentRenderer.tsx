@@ -28,7 +28,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, code }) => {
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/80 group-hover:bg-green-500 transition-colors"></div>
             </div>
             <Terminal size={13} className="text-gray-500 dark:text-gray-400 ml-1" />
-            <span className="text-xs font-bold font-mono text-gray-600 dark:text-gray-300 uppercase">{language || 'TEXT'}</span>
+            <span className="text-xs font-bold font-mono text-gray-600 dark:text-gray-300 uppercase">{language || t('common.text')}</span>
         </div>
         <button 
           onClick={handleCopy} 

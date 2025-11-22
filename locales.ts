@@ -16,7 +16,8 @@ export const resources = {
         loading: "Loading...",
         error: "Error",
         success: "Success",
-        failed: "Failed"
+        failed: "Failed",
+        text: "TEXT"
       },
       sidebar: {
         newChat: "New Chat",
@@ -192,7 +193,8 @@ export const resources = {
         loading: "加载中...",
         error: "错误",
         success: "成功",
-        failed: "失败"
+        failed: "失败",
+        text: "文本"
       },
       sidebar: {
         newChat: "新建会话",
