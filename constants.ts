@@ -1,3 +1,4 @@
+
 import { AgentConfig, LLMProvider, AppSettings } from "./types";
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
@@ -7,8 +8,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 };
 
 // --- Brand & Logo Assets (Powered by LobeHub Icons) ---
-// Using unpkg CDN for LobeHub static assets which are high quality and consistent
-const LOBEHUB_ICON_BASE = "https://unpkg.com/@lobehub/icons-static-png@latest/dark";
+// Using jsDelivr CDN for LobeHub static assets which are high quality, consistent and fast
+const LOBEHUB_ICON_BASE = "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/dark";
 
 export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
   openai: {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
@@ -315,9 +316,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const canFetchModels = !isGoogle && currentProvider?.baseURL;
 
       // Preview what the agent will look like
-      const previewBrand = getBrandFromModelId(agentForm.modelId || '');
-      const previewLogo = BRAND_CONFIGS[previewBrand]?.logo || BRAND_CONFIGS.other.logo;
       const previewName = agentForm.modelId ? (agentForm.modelId.split('/').pop() || agentForm.modelId) : 'New Agent';
+      
+      // Use the avatar from the form state if it exists, otherwise calculate it (fallback)
+      const brandFromId = getBrandFromModelId(agentForm.modelId || '');
+      const effectiveAvatar = agentForm.avatar || BRAND_CONFIGS[brandFromId]?.logo || BRAND_CONFIGS.other.logo;
+      const isImageAvatar = effectiveAvatar.startsWith('http') || effectiveAvatar.startsWith('data:');
 
       return (
         <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 space-y-5 animate-in fade-in slide-in-from-bottom-2">
@@ -329,7 +333,11 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             {/* LIVE PREVIEW CARD */}
             <div className="bg-white dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-4 shadow-sm">
                  <div className="w-12 h-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-                     <img src={previewLogo} alt="logo" className="w-10 h-10 object-contain" />
+                     {isImageAvatar ? (
+                        <img src={effectiveAvatar} alt="logo" className="w-10 h-10 object-contain" />
+                     ) : (
+                        <span className="text-2xl select-none">{effectiveAvatar}</span>
+                     )}
                  </div>
                  <div>
                      <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">Agent Preview</div>
@@ -721,7 +729,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                                                    {agent.avatar?.startsWith('http') ? <img src={agent.avatar} className="w-9 h-9 object-contain" alt="avatar"/> : agent.avatar}
+                                                    {agent.avatar?.startsWith('http') ? <img src={agent.avatar} className="w-9 h-9 object-contain" alt="avatar"/> : <span className="text-2xl">{agent.avatar}</span>}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-gray-900 dark:text-white text-sm">{agent.name}</h3>
