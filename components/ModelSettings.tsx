@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
@@ -320,24 +320,23 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           : currentProvider?.suggestedModels) || [];
 
       // Detect available brands from the model list
-      const availableBrands = useMemo(() => {
-          const brands = new Set<string>();
-          if (isGoogle) return ['google']; // Special case
-          
+      // FIXED: Removed useMemo to prevent React #310 error (Hooks inside conditional rendering)
+      const brands = new Set<string>();
+      if (isGoogle) {
+          brands.add('google');
+      } else {
           allModels.forEach(m => {
               brands.add(getBrandFromModelId(m));
           });
-          // Always ensure 'other' is last
-          const arr = Array.from(brands).sort();
-          return arr;
-      }, [allModels, isGoogle]);
+      }
+      const availableBrands = Array.from(brands).sort();
 
       // Filter models based on selected brand
-      const filteredModels = useMemo(() => {
-          if (!selectedBrandFilter && !isGoogle) return allModels;
-          if (isGoogle) return allModels; // Google has no sub-brands really
-          return allModels.filter(m => getBrandFromModelId(m) === selectedBrandFilter);
-      }, [allModels, selectedBrandFilter, isGoogle]);
+      // FIXED: Removed useMemo
+      let filteredModels = allModels;
+      if (!isGoogle && selectedBrandFilter) {
+          filteredModels = allModels.filter(m => getBrandFromModelId(m) === selectedBrandFilter);
+      }
 
       // Use manual entry if requested, or if no models found
       const useManualInput = manualModelEntry || (!hasFetchedModels && allModels.length === 0);
