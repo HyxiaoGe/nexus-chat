@@ -8,7 +8,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 };
 
 // --- Brand & Logo Assets (Powered by LobeHub Icons) ---
-// Switched to 'origin' directory for official brand colors instead of monochrome
+// Switched to 'origin' directory to get the OFFICIAL BRAND COLORS (not monochrome)
 const LOBEHUB_ICON_BASE = "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-png@latest/origin";
 
 export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
@@ -198,7 +198,19 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     providerId: 'provider-openrouter',
     modelId: 'anthropic/claude-3.5-sonnet',
     systemPrompt: 'You are Claude, a helpful AI assistant created by Anthropic.',
-    enabled: false, // Disabled by default to save slots
+    enabled: false,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-gpt4o',
+    name: 'GPT-4o',
+    avatar: BRAND_CONFIGS.openai.logo,
+    providerId: 'provider-openrouter',
+    modelId: 'openai/gpt-4o',
+    systemPrompt: 'You are a helpful assistant.',
+    enabled: false,
     config: {
       temperature: 0.7
     }
