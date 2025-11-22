@@ -24,7 +24,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
         
         {/* Avatar */}
         <div className={`
-            flex-shrink-0 w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shadow-md border
+            flex-shrink-0 w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shadow-md border overflow-hidden
             ${isUser 
                 ? 'bg-indigo-600 border-indigo-500 text-white' 
                 : 'bg-white dark:bg-[#1e2530] border-gray-200 dark:border-gray-700/50'}
@@ -32,9 +32,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
           {isUser ? (
             <User size={20} />
           ) : (
-            <span className="text-2xl select-none flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform duration-200">
-                {config?.avatar || <Bot size={20} className="text-gray-400"/>}
-            </span>
+            config?.avatar && config.avatar.startsWith('http') ? (
+                <img src={config.avatar} alt={config.name} className="w-full h-full object-cover" />
+            ) : (
+                <span className="text-2xl select-none flex items-center justify-center filter drop-shadow-sm transform hover:scale-110 transition-transform duration-200">
+                    {config?.avatar || <Bot size={20} className="text-gray-400"/>}
+                </span>
+            )
           )}
         </div>
 

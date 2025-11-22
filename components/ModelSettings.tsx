@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { AgentConfig, LLMProvider, AppSettings } from '../types';
 import { 
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
-    Eye, EyeOff, Globe, Wand2, Zap, Link2
+    Eye, EyeOff, Globe, Image as ImageIcon, Link2
 } from 'lucide-react';
 import { fetchProviderModels, validateOpenRouterKey } from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
-import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS } from '../constants';
+import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId } from '../constants';
 
 interface ModelSettingsProps {
   agents: AgentConfig[];
@@ -42,16 +43,20 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const { t } = useTranslation();
   const confirm = useConfirm();
   const [activeSection, setActiveSection] = useState<Section>('general');
+  
+  // Agent Editing State
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentForm, setAgentForm] = useState<Partial<AgentConfig>>({});
+  const [selectedBrandFilter, setSelectedBrandFilter] = useState<string | null>(null);
   
+  // Provider Editing State
   const [expandedProviderId, setExpandedProviderId] = useState<string | null>(null);
   const [providerForm, setProviderForm] = useState<Partial<LLMProvider>>({});
   const [showApiKey, setShowApiKey] = useState(false);
   
   const [isSyncingModels, setIsSyncingModels] = useState(false);
   const [fetchingModelsForAgent, setFetchingModelsForAgent] = useState(false);
-  const [manualModelEntry, setManualModelEntry] = useState(false); // Toggle for manual input vs dropdown
+  const [manualModelEntry, setManualModelEntry] = useState(false); 
   const { success, error, info } = useToast();
 
   // Reset state when modal opens/closes
@@ -69,18 +74,26 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     if (editingAgentId && agentForm.providerId) {
         const provider = providers.find(p => p.id === agentForm.providerId);
         
-        // Only auto-fetch if we haven't fetched yet, the provider is enabled, and it's not Google (static)
-        // And we are not in manual entry mode
+        // Auto-fetch if not fetched yet, provider enabled, not Google (static), and not manual mode
         if (provider && !provider.fetchedModels && provider.type !== 'google' && provider.baseURL && !manualModelEntry) {
-            handleRefreshModelsForAgent(provider.id, true); // true = silent mode
+            handleRefreshModelsForAgent(provider.id, true);
         }
     }
   }, [agentForm.providerId, editingAgentId]);
+
+  // When opening an agent, try to detect the brand from the current modelId to set initial filter
+  useEffect(() => {
+      if (editingAgentId && agentForm.modelId) {
+          const brandKey = getBrandFromModelId(agentForm.modelId);
+          setSelectedBrandFilter(brandKey);
+      }
+  }, [editingAgentId]); // Run once when edit starts
 
   const handleEditAgent = (agent: AgentConfig) => {
     setEditingAgentId(agent.id);
     setAgentForm({ ...agent });
     setManualModelEntry(false);
+    // Filter is set by the useEffect above
   };
 
   const handleNewAgent = () => {
@@ -89,7 +102,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     const newAgent: AgentConfig = {
         id: newId,
         name: 'New Agent',
-        avatar: '🤖',
+        avatar: BRAND_CONFIGS.other.logo,
         providerId: defaultProvider?.id || '',
         modelId: defaultProvider?.suggestedModels[0] || '',
         systemPrompt: 'You are a helpful assistant.',
@@ -98,6 +111,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     setAgentForm(newAgent);
     setEditingAgentId(newId);
     setManualModelEntry(false);
+    setSelectedBrandFilter(getBrandFromModelId(newAgent.modelId));
   };
 
   const handleSaveAgent = () => {
@@ -142,13 +156,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const applyAgentTemplate = (template: typeof SYSTEM_PROMPT_TEMPLATES[0]) => {
       setAgentForm(prev => ({
           ...prev,
-          avatar: template.icon,
-          name: `${template.label}`, // Optional: overwrite name
+          // Don't override avatar from template, use brand logo
+          // avatar: template.icon, 
+          name: `${template.label}`, 
           systemPrompt: template.prompt
       }));
   };
 
-  // Fetch models directly from inside the Agent Editor
   const handleRefreshModelsForAgent = async (providerId: string, silent = false) => {
       const provider = providers.find(p => p.id === providerId);
       if (!provider) return;
@@ -157,16 +171,9 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       try {
           const models = await fetchProviderModels(provider);
           if (models.length > 0) {
-              // Update the provider with new models locally
               const updatedProvider = { ...provider, fetchedModels: models };
               onUpdateProviders(providers.map(p => p.id === providerId ? updatedProvider : p));
-              
               if (!silent) success(t('settings.providers.syncSuccess'));
-              
-              // Auto-select first model if current invalid or empty
-              if (!agentForm.modelId || !models.includes(agentForm.modelId!)) {
-                  setAgentForm(prev => ({ ...prev, modelId: models[0] }));
-              }
           } else {
               if (!silent) info(t('settings.providers.noModels'));
           }
@@ -184,20 +191,17 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       } else {
           setExpandedProviderId(provider.id);
           setProviderForm({...provider});
-          setShowApiKey(false); // Reset visibility
+          setShowApiKey(false); 
       }
   };
 
   const handleSaveProvider = async () => {
       if (!expandedProviderId) return;
-      
-      // Strict Validation for OpenRouter
       if (providerForm.type === 'openai-compatible' && providerForm.id === 'provider-openrouter') {
          if (!providerForm.apiKey) {
              error(t('settings.providers.apiKeyRequired'));
              return;
          }
-         
          try {
              const isValid = await validateOpenRouterKey(providerForm.apiKey);
              if (!isValid) {
@@ -210,7 +214,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
              return;
          }
       }
-
       const updatedProvider = providerForm as LLMProvider;
       onUpdateProviders(providers.map(p => p.id === expandedProviderId ? updatedProvider : p));
       setExpandedProviderId(null);
@@ -220,13 +223,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const handleSyncModels = async (providerId: string, providerConfig: LLMProvider) => {
       setIsSyncingModels(true);
       try {
-          // Validate Key First if OpenRouter
           if (providerId === 'provider-openrouter' && providerConfig.apiKey) {
               const isValid = await validateOpenRouterKey(providerConfig.apiKey);
               if (!isValid) throw new Error(t('settings.providers.invalidKey'));
           }
-
-          // Then Fetch Models
           const models = await fetchProviderModels(providerConfig);
           if (models.length > 0) {
              const updatedProviders = providers.map(p => 
@@ -251,7 +251,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           name: 'Custom Provider',
           type: 'openai-compatible',
           apiKey: '',
-          baseURL: 'http://localhost:11434/v1', // Reasonable default for local
+          baseURL: 'http://localhost:11434/v1',
           enabled: true,
           isCustom: true,
           suggestedModels: []
@@ -292,10 +292,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           variant: 'danger',
           confirmLabel: t('settings.data.clear')
       });
-      
-      if (isConfirmed) {
-          onClearData();
-      }
+      if (isConfirmed) onClearData();
   }
 
   // --- Renders ---
@@ -311,21 +308,40 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       </button>
   );
 
+  // --- RENDER AGENT FORM (The Complex Part) ---
   const renderAgentForm = () => {
       const currentProvider = providers.find(p => p.id === agentForm.providerId);
-      // Logic to determine which models to show
+      const isGoogle = currentProvider?.type === 'google';
       const hasFetchedModels = !!(currentProvider?.fetchedModels && currentProvider.fetchedModels.length > 0);
       
-      // Fix: TypeScript strict check requires ensuring this is always an array
-      const availableModels: string[] = (hasFetchedModels 
+      // All models available for this provider
+      const allModels: string[] = (hasFetchedModels 
           ? currentProvider?.fetchedModels 
           : currentProvider?.suggestedModels) || [];
-      
-      const isGoogle = currentProvider?.type === 'google';
+
+      // Detect available brands from the model list
+      const availableBrands = useMemo(() => {
+          const brands = new Set<string>();
+          if (isGoogle) return ['google']; // Special case
+          
+          allModels.forEach(m => {
+              brands.add(getBrandFromModelId(m));
+          });
+          // Always ensure 'other' is last
+          const arr = Array.from(brands).sort();
+          return arr;
+      }, [allModels, isGoogle]);
+
+      // Filter models based on selected brand
+      const filteredModels = useMemo(() => {
+          if (!selectedBrandFilter && !isGoogle) return allModels;
+          if (isGoogle) return allModels; // Google has no sub-brands really
+          return allModels.filter(m => getBrandFromModelId(m) === selectedBrandFilter);
+      }, [allModels, selectedBrandFilter, isGoogle]);
+
+      // Use manual entry if requested, or if no models found
+      const useManualInput = manualModelEntry || (!hasFetchedModels && allModels.length === 0);
       const canFetchModels = !isGoogle && currentProvider?.baseURL;
-      
-      // Use manual entry if user requested it, OR if no models available via dropdown
-      const useManualInput = manualModelEntry || (!hasFetchedModels && availableModels.length === 0);
 
       return (
         <div className="bg-gray-50 dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 space-y-5 animate-in fade-in slide-in-from-bottom-2">
@@ -347,62 +363,92 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 </div>
                 <div className="col-span-1 space-y-1">
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.avatar')}</label>
-                    <input 
-                        type="text" 
-                        value={agentForm.avatar || ''} 
-                        onChange={e => setAgentForm({...agentForm, avatar: e.target.value})}
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-center text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Emoji"
-                    />
+                    <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                            {agentForm.avatar?.startsWith('http') ? (
+                                <img src={agentForm.avatar} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-xl">{agentForm.avatar}</span>
+                            )}
+                        </div>
+                        <input 
+                            type="text" 
+                            value={agentForm.avatar || ''} 
+                            onChange={e => setAgentForm({...agentForm, avatar: e.target.value})}
+                            className="flex-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                            placeholder="URL/Emoji"
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.provider')}</label>
-                    <select 
-                        value={agentForm.providerId || ''}
-                        onChange={e => {
-                            const newProvider = providers.find(p => p.id === e.target.value);
-                            setAgentForm({
-                                ...agentForm, 
-                                providerId: e.target.value, 
-                                // Auto-select first available model to prevent bad state
-                                modelId: newProvider?.fetchedModels?.[0] || newProvider?.suggestedModels?.[0] || ''
-                            });
-                            // Reset manual entry toggle when provider changes
-                            setManualModelEntry(false);
-                        }} 
-                        className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                        {providers.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="space-y-1">
+            <div className="grid grid-cols-1 gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
+                 {/* 1. Provider Selection */}
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">1. {t('settings.agents.provider')}</label>
+                        <select 
+                            value={agentForm.providerId || ''}
+                            onChange={e => {
+                                const newProvider = providers.find(p => p.id === e.target.value);
+                                const isNewGoogle = newProvider?.type === 'google';
+                                setAgentForm({
+                                    ...agentForm, 
+                                    providerId: e.target.value, 
+                                    modelId: '' // Reset model when provider changes
+                                });
+                                setManualModelEntry(false);
+                                // If Google, reset filter
+                                if (isNewGoogle) setSelectedBrandFilter('google');
+                                else setSelectedBrandFilter(null);
+                            }} 
+                            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            {providers.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* 2. Brand/Vendor Filter (Only if not Google and models available) */}
+                    {!isGoogle && !useManualInput && (
+                         <div className="space-y-1">
+                             <label className="text-xs font-bold text-gray-500 uppercase">2. Brand</label>
+                             <select 
+                                value={selectedBrandFilter || ''}
+                                onChange={e => {
+                                    setSelectedBrandFilter(e.target.value);
+                                    setAgentForm({ ...agentForm, modelId: '' }); // Reset model when brand changes
+                                }}
+                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                disabled={availableBrands.length === 0}
+                             >
+                                 <option value="" disabled>Select Brand</option>
+                                 {availableBrands.map(b => (
+                                     <option key={b} value={b}>{BRAND_CONFIGS[b]?.name || b}</option>
+                                 ))}
+                             </select>
+                         </div>
+                    )}
+                 </div>
+                
+                {/* 3. Model Selection */}
+                <div className="space-y-1 mt-2">
                     <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.modelId')}</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase">
+                             {isGoogle ? '2. ' : '3. '} {t('settings.agents.modelId')}
+                        </label>
                         <div className="flex items-center gap-2">
-                            {/* Toggle Manual Entry */}
                             {!useManualInput && canFetchModels && (
-                                <button
-                                    onClick={() => setManualModelEntry(true)}
-                                    className="text-[10px] text-gray-400 hover:text-blue-500 underline"
-                                >
+                                <button onClick={() => setManualModelEntry(true)} className="text-[10px] text-gray-400 hover:text-blue-500 underline">
                                     Type manually
                                 </button>
                             )}
-                            {useManualInput && (availableModels.length > 0) && (
-                                <button
-                                    onClick={() => setManualModelEntry(false)}
-                                    className="text-[10px] text-gray-400 hover:text-blue-500 underline"
-                                >
+                            {useManualInput && (allModels.length > 0) && (
+                                <button onClick={() => setManualModelEntry(false)} className="text-[10px] text-gray-400 hover:text-blue-500 underline">
                                     Select from list
                                 </button>
                             )}
-
-                            {/* Fetch Button */}
                             {canFetchModels && (
                                 <button 
                                     onClick={() => agentForm.providerId && handleRefreshModelsForAgent(agentForm.providerId)}
@@ -410,21 +456,31 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     className="text-[10px] flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
                                 >
                                     {fetchingModelsForAgent ? <Loader2 size={10} className="animate-spin"/> : <RefreshCw size={10} />}
-                                    {hasFetchedModels ? 'Refresh List' : 'Load Models'}
+                                    {hasFetchedModels ? 'Refresh' : 'Load API'}
                                 </button>
                             )}
                         </div>
                     </div>
                     
                     <div className="relative">
-                         {/* If we have a list (static or fetched) and not in manual mode, show dropdown */}
                          {!useManualInput ? (
                              <select
                                 value={agentForm.modelId || ''} 
-                                onChange={e => setAgentForm({...agentForm, modelId: e.target.value})}
-                                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                                onChange={e => {
+                                    const newModel = e.target.value;
+                                    const brand = getBrandFromModelId(newModel);
+                                    // Auto-set Avatar based on Brand Logo
+                                    setAgentForm({
+                                        ...agentForm, 
+                                        modelId: newModel,
+                                        avatar: BRAND_CONFIGS[brand]?.logo || agentForm.avatar
+                                    });
+                                }}
+                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                                disabled={filteredModels.length === 0}
                              >
-                                 {availableModels.map(m => (
+                                 <option value="" disabled>Select a model...</option>
+                                 {filteredModels.map(m => (
                                      <option key={m} value={m}>{m}</option>
                                  ))}
                              </select>
@@ -433,17 +489,14 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 type="text" 
                                 value={agentForm.modelId || ''} 
                                 onChange={e => setAgentForm({...agentForm, modelId: e.target.value})}
-                                className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                placeholder={t('settings.agents.placeholderModel')}
+                                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="e.g., deepseek/deepseek-chat"
                             />
                          )}
-                         {/* Chevron for select */}
-                         {!useManualInput && (
-                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                             </div>
-                         )}
                     </div>
+                    {!useManualInput && filteredModels.length === 0 && (
+                        <p className="text-[10px] text-orange-500 mt-1">No models found for this brand. Try clicking "Load API" or check Provider settings.</p>
+                    )}
                 </div>
             </div>
 
@@ -452,8 +505,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.agents.systemPrompt')}</label>
                     <span className="text-[10px] text-gray-400">Templates</span>
                 </div>
-                
-                {/* Template Chips */}
                 <div className="flex flex-wrap gap-2 mb-2">
                     {SYSTEM_PROMPT_TEMPLATES.map(tpl => (
                         <button
@@ -466,7 +517,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         </button>
                     ))}
                 </div>
-
                 <textarea 
                     value={agentForm.systemPrompt || ''} 
                     onChange={e => setAgentForm({...agentForm, systemPrompt: e.target.value})}
@@ -492,13 +542,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const renderProviderForm = (providerId: string) => {
       const isCustom = providerForm.isCustom;
       const isOpenRouter = providerId === 'provider-openrouter';
-      // Generic toggle for syncing models on any custom provider that has a base URL
       const canSyncModels = !!providerForm.baseURL;
 
       return (
         <div className="mt-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4 animate-in fade-in slide-in-from-top-2">
-            
-            {/* Quick Connect Presets for Custom Providers */}
             {isCustom && (
                 <div className="flex gap-2 mb-2 overflow-x-auto pb-1">
                     {PROVIDER_PRESETS.map(preset => (
@@ -590,12 +637,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         </div>
       );
   };
+  
+  // Fix: Modal render guard
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      
-      {/* Main Modal Window */}
       <div className="relative w-full max-w-5xl h-[85vh] bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl flex overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200">
         
         {/* Sidebar Navigation */}
@@ -607,14 +655,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">{t('settings.subtitle')}</p>
             </div>
-            
             <nav className="space-y-1 flex-1">
                 <NavItem section="general" icon={Monitor} label={t('settings.nav.general')} />
                 <NavItem section="agents" icon={Bot} label={t('settings.nav.agents')} />
                 <NavItem section="providers" icon={Server} label={t('settings.nav.providers')} />
                 <NavItem section="data" icon={Database} label={t('settings.nav.data')} />
             </nav>
-
             <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800 text-center">
                 <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors">{t('common.close')}</button>
             </div>
@@ -623,8 +669,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">
             <div className="p-8 max-w-3xl mx-auto">
-                
-                {/* Header for each section */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">
                         {activeSection === 'general' && t('settings.general.title')}
@@ -640,7 +684,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     </p>
                 </div>
 
-                {/* GENERAL SECTION */}
                 {activeSection === 'general' && (
                     <div className="space-y-6">
                         {/* Theme Settings */}
@@ -669,8 +712,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     </button>
                                 </div>
                             </div>
-
-                             {/* Language Settings */}
                              <div className="flex items-center justify-between p-4 mt-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                 <div className="flex items-center gap-3">
                                     <Globe className="text-blue-500" />
@@ -695,8 +736,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 </div>
                             </div>
                         </div>
-
-                        {/* Input Preferences */}
                          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
                             <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">{t('settings.general.input')}</h3>
                              <div className="flex items-center justify-between">
@@ -712,26 +751,22 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     </div>
                 )}
 
-                {/* AGENTS SECTION */}
                 {activeSection === 'agents' && (
                     <div className="space-y-4">
                         {editingAgentId && !agents.find(a => a.id === editingAgentId) && renderAgentForm()}
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {agents.map(agent => {
                                 const provider = providers.find(p => p.id === agent.providerId);
                                 const isGoogle = provider?.type === 'google';
-                                
                                 if (editingAgentId === agent.id) {
                                     return <div key={agent.id} className="md:col-span-2">{renderAgentForm()}</div>
                                 }
-
                                 return (
                                     <div key={agent.id} className={`relative group border rounded-xl p-4 transition-all duration-200 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md ${agent.enabled ? 'border-blue-200 dark:border-blue-900' : 'border-gray-200 dark:border-gray-800 opacity-60'}`}>
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl shadow-inner">
-                                                    {agent.avatar}
+                                                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-2xl shadow-inner overflow-hidden">
+                                                    {agent.avatar?.startsWith('http') ? <img src={agent.avatar} className="w-full h-full object-cover" alt="avatar"/> : agent.avatar}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-gray-900 dark:text-white text-sm">{agent.name}</h3>
@@ -758,7 +793,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 )
                             })}
                         </div>
-
                         {!editingAgentId && (
                             <button onClick={handleNewAgent} className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500 text-gray-500 dark:text-gray-400 hover:text-blue-500 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all bg-gray-50 dark:bg-gray-800/30">
                                 <Plus size={18} /> {t('settings.agents.new')}
@@ -767,7 +801,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                     </div>
                 )}
 
-                {/* PROVIDERS SECTION */}
                 {activeSection === 'providers' && (
                      <div className="space-y-6">
                          <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 rounded-lg flex gap-3">
@@ -777,7 +810,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 <p className="opacity-80">{t('settings.providers.infoDesc')}</p>
                             </div>
                          </div>
-
                         <div className="space-y-4">
                             {providers.map(provider => (
                                 <div key={provider.id} className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-white dark:bg-gray-900 shadow-sm">
@@ -807,14 +839,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 </div>
                             ))}
                         </div>
-
                         <button onClick={handleNewProvider} className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500/50 text-gray-500 hover:text-blue-500 rounded-lg flex items-center justify-center gap-2 text-sm transition-all">
                              <Plus size={16} /> {t('settings.providers.addCustom')}
                         </button>
                      </div>
                 )}
 
-                {/* DATA SECTION */}
                 {activeSection === 'data' && (
                     <div className="space-y-6">
                          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
@@ -831,7 +861,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 </div>
                             </div>
                         </div>
-
                         <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 p-6 shadow-sm">
                             <div className="flex items-start gap-4">
                                 <div className="p-3 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg">
@@ -851,7 +880,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
 
             </div>
         </div>
-
       </div>
     </div>
   );
