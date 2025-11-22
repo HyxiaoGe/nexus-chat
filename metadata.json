@@ -12,7 +12,7 @@
     "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
     "i18next": "https://aistudiocdn.com/i18next@^25.6.3",
     "react-i18next": "https://aistudiocdn.com/react-i18next@^16.3.5",
-    "@lobehub/icons": "https://esm.sh/@lobehub/icons@1.45.0?bundle&external=react,react-dom&deps=@ant-design/colors@7.1.0",
-    "@ant-design/colors": "https://esm.sh/@ant-design/colors@7.1.0"
+    "@lobehub/icons": "https://esm.sh/@lobehub/icons@1.56.0?external=react,react-dom,@ant-design/colors",
+    "@ant-design/colors": "https://cdn.jsdelivr.net/npm/@ant-design/colors@7.1.0/+esm"
   }
 }
