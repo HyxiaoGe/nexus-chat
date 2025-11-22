@@ -1,6 +1,39 @@
-
 import React from 'react';
 import { Bot } from 'lucide-react';
+import {
+  OpenAI,
+  Google,
+  DeepSeek,
+  Claude,
+  Meta,
+  Mistral,
+  Perplexity,
+  Grok,
+  Qwen,
+  Minimax,
+  Microsoft,
+  LobeHub
+} from '@lobehub/icons';
+
+// Mapping string keys (from constants.ts) to LobeHub components
+const BRAND_MAP: Record<string, any> = {
+  openai: OpenAI,
+  google: Google,
+  gemini: Google, 
+  anthropic: Claude, 
+  claude: Claude,
+  deepseek: DeepSeek,
+  meta: Meta,
+  llama: Meta,
+  mistral: Mistral,
+  perplexity: Perplexity,
+  xai: Grok,
+  grok: Grok,
+  qwen: Qwen,
+  minimax: Minimax,
+  microsoft: Microsoft,
+  other: LobeHub
+};
 
 interface BrandIconProps {
   brand: string;
@@ -9,83 +42,17 @@ interface BrandIconProps {
 }
 
 export const BrandIcon: React.FC<BrandIconProps> = ({ brand, size = 24, className = '' }) => {
-  const style = { width: size, height: size };
   const key = brand?.toLowerCase().trim();
+  const IconComponent = BRAND_MAP[key] || LobeHub;
 
-  // Official SVG Paths based on LobeHub/Official Brand Guidelines
-  switch (key) {
-    case 'deepseek':
-      return (
-        <svg viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-          <circle cx="512" cy="512" r="512" fill="#4D6BFE"/>
-          <path d="M780.6 224c-30.8-15.8-82-35.7-140.8-31.2-32.4 2.5-65 10.3-97.5 20.1-36.2 10.9-71.7 21.6-104.5 21.6-47.1 0-97-21.6-149.8-74.4-7.3-7.3-20.9-6.8-27.7 1L180 251.9c-6.3 7.2-5.4 18.2 1.9 24.4 78.9 66.9 128 135.6 139 197.3 2.9 16.4 4.4 33.1 4.4 49.8 0 78.6-32.4 150.9-90.6 204-6.8 6.2-7.1 16.8-0.7 23.3l77.1 79.6c6.7 6.9 17.9 6.9 24.8 0.2C413.2 753.8 460 666.2 460 569.5c0-33.8-6-66.2-16.7-96.5-9.5-27-19.5-53-25.8-77.6-13.6-53.2 11.1-81.4 62.3-83.8 28.6-1.3 61 8.9 90.4 24 31.4 16.1 61.3 37.7 88.7 57.6 26 18.9 54.7 33 85.1 39.4 12.1 2.5 24.1 1.9 34.9-1.7 34-11.3 54.2-46.4 54.2-81.8 0.1-48.2-22.5-97.2-52.5-125.1z" fill="white"/>
-        </svg>
-      );
-    case 'google':
-    case 'gemini':
-      return (
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-           <path d="M22.0752 10.4505C19.5086 10.9852 17.1127 12.7839 15.9362 15.1507C14.9195 17.2361 14.759 19.5362 15.0265 21.7824C15.1335 22.6916 14.2777 23.3334 13.4219 23.066C11.6034 22.4776 9.78475 21.8892 8.0197 21.1939C5.29194 20.1241 3.20599 17.7707 2.40371 14.9367C1.86886 13.0647 1.97584 11.0923 2.4572 9.27374C2.72463 8.25749 3.84785 7.77611 4.75712 8.15052C6.68265 8.89933 8.50127 9.64813 10.3733 10.4505C12.3523 11.3063 14.4383 11.3063 16.4174 10.4505C18.2894 9.64813 20.108 8.89933 22.0336 8.15052C22.9428 7.77611 24.066 8.25749 24.3335 9.27374C24.8148 11.0923 24.9218 13.0647 24.387 14.9367C23.5847 17.7707 21.4987 20.1241 18.771 21.1939C17.0059 21.8892 15.1873 22.4776 13.3688 23.066C12.513 23.3334 11.6572 22.6916 11.7641 21.7824C12.0316 19.5362 11.8712 17.2361 10.8544 15.1507C9.67799 12.7839 7.28203 10.9852 4.71551 10.4505C3.75276 10.2365 3.75276 8.84562 4.71551 8.63163C7.28203 8.09688 9.67799 6.29821 10.8544 3.93138C11.8712 1.84599 12.0316 -0.454129 11.7641 -2.70033C11.6572 -3.60954 12.513 -4.25132 13.3688 -3.98394C15.1873 -3.39553 17.0059 -2.80712 18.771 -2.11188C21.4987 -1.04206 23.5847 1.31129 24.387 4.14534C24.9218 6.01736 24.8148 7.98974 24.3335 9.00602C24.066 10.0223 22.9428 10.5036 22.0336 10.1292C20.108 9.38042 18.2894 8.63161 16.4174 7.82931C14.4383 6.9735 12.3523 6.9735 10.3733 7.82931C8.50127 8.63161 6.68265 9.38042 4.75712 10.1292C3.84785 10.5036 2.72463 10.0223 2.4572 9.00602C1.97584 7.98974 1.86886 6.01736 2.40371 4.14534C3.20599 1.31129 5.29194 -1.04206 8.0197 -2.11188C9.78475 -2.80712 11.6034 -3.39553 13.4219 -3.98394C14.2777 -4.25132 15.1335 -3.60954 15.0265 -2.70033C14.759 -0.454129 14.9195 1.84599 15.9362 3.93138C17.1127 6.29821 19.5086 8.09688 22.0752 8.63163C23.0379 8.84562 23.0379 10.2365 22.0752 10.4505Z" fill="url(#gemini-gradient)"/>
-           <defs>
-            <linearGradient id="gemini-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#4E95FF" />
-                <stop offset="50%" stopColor="#9D66FF" />
-                <stop offset="100%" stopColor="#F37F6F" />
-            </linearGradient>
-           </defs>
-        </svg>
-      );
-    case 'openai':
-      return (
-        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={`${className} text-gray-900 dark:text-white`} style={style}>
-          <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0843 1.6152-2.4598a1.697 1.697 0 0 0 .2507-.4683l.2194-1.0974-2.609 1.51a4.4803 4.4803 0 0 1-1.2033-3.4212l2.224.0813.7705-3.5047-2.6885.847a4.4803 4.4803 0 0 1 1.7736-3.2016l1.9562 1.214.6253 3.5426 1.0312-2.9998a4.4755 4.4755 0 0 1 3.3734.3438l-1.4281 1.6718-2.8135-.4063 2.5469 1.6093a4.4803 4.4803 0 0 1 1.6093 3.25l-2.1562-.6406.0313 3.5936 2.5468-1.3593a4.4803 4.4803 0 0 1-2.4062 2.9218l-1.6875-1.8593-.9219 3.1874zm-6.6873-6.4061a4.4755 4.4755 0 0 1-.5312-3.7186l1.7656.9062 2.2968-1.953-1.8906-2.2968a4.4803 4.4803 0 0 1 3.4374 1.1562l-.6094 2.0937 3.2812-1.4687-1.5312 3.0155a4.4803 4.4803 0 0 1-3.5936 1.2031l.4375-2.1874-3.4062 1.203zm15.3434 3.7186a4.4755 4.4755 0 0 1-3.4374-1.1562l.6094-2.0937-3.2812 1.4687 1.5312-3.0155a4.4803 4.4803 0 0 1 3.5936-1.2031l-.4375 2.1874 3.4062-1.203a4.4755 4.4755 0 0 1 .5312 3.7186l-1.7656-.9062-2.2968 1.953 1.8906 2.2968z"/>
-        </svg>
-      );
-    case 'anthropic':
-    case 'claude':
-      return (
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-            <rect width="24" height="24" rx="4" fill="#DA7756"/>
-            <path d="M16.5 16.5V7.5H15V15H9V7.5H7.5V16.5H16.5Z" fill="white"/>
-        </svg>
-      );
-    case 'meta':
-    case 'llama':
-      return (
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-            <path d="M12 12C12 13.65 13.35 15 15 15C16.65 15 18 13.65 18 12C18 10.35 16.65 9 15 9C13.35 9 12 10.35 12 12ZM12 12C12 10.35 10.65 9 9 9C7.35 9 6 10.35 6 12C6 13.65 7.35 15 9 15C10.65 15 12 13.65 12 12ZM15 17C13.05 17 11.55 15.85 10.9 14.2C10.25 15.85 8.75 17 6.8 17C4.15 17 2 14.75 2 12C2 9.25 4.15 7 6.8 7C8.75 7 10.25 8.15 10.9 9.8C11.55 8.15 13.05 7 15 7C17.85 7 20 9.25 20 12C20 14.75 17.85 17 15 17Z" fill="#0668E1"/>
-        </svg>
-      );
-    case 'mistral':
-        return (
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-                <rect width="24" height="24" rx="4" fill="#F5A524"/>
-                <path d="M4 20V11.5L9 7V15.5L14 11V7L19 11.5V20" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-        );
-    case 'perplexity':
-        return (
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-                <rect width="24" height="24" rx="12" fill="#23B5B5"/>
-                <path d="M7.5 8.5V15.5M12 6.5V17.5M16.5 8.5V15.5" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-        );
-    case 'xai':
-    case 'grok':
-        return (
-             <svg viewBox="0 0 24 24" fill="currentColor" className={`${className} text-black dark:text-white`} style={style}>
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-        );
-    case 'qwen':
-         return (
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style}>
-               <rect width="24" height="24" rx="4" fill="#6025F5"/>
-               <path d="M16 8L8 16M8 8L16 16" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
-         );
-    default:
-      // Fallback to generic bot if unknown, or text if very short
-      return <Bot size={size} className={`${className} text-gray-400`} />;
+  if (key === 'other' || !BRAND_MAP[key]) {
+       return <Bot size={size} className={className} />;
   }
+
+  // Using .Avatar as requested for the full colored icon
+  return (
+    <div className={className} style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <IconComponent.Avatar size={size} />
+    </div>
+  );
 };

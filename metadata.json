@@ -10,6 +10,7 @@
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
     "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
     "i18next": "https://aistudiocdn.com/i18next@^23.10.0",
-    "react-i18next": "https://aistudiocdn.com/react-i18next@^14.1.0"
+    "react-i18next": "https://aistudiocdn.com/react-i18next@^14.1.0",
+    "@lobehub/icons": "https://esm.sh/@lobehub/icons@1.45.0"
   }
 }
