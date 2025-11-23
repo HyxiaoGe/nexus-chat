@@ -1021,13 +1021,15 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">{agent.modelId}</p>
-                                        </div>
-                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
-                                             <button onClick={() => handleEditAgent(agent)} className="p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                                                <Edit2 size={16} />
-                                             </button>
+                                        <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
+                                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded flex-1">{agent.modelId}</p>
+                                            <button
+                                                onClick={() => handleEditAgent(agent)}
+                                                className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                                title={t('settings.agents.edit')}
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
                                         </div>
                                     </div>
                                 )
