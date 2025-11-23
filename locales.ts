@@ -67,7 +67,7 @@ export const resources = {
         step2: "Get your API key from the Keys page",
         step3: "Paste it in Settings → Providers → OpenRouter",
         step4: "Start chatting with multiple AI models!",
-        later: "Remind Me in 7 Days",
+        later: "Remind Me Later",
         configure: "Configure Now"
       },
       suggestions: {
@@ -129,7 +129,8 @@ export const resources = {
           placeholderPrompt: "How should this agent behave?",
           agentNameRequired: "Agent name is required",
           agentSaved: "Agent saved successfully",
-          agentDeleted: "Agent deleted"
+          agentDeleted: "Agent deleted",
+          maxAgentsWarning: "Maximum 4 agents can be enabled simultaneously"
         },
         editor: {
             preview: "Agent Preview",
@@ -271,7 +272,7 @@ export const resources = {
         step2: "从 Keys 页面获取您的 API 密钥",
         step3: "在 设置 → 提供商 → OpenRouter 中粘贴密钥",
         step4: "开始与多个 AI 模型对话！",
-        later: "7天后提醒我",
+        later: "稍后提醒",
         configure: "立即配置"
       },
       suggestions: {
@@ -333,7 +334,8 @@ export const resources = {
           placeholderPrompt: "这个智能体应该如何表现？",
           agentNameRequired: "智能体名称必填",
           agentSaved: "智能体保存成功",
-          agentDeleted: "智能体已删除"
+          agentDeleted: "智能体已删除",
+          maxAgentsWarning: "最多只能同时启用4个智能体"
         },
         editor: {
             preview: "智能体预览",

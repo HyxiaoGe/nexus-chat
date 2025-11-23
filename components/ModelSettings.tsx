@@ -377,6 +377,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   };
 
   const handleToggleAgent = (id: string) => {
+      const agent = agents.find(a => a.id === id);
+      if (!agent) return;
+
+      // If trying to enable an agent, check the limit
+      if (!agent.enabled) {
+          const currentEnabledCount = agents.filter(a => a.enabled).length;
+          if (currentEnabledCount >= 4) {
+              info(t('settings.agents.maxAgentsWarning'));
+              return;
+          }
+      }
+
       onUpdateAgents(agents.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
   };
 
