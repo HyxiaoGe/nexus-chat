@@ -156,6 +156,25 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   // --- Version Check ---
   const { hasUpdate, reloadPage } = useVersionCheck();
 
+  // --- Actions ---
+  const createNewSession = () => {
+    const newSession: Session = {
+      id: generateId(),
+      title: t('common.newChat'),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    setSessions(prev => [newSession, ...prev]);
+    setActiveSessionId(newSession.id);
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
+  };
+
+  const updateSessionTitle = (sessionId: string, title: string) => {
+    setSessions(prev => prev.map(s =>
+      s.id === sessionId ? { ...s, title, updatedAt: Date.now() } : s
+    ));
+  };
+
   // --- Hooks ---
   const { isStreaming, sendMessage, stopGeneration } = useChatOrchestrator({
       activeSessionId,
@@ -164,21 +183,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       messages,
       setMessages,
       saveMessagesToStorage,
-      onScrollToBottom: scrollToBottom
+      onScrollToBottom: scrollToBottom,
+      updateSessionTitle
   });
-
-  // --- Actions ---
-  const createNewSession = () => {
-    const newSession: Session = {
-      id: generateId(),
-      title: `${t('common.create')} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    setSessions(prev => [newSession, ...prev]);
-    setActiveSessionId(newSession.id);
-    if (window.innerWidth < 768) setIsSidebarOpen(false);
-  };
 
   const deleteSession = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -466,37 +473,43 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
         {/* Floating Input Bar (Cockpit) */}
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent dark:from-[#0B0F17] dark:via-[#0B0F17] dark:to-transparent z-30 pointer-events-none">
             <div className="max-w-4xl mx-auto pointer-events-auto">
-                <div className="relative group shadow-2xl shadow-blue-900/5 dark:shadow-black/50 rounded-[2rem] bg-white dark:bg-[#151b26] border border-gray-200 dark:border-gray-800 transition-all focus-within:border-blue-400/50 dark:focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-100 dark:focus-within:ring-blue-900/20">
-                    <textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={handleInput}
-                        onKeyDown={handleKeyDown}
-                        placeholder={t('app.inputPlaceholder')}
-                        disabled={isStreaming}
-                        rows={1}
-                        className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-6 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
-                        style={{ minHeight: '60px' }}
-                    />
-                    
-                    <div className="absolute right-2 bottom-2">
-                        {isStreaming ? (
-                          <button
-                            onClick={stopGeneration}
-                            className="p-2.5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30 hover:scale-105 active:scale-95 transition-all duration-200"
-                            title={t('app.stop')}
-                          >
-                            <Square size={20} fill="currentColor" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={onSend}
-                            disabled={!input.trim()}
-                            className={`p-2.5 rounded-full transition-all duration-200 flex items-center justify-center ${!input.trim() ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/30 hover:scale-105 active:scale-95'}`}
-                          >
-                            <Send size={20} className={input.trim() ? "ml-0.5" : ""} />
-                          </button>
-                        )}
+                {/* Gradient border wrapper */}
+                <div className="relative rounded-[2rem] p-[2px] bg-gradient-to-r from-transparent via-transparent to-transparent focus-within:from-blue-500 focus-within:via-purple-500 focus-within:to-blue-500 transition-all duration-500 shadow-2xl shadow-blue-900/5 dark:shadow-black/50">
+                    <div className="relative group rounded-[2rem] bg-white dark:bg-[#151b26] transition-all">
+                        <textarea
+                            ref={textareaRef}
+                            value={input}
+                            onChange={handleInput}
+                            onKeyDown={handleKeyDown}
+                            placeholder={t('app.inputPlaceholder')}
+                            disabled={isStreaming}
+                            rows={1}
+                            className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-6 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
+                            style={{ minHeight: '60px' }}
+                        />
+
+                        <div className="absolute right-2 bottom-2">
+                            {isStreaming ? (
+                              <button
+                                onClick={stopGeneration}
+                                className="p-2.5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/30 hover:scale-105 active:scale-95 transition-all duration-200"
+                                title={t('app.stop')}
+                              >
+                                <Square size={20} fill="currentColor" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={onSend}
+                                disabled={!input.trim()}
+                                className={`relative p-2.5 rounded-full transition-all duration-200 flex items-center justify-center ${!input.trim() ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-500 hover:to-purple-500 shadow-lg shadow-blue-500/50 hover:shadow-purple-500/50 hover:scale-110 active:scale-95'}`}
+                              >
+                                <Send size={20} className={input.trim() ? "ml-0.5" : ""} />
+                                {input.trim() && (
+                                  <span className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 blur-md opacity-50 -z-10 animate-pulse"></span>
+                                )}
+                              </button>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="text-center mt-3">
