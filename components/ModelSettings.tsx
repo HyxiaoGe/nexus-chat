@@ -228,24 +228,47 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   // --- Aggregated Models Logic ---
   // Combine models from ALL providers into a single searchable list
   const allAggregatedModels = useMemo(() => {
-      const list: { modelId: string; providerId: string; providerName: string; brand: string }[] = [];
-      
+      const list: {
+        modelId: string;
+        providerId: string;
+        providerName: string;
+        brand: string;
+        created?: number;
+        contextLength?: number;
+        pricing?: { prompt: string; completion: string };
+      }[] = [];
+
       providers.forEach(p => {
           if (!p.enabled) return;
-          
-          // Use fetched models if available, otherwise defaults
-          const sourceModels = (p.fetchedModels && p.fetchedModels.length > 0) 
-              ? p.fetchedModels 
-              : p.suggestedModels;
-              
-          sourceModels.forEach(m => {
-              list.push({
-                  modelId: m,
-                  providerId: p.id,
-                  providerName: p.name,
-                  brand: getBrandFromModelId(m)
+
+          // Use fetched models (full metadata) if available, otherwise fallback to suggested models
+          if (p.fetchedModels && p.fetchedModels.length > 0) {
+              // OpenRouterModel[] with full metadata
+              p.fetchedModels.forEach(m => {
+                  list.push({
+                      modelId: m.id,
+                      providerId: p.id,
+                      providerName: p.name,
+                      brand: getBrandFromModelId(m.id),
+                      created: m.created,
+                      contextLength: m.context_length,
+                      pricing: {
+                        prompt: m.pricing.prompt,
+                        completion: m.pricing.completion
+                      }
+                  });
               });
-          });
+          } else {
+              // Fallback to suggestedModels (string[])
+              p.suggestedModels.forEach(modelId => {
+                  list.push({
+                      modelId,
+                      providerId: p.id,
+                      providerName: p.name,
+                      brand: getBrandFromModelId(modelId)
+                  });
+              });
+          }
       });
       return list;
   }, [providers]);
@@ -379,11 +402,11 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       try {
           const models = await fetchProviderModels(providerConfig);
           if (models.length > 0) {
-             const updatedProviders = providers.map(p => 
-                 p.id === providerId ? { ...p, fetchedModels: models } : p
+             const updatedProviders = providers.map(p =>
+                 p.id === providerId ? { ...p, fetchedModels: models, lastFetched: Date.now() } : p
              );
              onUpdateProviders(updatedProviders);
-             success(t('settings.providers.syncSuccess'));
+             success(t('settings.providers.syncSuccess', { count: models.length }));
           } else {
              error(t('settings.providers.noModels'));
           }
@@ -393,6 +416,41 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
           setIsSyncingModels(false);
       }
   };
+
+  // Auto-refresh models on modal open if cache is stale (> 1 hour)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const refreshStaleProviders = async () => {
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+
+      for (const provider of providers) {
+        // Only refresh OpenRouter and enabled providers
+        if (!provider.enabled || provider.type !== 'openai-compatible') continue;
+        if (!provider.apiKey) continue; // Skip if no API key
+
+        // Check if cache is stale or doesn't exist
+        if (!provider.lastFetched || provider.lastFetched < oneHourAgo) {
+          console.log(`Auto-refreshing models for ${provider.name}...`);
+          try {
+            const models = await fetchProviderModels(provider);
+            if (models.length > 0) {
+              const updatedProviders = providers.map(p =>
+                p.id === provider.id ? { ...p, fetchedModels: models, lastFetched: Date.now() } : p
+              );
+              onUpdateProviders(updatedProviders);
+              info(t('settings.providers.autoRefreshed', { name: provider.name }));
+            }
+          } catch (e) {
+            console.warn(`Failed to auto-refresh models for ${provider.name}:`, e);
+            // Silently fail - user can manually sync if needed
+          }
+        }
+      }
+    };
+
+    refreshStaleProviders();
+  }, [isOpen, providers, onUpdateProviders, info, t]);
 
   const handleNewProvider = () => {
       const newId = `custom-${Math.random().toString(36).substring(2, 9)}`;
@@ -460,12 +518,17 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const renderAgentForm = () => {
       // Preview what the agent will look like
       const previewName = agentForm.modelId ? (agentForm.modelId.split('/').pop() || agentForm.modelId) : 'New Agent';
-      
+
       // Use the avatar from the form state if it exists, otherwise calculate it (fallback)
       const brandFromId = getBrandFromModelId(agentForm.modelId || '');
       const effectiveAvatar = agentForm.avatar || BRAND_CONFIGS[brandFromId]?.logo || 'other';
-      
+
       const isImageAvatar = effectiveAvatar.startsWith('http') || effectiveAvatar.startsWith('data:');
+
+      // Find current model metadata for badge display
+      const currentModel = allAggregatedModels.find(m => m.modelId === agentForm.modelId);
+      const showNewBadge = isNewModel(currentModel?.created);
+      const showThinkingBadge = isThinkingModel(agentForm.modelId || '');
 
       // --- FILTER MODELS BY BRAND ---
       const filteredModels = selectedBrand 
@@ -485,7 +548,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const modelOptions: IconOption[] = filteredModels.map(m => {
           const brand = getBrandFromModelId(m.modelId);
           const isThinking = isThinkingModel(m.modelId);
-          const isNew = isNewModel(m.modelId);
+          const isNew = isNewModel(m.created);
 
           // Build badges array
           const badges: IconOption['badges'] = [];
@@ -504,10 +567,14 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
               });
           }
 
+          // Add context length to subLabel if available
+          const contextInfo = m.contextLength ? ` • ${(m.contextLength / 1000).toFixed(0)}K ctx` : '';
+          const subLabel = `${m.providerName}${contextInfo}`;
+
           return {
               value: m.modelId,
               label: m.modelId,
-              subLabel: m.providerName,
+              subLabel,
               icon: BRAND_CONFIGS[brand]?.logo,
               badges: badges.length > 0 ? badges : undefined
           };
@@ -543,13 +610,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                      <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">{t('settings.editor.preview')}</div>
                      <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                          {previewName}
-                         {isNewModel(agentForm.modelId || '') && (
+                         {showNewBadge && (
                              <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm">
                                  <Sparkles size={10} />
                                  NEW
                              </span>
                          )}
-                         {isThinkingModel(agentForm.modelId || '') && (
+                         {showThinkingBadge && (
                              <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm">
                                  <BrainCircuit size={10} />
                                  {t('settings.editor.reasoningModel')}
@@ -979,6 +1046,10 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             {agents.map(agent => {
                                 const provider = providers.find(p => p.id === agent.providerId);
                                 const isGoogle = provider?.type === 'google';
+                                const agentModelMetadata = allAggregatedModels.find(m => m.modelId === agent.modelId);
+                                const showAgentNewBadge = isNewModel(agentModelMetadata?.created);
+                                const showAgentThinkingBadge = isThinkingModel(agent.modelId);
+
                                 if (editingAgentId === agent.id) {
                                     return <div key={agent.id} className="md:col-span-2">{renderAgentForm()}</div>
                                 }
@@ -996,13 +1067,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                         <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">{agent.name}</h3>
-                                                        {isNewModel(agent.modelId) && (
+                                                        {showAgentNewBadge && (
                                                             <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm flex-shrink-0">
                                                                 <Sparkles size={9} />
                                                                 NEW
                                                             </span>
                                                         )}
-                                                        {isThinkingModel(agent.modelId) && (
+                                                        {showAgentThinkingBadge && (
                                                             <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm flex-shrink-0">
                                                                 <BrainCircuit size={9} />
                                                             </span>

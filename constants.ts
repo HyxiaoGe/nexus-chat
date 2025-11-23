@@ -18,91 +18,88 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   language: detectBrowserLanguage()
 };
 
-// Keys match the mapping in components/BrandIcons.tsx
-export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keywords: string[] }> = {
+// Supported model providers - Keys match the mapping in components/BrandIcons.tsx
+export const BRAND_CONFIGS: Record<string, { name: string; logo: string }> = {
   openai: {
     name: 'OpenAI',
-    logo: 'openai', 
-    keywords: ['openai', 'gpt', 'o1-', 'o3-', 'o5-']
+    logo: 'openai'
   },
   google: {
     name: 'Google Gemini',
-    logo: 'gemini', // Changed to gemini for the sparkle icon
-    keywords: ['google', 'gemini', 'veo']
+    logo: 'gemini'
   },
   anthropic: {
     name: 'Anthropic',
-    logo: 'anthropic',
-    keywords: ['anthropic', 'claude']
+    logo: 'anthropic'
   },
-  deepseek: {
-    name: 'DeepSeek',
-    logo: 'deepseek',
-    keywords: ['deepseek']
-  },
-  meta: {
-    name: 'Meta Llama',
-    logo: 'meta',
-    keywords: ['meta', 'llama', 'facebook']
-  },
-  mistral: {
-    name: 'Mistral AI',
-    logo: 'mistral',
-    keywords: ['mistral', 'mixtral', 'pixtral', 'codestral']
-  },
-  xai: {
+  'x-ai': {
     name: 'xAI (Grok)',
-    logo: 'grok',
-    keywords: ['x-ai', 'grok']
-  },
-  perplexity: {
-    name: 'Perplexity',
-    logo: 'perplexity',
-    keywords: ['perplexity', 'sonar']
+    logo: 'grok'
   },
   qwen: {
     name: 'Qwen (Alibaba)',
-    logo: 'qwen',
-    keywords: ['qwen']
+    logo: 'qwen'
+  },
+  deepseek: {
+    name: 'DeepSeek',
+    logo: 'deepseek'
+  },
+  moonshot: {
+    name: 'Moonshot AI',
+    logo: 'moonshot'
+  },
+  'zhipuai': {
+    name: 'Zhipu AI (智谱)',
+    logo: 'zhipu'
   },
   minimax: {
     name: 'MiniMax',
-    logo: 'minimax', 
-    keywords: ['minimax']
-  },
-  microsoft: {
-    name: 'Microsoft',
-    logo: 'microsoft',
-    keywords: ['microsoft', 'phi']
-  },
-  nvidia: {
-    name: 'NVIDIA',
-    logo: 'nvidia', // Maps to fallback if icon not found, but keyword helps grouping
-    keywords: ['nvidia', 'nemotron']
+    logo: 'minimax'
   },
   other: {
     name: 'Assistant',
-    logo: 'other', 
-    keywords: []
+    logo: 'other'
   }
 };
 
+// Extract brand from model ID (e.g., "anthropic/claude-3.5" -> "anthropic")
 export const getBrandFromModelId = (modelId: string): keyof typeof BRAND_CONFIGS => {
   const lower = modelId.toLowerCase();
-  
-  // 1. Check for specific keywords first
-  for (const [key, config] of Object.entries(BRAND_CONFIGS)) {
-      if (config.keywords.some(k => lower.includes(k))) return key;
+
+  // Extract vendor from OpenRouter format (vendor/model-name)
+  if (lower.includes('/')) {
+    const vendor = lower.split('/')[0];
+
+    // Direct match with our supported brands
+    if (vendor in BRAND_CONFIGS) {
+      return vendor as keyof typeof BRAND_CONFIGS;
+    }
+
+    // Handle vendor aliases
+    const aliases: Record<string, keyof typeof BRAND_CONFIGS> = {
+      'meta-llama': 'other',
+      'mistralai': 'other',
+      'microsoft': 'other',
+      'perplexity': 'other',
+      'nvidia': 'other',
+      'meta': 'other'
+    };
+
+    if (vendor in aliases) {
+      return aliases[vendor];
+    }
   }
 
-  // 2. Fallback for OpenRouter prefixes (vendor/model)
-  if (lower.includes('/')) {
-      const prefix = lower.split('/')[0];
-      // Try to match prefix again
-      for (const [key, config] of Object.entries(BRAND_CONFIGS)) {
-          if (config.keywords.some(k => prefix.includes(k))) return key;
-      }
-  }
+  // For non-OpenRouter format (e.g., Gemini direct API)
+  if (lower.includes('gemini') || lower.includes('google')) return 'google';
+  if (lower.includes('gpt') || lower.includes('o1-') || lower.includes('o3-')) return 'openai';
+  if (lower.includes('claude')) return 'anthropic';
+  if (lower.includes('deepseek')) return 'deepseek';
+  if (lower.includes('grok')) return 'x-ai';
+  if (lower.includes('qwen')) return 'qwen';
+  if (lower.includes('moonshot')) return 'moonshot';
+  if (lower.includes('glm') || lower.includes('zhipu')) return 'zhipuai';
+  if (lower.includes('minimax')) return 'minimax';
 
   return 'other';
 };
@@ -119,56 +116,11 @@ export const isThinkingModel = (modelId: string): boolean => {
   );
 };
 
-// New models (released in 2025 or preview/experimental versions)
-export const NEW_MODELS = new Set([
-  // OpenAI - Next Gen
-  'openai/gpt-5.1',
-  'openai/gpt-5-turbo',
-  'openai/gpt-4.5-preview',
-  'openai/gpt-4.5-turbo',
-  'openai/o3-mini',
-
-  // Anthropic - Next Gen
-  'anthropic/claude-opus-4.5',
-  'anthropic/claude-sonnet-4.5',
-  'anthropic/claude-haiku-4.5',
-  'anthropic/claude-opus-4',
-  'anthropic/claude-sonnet-4',
-  'anthropic/claude-sonnet-3.7',
-
-  // Google - Gemini 3 & Latest 2.0
-  'google/gemini-3-ultra-preview',
-  'google/gemini-3-pro-preview',
-  'google/gemini-3-flash-preview',
-  'gemini-3-pro-preview',
-  'gemini-3-flash-preview',
-  'gemini-3-ultra-preview',
-  'google/gemini-2.0-flash-001',
-  'google/gemini-2.0-flash-lite-preview-02-05',
-  'google/gemini-2.0-pro-exp-02-05',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite-preview-02-05',
-  'gemini-2.0-pro-exp-02-05',
-  'google/gemini-2.0-flash-thinking-exp-01-21',
-  'gemini-2.0-flash-thinking-exp-01-21',
-
-  // DeepSeek - R1 (Reasoning)
-  'deepseek/deepseek-r1',
-
-  // xAI - Grok 3
-  'x-ai/grok-3',
-
-  // Mistral - Codestral 2025
-  'mistralai/codestral-2501',
-
-  // Perplexity - Reasoning models
-  'perplexity/sonar-reasoning-pro',
-  'perplexity/sonar-reasoning',
-]);
-
-// Helper to identify new models
-export const isNewModel = (modelId: string): boolean => {
-  return NEW_MODELS.has(modelId);
+// Helper to identify new models (released in the last 6 months)
+export const isNewModel = (createdTimestamp?: number): boolean => {
+  if (!createdTimestamp) return false;
+  const sixMonthsAgo = Date.now() / 1000 - (6 * 30 * 24 * 60 * 60);
+  return createdTimestamp > sixMonthsAgo;
 };
 
 export const DEFAULT_PROVIDERS: LLMProvider[] = [
@@ -179,15 +131,11 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     apiKey: '', // Uses env if empty
     enabled: false, // Disabled by default to unify usage under OpenRouter
     suggestedModels: [
-        'gemini-3-pro-preview',
-        'gemini-3-flash-preview',
-        'gemini-3-ultra-preview',
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-lite-preview-02-05',
-        'gemini-2.0-pro-exp-02-05',
-        'gemini-1.5-pro',
-        'gemini-1.5-flash',
-        'gemini-2.0-flash-thinking-exp-01-21'
+      'gemini-2.0-flash-thinking-exp',
+      'gemini-2.0-flash',
+      'gemini-2.0-pro-exp',
+      'gemini-1.5-pro',
+      'gemini-1.5-flash'
     ]
   },
   {
@@ -197,89 +145,26 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     baseURL: 'https://openrouter.ai/api/v1',
     apiKey: '',
     enabled: true,
-    // Comprehensive list of mainstream models
+    // Fallback models (will be replaced by dynamic fetching)
     suggestedModels: [
-      // --- OpenAI ---
-      'openai/gpt-5.1',
-      'openai/gpt-5-turbo',
-      'openai/gpt-4.5-preview',
-      'openai/gpt-4.5-turbo',
-      'openai/o3-mini',
-      'openai/o1',
-      'openai/o1-mini',
-      'openai/gpt-4o',
-      'openai/gpt-4o-mini',
-      'openai/gpt-4-turbo',
-
-      // --- Anthropic ---
-      // Future / Next Gen
-      'anthropic/claude-opus-4.5',
-      'anthropic/claude-sonnet-4.5',
-      'anthropic/claude-haiku-4.5',
-      'anthropic/claude-opus-4',
-      'anthropic/claude-sonnet-4',
-
-      // Current Gen
-      'anthropic/claude-sonnet-3.7',
       'anthropic/claude-3.5-sonnet',
-      'anthropic/claude-3.5-haiku',
-      'anthropic/claude-3-opus',
-
-      // --- Google ---
-      'google/gemini-3-ultra-preview',
-      'google/gemini-3-pro-preview',
-      'google/gemini-3-flash-preview',
-      'google/gemini-2.0-flash-001',
-      'google/gemini-2.0-flash-lite-preview-02-05',
-      'google/gemini-2.0-pro-exp-02-05',
-      'google/gemini-flash-1.5',
-      'google/gemini-pro-1.5',
+      'openai/gpt-4o',
       'google/gemini-2.0-flash-thinking-exp-01-21',
-
-      // --- DeepSeek ---
       'deepseek/deepseek-r1',
-      'deepseek/deepseek-chat', // V3
-
-      // --- xAI (Grok) ---
-      'x-ai/grok-3',
       'x-ai/grok-2-1212',
-
-      // --- Meta Llama ---
-      'meta-llama/llama-3.3-70b-instruct',
-      'meta-llama/llama-3.2-90b-vision-instruct',
-      'meta-llama/llama-3.1-405b-instruct',
-      'meta-llama/llama-3.1-70b-instruct',
-
-      // --- Mistral ---
-      'mistralai/mistral-large-2411',
-      'mistralai/codestral-2501',
-      'mistralai/mistral-small-2402',
-
-      // --- Perplexity ---
-      'perplexity/sonar-reasoning-pro',
-      'perplexity/sonar-reasoning',
-
-      // --- Qwen ---
-      'qwen/qwen-2.5-72b-instruct',
-      'qwen/qwen-2.5-coder-32b-instruct',
-
-      // --- Nvidia ---
-      'nvidia/llama-3.1-nemotron-70b-instruct',
-
-      // --- Microsoft ---
-      'microsoft/phi-4'
+      'qwen/qwen-2.5-72b-instruct'
     ]
   }
 ];
 
 export const DEFAULT_AGENTS: AgentConfig[] = [
   {
-    id: 'agent-gemini-3',
-    name: 'Gemini 3 Pro',
-    avatar: 'gemini',
+    id: 'agent-claude-sonnet',
+    name: 'Claude 3.5 Sonnet',
+    avatar: 'anthropic',
     providerId: 'provider-openrouter',
-    modelId: 'google/gemini-3-pro-preview',
-    systemPrompt: '你是一个乐于助人且反应迅速的助手。',
+    modelId: 'anthropic/claude-3.5-sonnet',
+    systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: true,
     config: {
       temperature: 0.7,
@@ -299,23 +184,23 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-claude-4-5',
-    name: 'Claude 4.5 Sonnet',
-    avatar: 'anthropic',
+    id: 'agent-gemini-thinking',
+    name: 'Gemini 2.0 Thinking',
+    avatar: 'gemini',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-sonnet-4.5',
-    systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
+    modelId: 'google/gemini-2.0-flash-thinking-exp-01-21',
+    systemPrompt: '你是一个乐于助人且反应迅速的助手。',
     enabled: false,
     config: {
       temperature: 0.7
     }
   },
   {
-    id: 'agent-gpt-5',
-    name: 'GPT-5.1',
+    id: 'agent-gpt-4o',
+    name: 'GPT-4o',
     avatar: 'openai',
     providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-5.1',
+    modelId: 'openai/gpt-4o',
     systemPrompt: '你是一个乐于助人的助手。',
     enabled: false,
     config: {
