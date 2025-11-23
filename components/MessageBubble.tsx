@@ -11,7 +11,7 @@ interface MessageBubbleProps {
   config?: AgentConfig;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message, config }) => {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
   
@@ -132,4 +132,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function: only re-render if message content, streaming state, or error changes
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.content === nextProps.message.content &&
+    prevProps.message.isStreaming === nextProps.message.isStreaming &&
+    prevProps.message.error === nextProps.message.error &&
+    prevProps.config?.id === nextProps.config?.id
+  );
+});

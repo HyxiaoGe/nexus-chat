@@ -132,12 +132,13 @@ export const useChatOrchestrator = ({
             });
           }
 
-        } catch (err: any) {
+        } catch (err: unknown) {
           if (signal.aborted) return;
-          
+
           console.error(err);
+          const errorMessage = err instanceof Error ? err.message : t('common.failed');
           setMessages(prev => {
-            const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: err.message || t('common.failed') } : m);
+            const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: errorMessage } : m);
             saveMessagesToStorage(activeSessionId, final);
             return final;
           });

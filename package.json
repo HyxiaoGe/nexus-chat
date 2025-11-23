@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "latest",
+    "@google/genai": "^1.30.0",
     "@lobehub/icons": "^1.45.0",
     "i18next": "^23.10.0",
     "lucide-react": "^0.344.0",

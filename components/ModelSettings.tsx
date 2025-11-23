@@ -23,6 +23,7 @@ interface ModelSettingsProps {
   onUpdateProviders: (providers: LLMProvider[]) => void;
   onUpdateSettings: (settings: AppSettings) => void;
   onExportData: () => void;
+  onImportData: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClearData: () => void;
   isOpen: boolean;
   onClose: () => void;
@@ -195,6 +196,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   onUpdateProviders,
   onUpdateSettings,
   onExportData,
+  onImportData,
   onClearData,
   isOpen,
   onClose
@@ -1007,6 +1009,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 <p className="opacity-80">{t('settings.providers.infoDesc')}</p>
                             </div>
                          </div>
+                         <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-lg flex gap-3">
+                            <div className="text-yellow-600 dark:text-yellow-500 mt-0.5"><ShieldCheck size={18} /></div>
+                            <div className="text-sm text-yellow-900 dark:text-yellow-100">
+                                <p className="font-semibold mb-1">{t('settings.providers.securityWarning')}</p>
+                                <p className="opacity-80">{t('settings.providers.securityWarningDesc')}</p>
+                            </div>
+                         </div>
                         <div className="space-y-4">
                             {providers.map(provider => (
                                 <div key={provider.id} className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-white dark:bg-gray-900 shadow-sm">
@@ -1059,6 +1068,26 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     <button onClick={onExportData} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors">
                                         {t('settings.data.download')}
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
+                                    <Download size={24} className="rotate-180" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-900 dark:text-white">{t('settings.data.import')}</h3>
+                                    <p className="text-sm text-gray-500 mt-1 mb-4">{t('settings.data.importDesc')}</p>
+                                    <label className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors cursor-pointer inline-block">
+                                        {t('settings.data.upload')}
+                                        <input
+                                            type="file"
+                                            accept=".json"
+                                            onChange={onImportData}
+                                            className="hidden"
+                                        />
+                                    </label>
                                 </div>
                             </div>
                         </div>
