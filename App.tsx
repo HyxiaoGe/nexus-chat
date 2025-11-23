@@ -529,9 +529,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             }}
             onRemindLater={() => {
               setShowWelcomeDialog(false);
-              // Set reminder for 7 days later
-              const sevenDaysLater = Date.now() + (7 * 24 * 60 * 60 * 1000);
-              localStorage.setItem('nexus_welcome_remind_at', sevenDaysLater.toString());
+              // Set reminder for 1 hour later
+              const oneHourLater = Date.now() + (1 * 60 * 60 * 1000);
+              localStorage.setItem('nexus_welcome_remind_at', oneHourLater.toString());
             }}
             onOpenSettings={() => {
               setSettingsSection('providers');

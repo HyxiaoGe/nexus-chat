@@ -144,9 +144,10 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
 ];
 
 export const DEFAULT_AGENTS: AgentConfig[] = [
+  // Default enabled agents (4)
   {
-    id: 'agent-claude-sonnet',
-    name: 'Claude 3.5 Sonnet',
+    id: 'agent-anthropic',
+    name: 'Anthropic Claude',
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
     modelId: 'anthropic/claude-3.5-sonnet',
@@ -158,8 +159,8 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-gpt-4o',
-    name: 'GPT-4o',
+    id: 'agent-openai',
+    name: 'OpenAI GPT',
     avatar: 'openai',
     providerId: 'provider-openrouter',
     modelId: 'openai/gpt-4o',
@@ -170,8 +171,8 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-gemini-flash',
-    name: 'Gemini 2.0 Flash',
+    id: 'agent-google',
+    name: 'Google Gemini',
     avatar: 'gemini',
     providerId: 'provider-openrouter',
     modelId: 'google/gemini-2.0-flash-exp',
@@ -182,8 +183,8 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-deepseek-r1',
-    name: 'DeepSeek R1',
+    id: 'agent-deepseek',
+    name: 'DeepSeek',
     avatar: 'deepseek',
     providerId: 'provider-openrouter',
     modelId: 'deepseek/deepseek-r1',
@@ -193,21 +194,10 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
       temperature: 0.6
     }
   },
+  // Disabled agents
   {
-    id: 'agent-gemini-thinking',
-    name: 'Gemini 2.0 Flash Thinking',
-    avatar: 'gemini',
-    providerId: 'provider-openrouter',
-    modelId: 'google/gemini-2.0-flash-thinking-exp-01-21',
-    systemPrompt: '你是一个具有深度推理能力的助手。',
-    enabled: false,
-    config: {
-      temperature: 0.7
-    }
-  },
-  {
-    id: 'agent-grok-2',
-    name: 'Grok 2',
+    id: 'agent-xai',
+    name: 'xAI Grok',
     avatar: 'grok',
     providerId: 'provider-openrouter',
     modelId: 'x-ai/grok-2-1212',
@@ -218,8 +208,8 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-qwen-72b',
-    name: 'Qwen 2.5 72B',
+    id: 'agent-qwen',
+    name: 'Qwen (通义千问)',
     avatar: 'qwen',
     providerId: 'provider-openrouter',
     modelId: 'qwen/qwen-2.5-72b-instruct',
@@ -230,36 +220,36 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    avatar: 'openai',
+    id: 'agent-moonshot',
+    name: 'Moonshot AI',
+    avatar: 'moonshot',
     providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-4o-mini',
-    systemPrompt: '你是一个高效的助手。',
+    modelId: 'moonshot/moonshot-v1-8k',
+    systemPrompt: '你是 Kimi，由 Moonshot AI 开发的智能助手。',
     enabled: false,
     config: {
       temperature: 0.7
     }
   },
   {
-    id: 'agent-claude-haiku',
-    name: 'Claude 3.5 Haiku',
-    avatar: 'anthropic',
+    id: 'agent-zhipu',
+    name: 'Zhipu AI (智谱)',
+    avatar: 'zhipu',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-3.5-haiku',
-    systemPrompt: '你是 Claude，一个快速高效的助手。',
+    modelId: 'zhipuai/glm-4-plus',
+    systemPrompt: '你是智谱清言，由智谱 AI 开发的语言模型。',
     enabled: false,
     config: {
       temperature: 0.7
     }
   },
   {
-    id: 'agent-deepseek-chat',
-    name: 'DeepSeek Chat',
-    avatar: 'deepseek',
+    id: 'agent-minimax',
+    name: 'MiniMax',
+    avatar: 'minimax',
     providerId: 'provider-openrouter',
-    modelId: 'deepseek/deepseek-chat',
-    systemPrompt: '你是 DeepSeek 智能助手。',
+    modelId: 'minimax/minimax-01',
+    systemPrompt: '你是 MiniMax 智能助手。',
     enabled: false,
     config: {
       temperature: 0.7
