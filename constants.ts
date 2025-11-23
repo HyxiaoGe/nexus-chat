@@ -37,7 +37,7 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   mistral: {
     name: 'Mistral AI',
     logo: 'mistral',
-    keywords: ['mistral', 'mixtral', 'pixtral']
+    keywords: ['mistral', 'mixtral', 'pixtral', 'codestral']
   },
   xai: {
     name: 'xAI (Grok)',
@@ -63,6 +63,11 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
     name: 'Microsoft',
     logo: 'microsoft',
     keywords: ['microsoft', 'phi']
+  },
+  nvidia: {
+    name: 'NVIDIA',
+    logo: 'nvidia', // Maps to fallback if icon not found, but keyword helps grouping
+    keywords: ['nvidia', 'nemotron']
   },
   other: {
     name: 'Assistant',
@@ -91,6 +96,18 @@ export const getBrandFromModelId = (modelId: string): keyof typeof BRAND_CONFIGS
   return 'other';
 };
 
+// Helper to identify reasoning/thinking models
+export const isThinkingModel = (modelId: string): boolean => {
+  const lower = modelId.toLowerCase();
+  return (
+    lower.includes('deepseek-r1') ||
+    lower.includes('o1-') ||
+    lower.includes('o3-') ||
+    lower.includes('thinking') ||
+    lower.includes('reasoning')
+  );
+};
+
 export const DEFAULT_PROVIDERS: LLMProvider[] = [
   {
     id: 'provider-google',
@@ -100,9 +117,13 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     enabled: false, // Disabled by default to unify usage under OpenRouter
     suggestedModels: [
         'gemini-3-pro-preview',
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite-latest',
-        'gemini-2.5-flash-thinking-exp-01-21', 
+        'gemini-3-flash-preview',
+        'gemini-3-ultra-preview',
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-lite-preview-02-05',
+        'gemini-2.0-pro-exp-02-05',
+        'gemini-1.5-pro',
+        'gemini-1.5-flash',
         'gemini-2.0-flash-thinking-exp-01-21'
     ]
   },
@@ -115,47 +136,75 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     enabled: true,
     // Comprehensive list of mainstream models
     suggestedModels: [
-      // Anthropic
-      'anthropic/claude-3.7-sonnet',
-      'anthropic/claude-3.5-sonnet',
-      // Note: Claude 4.5 is placeholder until released
-      'anthropic/claude-4.5-sonnet', 
-
-      // OpenAI
+      // --- OpenAI ---
+      'openai/gpt-5.1',
+      'openai/gpt-5-turbo',
+      'openai/gpt-4.5-preview', 
+      'openai/gpt-4.5-turbo',
       'openai/o3-mini',
       'openai/o1',
+      'openai/o1-mini',
       'openai/gpt-4o',
-      // Note: GPT-5.1 is placeholder
-      'openai/gpt-5.1', 
+      'openai/gpt-4o-mini',
+      'openai/gpt-4-turbo',
+
+      // --- Anthropic ---
+      // Future / Next Gen
+      'anthropic/claude-4.5-opus',
+      'anthropic/claude-4.5-sonnet',
+      'anthropic/claude-4.5-haiku',
+      'anthropic/claude-4-opus',
+      'anthropic/claude-4-sonnet',
       
-      // DeepSeek
-      'deepseek/deepseek-r1',
-      'deepseek/deepseek-chat', // Correct ID for V3
-      
-      // Google (via OpenRouter)
+      // Current Gen
+      'anthropic/claude-3.7-sonnet',
+      'anthropic/claude-3.5-sonnet',
+      'anthropic/claude-3.5-haiku',
+      'anthropic/claude-3-opus',
+
+      // --- Google ---
+      'google/gemini-3-ultra-preview',
       'google/gemini-3-pro-preview',
+      'google/gemini-3-flash-preview',
       'google/gemini-2.0-flash-001',
       'google/gemini-2.0-flash-lite-preview-02-05',
       'google/gemini-2.0-pro-exp-02-05',
+      'google/gemini-flash-1.5',
+      'google/gemini-pro-1.5',
+      'google/gemini-2.0-flash-thinking-exp-01-21',
       
-      // xAI
+      // --- DeepSeek ---
+      'deepseek/deepseek-r1',
+      'deepseek/deepseek-chat', // V3
+      
+      // --- xAI (Grok) ---
       'x-ai/grok-3',
+      'x-ai/grok-2-1212',
       
-      // Meta
+      // --- Meta Llama ---
       'meta-llama/llama-3.3-70b-instruct',
+      'meta-llama/llama-3.2-90b-vision-instruct',
       'meta-llama/llama-3.1-405b-instruct',
+      'meta-llama/llama-3.1-70b-instruct',
       
-      // Mistral
+      // --- Mistral ---
       'mistralai/mistral-large-2411',
+      'mistralai/codestral-2501',
+      'mistralai/mistral-small-2402',
       
-      // Perplexity
-      'perplexity/llama-3.1-sonar-huge-128k-online',
+      // --- Perplexity ---
+      'perplexity/sonar-reasoning-pro',
+      'perplexity/sonar-reasoning',
       
-      // Qwen
+      // --- Qwen ---
       'qwen/qwen-2.5-72b-instruct',
+      'qwen/qwen-2.5-coder-32b-instruct',
+
+      // --- Nvidia ---
+      'nvidia/llama-3.1-nemotron-70b-instruct',
       
-      // Microsoft
-      'microsoft/phi-4',
+      // --- Microsoft ---
+      'microsoft/phi-4'
     ]
   }
 ];
@@ -187,11 +236,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-claude-3-7',
-    name: 'Claude 3.7',
+    id: 'agent-claude-4-5',
+    name: 'Claude 4.5',
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-3.7-sonnet',
+    modelId: 'anthropic/claude-4.5-sonnet',
     systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: false,
     config: {
@@ -199,11 +248,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-o3-mini',
-    name: 'OpenAI o3-mini',
+    id: 'agent-gpt-5',
+    name: 'GPT-5.1',
     avatar: 'openai',
     providerId: 'provider-openrouter',
-    modelId: 'openai/o3-mini',
+    modelId: 'openai/gpt-5.1',
     systemPrompt: '你是一个乐于助人的助手。',
     enabled: false,
     config: {

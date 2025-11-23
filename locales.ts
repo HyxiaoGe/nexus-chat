@@ -134,7 +134,8 @@ export const resources = {
             selectBrand: "Select Brand (e.g. DeepSeek, OpenAI)",
             selectModel: "Select Model",
             noModelsFound: "No models found for this brand. Try syncing providers in the 'Providers' tab.",
-            selectConnection: "Select Connection (e.g. OpenRouter)"
+            selectConnection: "Select Connection (e.g. OpenRouter)",
+            reasoningModel: "Thinking"
         },
         providers: {
           title: "Providers",
@@ -311,7 +312,8 @@ export const resources = {
             selectBrand: "选择品牌 (例如 DeepSeek, OpenAI)",
             selectModel: "选择模型",
             noModelsFound: "该品牌下未找到模型。请尝试在“提供商”标签页同步。",
-            selectConnection: "选择连接 (例如 OpenRouter)"
+            selectConnection: "选择连接 (例如 OpenRouter)",
+            reasoningModel: "推理模型"
         },
         providers: {
           title: "提供商",

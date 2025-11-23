@@ -5,13 +5,14 @@ import {
     Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
-    Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench, Sliders
+    Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench, Sliders,
+    BrainCircuit
 } from 'lucide-react';
 import { fetchProviderModels } from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
-import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId } from '../constants';
+import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId, isThinkingModel } from '../constants';
 import { BrandIcon } from './BrandIcons';
 
 interface ModelSettingsProps {
@@ -35,6 +36,7 @@ interface IconOption {
     label: string;
     subLabel?: string;
     icon?: string | React.ReactNode;
+    badges?: { label: string; icon?: React.ReactNode; colorClass: string }[];
 }
 
 const IconSelect = ({ 
@@ -99,21 +101,27 @@ const IconSelect = ({
                     ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-gray-300 dark:hover:border-gray-600'}
                 `}
             >
-                <div className="flex items-center gap-2.5 truncate">
+                <div className="flex items-center gap-2.5 min-w-0">
                     {selectedOption ? (
                         <>
                             <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
                                 {renderIcon(selectedOption.icon)}
                             </div>
-                            <div className="flex flex-col items-start truncate">
+                            <div className="flex items-center gap-2 truncate">
                                 <span className="truncate font-medium">{selectedOption.label}</span>
+                                {selectedOption.badges?.map((badge, idx) => (
+                                    <span key={idx} className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${badge.colorClass}`}>
+                                        {badge.icon}
+                                        {badge.label}
+                                    </span>
+                                ))}
                             </div>
                         </>
                     ) : (
                         <span className="text-gray-400">{placeholder || t('settings.editor.select')}</span>
                     )}
                 </div>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ml-2 flex-shrink-0`} />
             </button>
 
             {isOpen && (
@@ -156,8 +164,16 @@ const IconSelect = ({
                                     <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
                                         {renderIcon(opt.icon)}
                                     </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="truncate font-medium">{opt.label}</span>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="truncate font-medium">{opt.label}</span>
+                                            {opt.badges?.map((badge, idx) => (
+                                                <span key={idx} className={`flex-shrink-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${badge.colorClass}`}>
+                                                    {badge.icon}
+                                                    {badge.label}
+                                                </span>
+                                            ))}
+                                        </div>
                                         {opt.subLabel && <span className="text-[10px] text-gray-400 truncate">{opt.subLabel}</span>}
                                     </div>
                                     {value === opt.value && <Check size={14} className="ml-auto text-blue-600 flex-shrink-0" />}
@@ -460,11 +476,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       // 2. Model Options
       const modelOptions: IconOption[] = filteredModels.map(m => {
           const brand = getBrandFromModelId(m.modelId);
+          const isThinking = isThinkingModel(m.modelId);
+          
           return {
               value: m.modelId,
               label: m.modelId,
               subLabel: m.providerName,
-              icon: BRAND_CONFIGS[brand]?.logo
+              icon: BRAND_CONFIGS[brand]?.logo,
+              badges: isThinking ? [{
+                  label: t('settings.editor.reasoningModel'),
+                  icon: <BrainCircuit size={10} />,
+                  colorClass: "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300"
+              }] : undefined
           };
       });
 
@@ -496,7 +519,15 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                  </div>
                  <div>
                      <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">{t('settings.editor.preview')}</div>
-                     <div className="font-bold text-gray-900 dark:text-white">{previewName}</div>
+                     <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                         {previewName}
+                         {isThinkingModel(agentForm.modelId || '') && (
+                             <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300">
+                                 <BrainCircuit size={10} />
+                                 {t('settings.editor.reasoningModel')}
+                             </span>
+                         )}
+                     </div>
                  </div>
             </div>
             
