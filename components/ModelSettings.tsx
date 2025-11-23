@@ -28,6 +28,7 @@ interface ModelSettingsProps {
   onClearData: () => void;
   isOpen: boolean;
   onClose: () => void;
+  initialSection?: Section;
 }
 
 type Section = 'general' | 'agents' | 'providers' | 'data';
@@ -205,11 +206,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   onImportData,
   onClearData,
   isOpen,
-  onClose
+  onClose,
+  initialSection = 'general'
 }) => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const [activeSection, setActiveSection] = useState<Section>('general');
+  const [activeSection, setActiveSection] = useState<Section>(initialSection);
   
   // Agent Editing State
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
@@ -287,6 +289,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         setExpandedProviderId(null);
     }
   }, [isOpen]);
+
+  // Update active section when initialSection changes
+  useEffect(() => {
+    if (isOpen) {
+      setActiveSection(initialSection);
+    }
+  }, [isOpen, initialSection]);
 
   // --- Agent Logic ---
   
@@ -1106,14 +1115,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 )
                             })}
                         </div>
-                        {!editingAgentId && (
-                            <button onClick={handleNewAgent} className="w-full py-5 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-2xl flex items-center justify-center gap-3 text-sm font-semibold transition-all duration-300 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/30 dark:to-gray-900/20 hover:shadow-lg hover:scale-[1.01] group">
-                                <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
-                                    <Plus size={18} />
-                                </div>
-                                {t('settings.agents.new')}
-                            </button>
-                        )}
                     </div>
                 )}
 
@@ -1166,9 +1167,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                 </div>
                             ))}
                         </div>
-                        <button onClick={handleNewProvider} className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500/50 text-gray-500 hover:text-blue-500 rounded-lg flex items-center justify-center gap-2 text-sm transition-all">
-                             <Plus size={16} /> {t('settings.providers.addCustom')}
-                        </button>
                      </div>
                 )}
 
