@@ -119,6 +119,58 @@ export const isThinkingModel = (modelId: string): boolean => {
   );
 };
 
+// New models (released in 2025 or preview/experimental versions)
+export const NEW_MODELS = new Set([
+  // OpenAI - Next Gen
+  'openai/gpt-5.1',
+  'openai/gpt-5-turbo',
+  'openai/gpt-4.5-preview',
+  'openai/gpt-4.5-turbo',
+  'openai/o3-mini',
+
+  // Anthropic - Next Gen
+  'anthropic/claude-opus-4.5',
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-haiku-4.5',
+  'anthropic/claude-opus-4',
+  'anthropic/claude-sonnet-4',
+  'anthropic/claude-sonnet-3.7',
+
+  // Google - Gemini 3 & Latest 2.0
+  'google/gemini-3-ultra-preview',
+  'google/gemini-3-pro-preview',
+  'google/gemini-3-flash-preview',
+  'gemini-3-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-3-ultra-preview',
+  'google/gemini-2.0-flash-001',
+  'google/gemini-2.0-flash-lite-preview-02-05',
+  'google/gemini-2.0-pro-exp-02-05',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-2.0-pro-exp-02-05',
+  'google/gemini-2.0-flash-thinking-exp-01-21',
+  'gemini-2.0-flash-thinking-exp-01-21',
+
+  // DeepSeek - R1 (Reasoning)
+  'deepseek/deepseek-r1',
+
+  // xAI - Grok 3
+  'x-ai/grok-3',
+
+  // Mistral - Codestral 2025
+  'mistralai/codestral-2501',
+
+  // Perplexity - Reasoning models
+  'perplexity/sonar-reasoning-pro',
+  'perplexity/sonar-reasoning',
+]);
+
+// Helper to identify new models
+export const isNewModel = (modelId: string): boolean => {
+  return NEW_MODELS.has(modelId);
+};
+
 export const DEFAULT_PROVIDERS: LLMProvider[] = [
   {
     id: 'provider-google',
