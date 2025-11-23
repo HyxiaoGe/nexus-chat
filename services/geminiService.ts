@@ -134,8 +134,19 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<OpenRo
         throw new Error("Invalid API response format: could not find model list");
     }
 
-    // Filter out invalid models and sort by name
-    return models.filter(m => m.id && typeof m.id === 'string').sort((a, b) => a.name.localeCompare(b.name));
+    // Filter out invalid models and sort by creation date (newest first)
+    return models
+      .filter(m => m.id && typeof m.id === 'string')
+      .sort((a, b) => {
+        // Primary sort: by created timestamp (newest first)
+        const timeA = a.created || 0;
+        const timeB = b.created || 0;
+        if (timeB !== timeA) {
+          return timeB - timeA; // Descending order (newest first)
+        }
+        // Secondary sort: by name (alphabetical)
+        return a.name.localeCompare(b.name);
+      });
   } catch (error) {
     console.error("Error fetching models:", error);
     throw error;

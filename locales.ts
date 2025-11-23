@@ -51,6 +51,25 @@ export const resources = {
         refresh: "Refresh",
         stop: "Stop Generating"
       },
+      welcome: {
+        title: "Welcome to NexusChat",
+        subtitle: "Multi-LLM Orchestrator",
+        feature1: {
+          title: "Chat with Multiple AI Models",
+          desc: "Get responses from Claude, GPT-4, Gemini, and DeepSeek simultaneously."
+        },
+        feature2: {
+          title: "Setup Required",
+          desc: "You need to configure your OpenRouter API key to get started."
+        },
+        getStarted: "Get Started:",
+        step1: "Visit OpenRouter.ai and create an account",
+        step2: "Get your API key from the Keys page",
+        step3: "Paste it in Settings → Providers → OpenRouter",
+        step4: "Start chatting with multiple AI models!",
+        later: "Maybe Later",
+        configure: "Configure Now"
+      },
       suggestions: {
         creative: {
           label: "Creative Writing",
@@ -235,6 +254,25 @@ export const resources = {
         clickToRefresh: "刷新以应用更新",
         refresh: "立即刷新",
         stop: "停止生成"
+      },
+      welcome: {
+        title: "欢迎使用 NexusChat",
+        subtitle: "多模型协作平台",
+        feature1: {
+          title: "与多个 AI 模型对话",
+          desc: "同时获取 Claude、GPT-4、Gemini 和 DeepSeek 的回复。"
+        },
+        feature2: {
+          title: "需要配置",
+          desc: "您需要配置 OpenRouter API 密钥才能开始使用。"
+        },
+        getStarted: "开始使用：",
+        step1: "访问 OpenRouter.ai 并创建账户",
+        step2: "从 Keys 页面获取您的 API 密钥",
+        step3: "在 设置 → 提供商 → OpenRouter 中粘贴密钥",
+        step4: "开始与多个 AI 模型对话！",
+        later: "稍后配置",
+        configure: "立即配置"
       },
       suggestions: {
         creative: {

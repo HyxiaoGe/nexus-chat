@@ -172,6 +172,30 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
+    id: 'agent-gpt-4o',
+    name: 'GPT-4o',
+    avatar: 'openai',
+    providerId: 'provider-openrouter',
+    modelId: 'openai/gpt-4o',
+    systemPrompt: '你是一个乐于助人的助手。',
+    enabled: true,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-gemini-flash',
+    name: 'Gemini 2.0 Flash',
+    avatar: 'gemini',
+    providerId: 'provider-openrouter',
+    modelId: 'google/gemini-2.0-flash-exp',
+    systemPrompt: '你是一个乐于助人且反应迅速的助手。',
+    enabled: true,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
     id: 'agent-deepseek-r1',
     name: 'DeepSeek R1',
     avatar: 'deepseek',
@@ -181,30 +205,6 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     enabled: true,
     config: {
       temperature: 0.6
-    }
-  },
-  {
-    id: 'agent-gemini-thinking',
-    name: 'Gemini 2.0 Thinking',
-    avatar: 'gemini',
-    providerId: 'provider-openrouter',
-    modelId: 'google/gemini-2.0-flash-thinking-exp-01-21',
-    systemPrompt: '你是一个乐于助人且反应迅速的助手。',
-    enabled: false,
-    config: {
-      temperature: 0.7
-    }
-  },
-  {
-    id: 'agent-gpt-4o',
-    name: 'GPT-4o',
-    avatar: 'openai',
-    providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-4o',
-    systemPrompt: '你是一个乐于助人的助手。',
-    enabled: false,
-    config: {
-      temperature: 0.7
     }
   }
 ];
