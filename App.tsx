@@ -15,6 +15,7 @@ import { generateId } from './utils/common';
 import { useChatOrchestrator } from './hooks/useChatOrchestrator';
 import { useScrollToBottom } from './hooks/useScrollToBottom';
 import { useVersionCheck } from './hooks/useVersionCheck';
+import { BrandIcon } from './components/BrandIcons';
 
 interface NexusChatProps {
   appSettings: AppSettings;
@@ -324,6 +325,48 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                           />
                         );
                     })}
+
+                    {/* Pending Agents "Typing" Indicators */}
+                    {(() => {
+                        const pendingAgents = messages.filter(m => m.role === 'model' && m.isStreaming && !m.content && !m.error);
+                        if (pendingAgents.length === 0) return null;
+
+                        return (
+                            <div className="space-y-3 pt-2 animate-in fade-in duration-500">
+                                {pendingAgents.map(msg => {
+                                    const agent = agents.find(a => a.id === msg.agentId);
+                                    if (!agent) return null;
+                                    
+                                    const isUrl = agent.avatar?.startsWith('http') || agent.avatar?.startsWith('data:');
+                                    
+                                    return (
+                                        <div key={msg.id} className="flex w-full justify-start">
+                                            <div className="flex items-center gap-3 md:gap-4 pl-1">
+                                                {/* Ghost Avatar */}
+                                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center opacity-60 grayscale">
+                                                    {isUrl ? (
+                                                        <img src={agent.avatar} className="w-full h-full object-cover rounded-2xl" alt="typing" />
+                                                    ) : (
+                                                        <BrandIcon brand={agent.avatar || 'other'} size={18} />
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Typing Status */}
+                                                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 bg-white/40 dark:bg-gray-800/40 px-3 py-1.5 rounded-full">
+                                                    <span className="font-semibold">{agent.name}</span>
+                                                    <span className="flex gap-1 items-center">
+                                                        <span className="w-1 h-1 bg-current rounded-full animate-bounce"></span>
+                                                        <span className="w-1 h-1 bg-current rounded-full animate-bounce delay-75"></span>
+                                                        <span className="w-1 h-1 bg-current rounded-full animate-bounce delay-150"></span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )
+                    })()}
                 </div>
               )}
           </div>
