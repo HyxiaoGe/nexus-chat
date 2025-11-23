@@ -7,6 +7,7 @@ import i18n from './i18n';
 import { Sidebar } from './components/Sidebar';
 import { MessageBubble } from './components/MessageBubble';
 import { ModelSettings } from './components/ModelSettings';
+import { WelcomeDialog } from './components/WelcomeDialog';
 import { ToastProvider, useToast } from './components/Toast';
 import { DialogProvider, useConfirm } from './contexts/DialogContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -40,6 +41,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -87,6 +89,20 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
         }
     }
   }, []);
+
+  // --- Welcome Dialog Logic ---
+  // Show welcome dialog if no API keys are configured
+  useEffect(() => {
+    const hasWelcomeDismissed = localStorage.getItem('nexus_welcome_dismissed');
+    if (hasWelcomeDismissed) return;
+
+    const hasConfiguredKey = providers.some(p => p.apiKey && p.apiKey.trim().length > 0);
+    if (!hasConfiguredKey && providers.length > 0) {
+      // Delay showing dialog to avoid flashing during initial load
+      const timer = setTimeout(() => setShowWelcomeDialog(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [providers]);
 
   // --- Persistence with Debounce ---
   const debouncedSessions = useDebounce(sessions, 1000);
@@ -494,6 +510,15 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             onClearData={handleClearData}
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
+        />
+
+        <WelcomeDialog
+            isOpen={showWelcomeDialog}
+            onClose={() => {
+              setShowWelcomeDialog(false);
+              localStorage.setItem('nexus_welcome_dismissed', 'true');
+            }}
+            onOpenSettings={() => setIsSettingsOpen(true)}
         />
       </main>
     </div>
