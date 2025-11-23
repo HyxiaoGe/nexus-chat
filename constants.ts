@@ -12,12 +12,12 @@ export const BRAND_CONFIGS: Record<string, { name: string; logo: string; keyword
   openai: {
     name: 'OpenAI',
     logo: 'openai', 
-    keywords: ['openai', 'gpt', 'o1-', 'o1-mini', 'o1-preview']
+    keywords: ['openai', 'gpt', 'o1-', 'o3-', 'o5-']
   },
   google: {
     name: 'Google Gemini',
     logo: 'gemini', // Changed to gemini for the sparkle icon
-    keywords: ['google', 'gemini']
+    keywords: ['google', 'gemini', 'veo']
   },
   anthropic: {
     name: 'Anthropic',
@@ -94,16 +94,16 @@ export const getBrandFromModelId = (modelId: string): keyof typeof BRAND_CONFIGS
 export const DEFAULT_PROVIDERS: LLMProvider[] = [
   {
     id: 'provider-google',
-    name: 'Google Gemini',
+    name: 'Google Gemini (Native)',
     type: 'google',
     apiKey: '', // Uses env if empty
-    enabled: true,
+    enabled: false, // Disabled by default to unify usage under OpenRouter
     suggestedModels: [
-        'gemini-2.5-flash', 
-        'gemini-2.0-flash-thinking-exp-01-21',
-        'gemini-2.0-pro-exp-02-05',
-        'gemini-1.5-pro', 
-        'gemini-1.5-flash'
+        'gemini-3-pro-preview',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite-latest',
+        'gemini-2.5-flash-thinking-exp-01-21', 
+        'gemini-2.0-flash-thinking-exp-01-21'
     ]
   },
   {
@@ -115,45 +115,44 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     enabled: true,
     // Comprehensive list of mainstream models
     suggestedModels: [
-      // OpenAI
-      'openai/gpt-4o',
-      'openai/gpt-4o-mini',
-      'openai/o1-preview',
-      'openai/o1-mini',
-      
       // Anthropic
+      'anthropic/claude-3.7-sonnet',
       'anthropic/claude-3.5-sonnet',
-      'anthropic/claude-3.5-haiku',
-      'anthropic/claude-3-opus',
+      // Note: Claude 4.5 is placeholder until released
+      'anthropic/claude-4.5-sonnet', 
+
+      // OpenAI
+      'openai/o3-mini',
+      'openai/o1',
+      'openai/gpt-4o',
+      // Note: GPT-5.1 is placeholder
+      'openai/gpt-5.1', 
       
       // DeepSeek
       'deepseek/deepseek-r1',
-      'deepseek/deepseek-v3',
+      'deepseek/deepseek-chat', // Correct ID for V3
       
       // Google (via OpenRouter)
+      'google/gemini-3-pro-preview',
       'google/gemini-2.0-flash-001',
+      'google/gemini-2.0-flash-lite-preview-02-05',
       'google/gemini-2.0-pro-exp-02-05',
+      
+      // xAI
+      'x-ai/grok-3',
       
       // Meta
       'meta-llama/llama-3.3-70b-instruct',
       'meta-llama/llama-3.1-405b-instruct',
-      'meta-llama/llama-3.1-70b-instruct',
-      'meta-llama/llama-3.1-8b-instruct',
       
       // Mistral
       'mistralai/mistral-large-2411',
-      'mistralai/pixtral-large-2411',
-      'mistralai/mistral-small-2402',
       
       // Perplexity
       'perplexity/llama-3.1-sonar-huge-128k-online',
       
-      // xAI
-      'x-ai/grok-2-1212',
-      
       // Qwen
       'qwen/qwen-2.5-72b-instruct',
-      'qwen/qwen-2.5-coder-32b-instruct',
       
       // Microsoft
       'microsoft/phi-4',
@@ -163,11 +162,11 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
 
 export const DEFAULT_AGENTS: AgentConfig[] = [
   {
-    id: 'agent-gemini-flash',
-    name: 'Gemini Flash',
+    id: 'agent-gemini-3',
+    name: 'Gemini 3 Pro',
     avatar: 'gemini', 
-    providerId: 'provider-google',
-    modelId: 'gemini-2.5-flash',
+    providerId: 'provider-openrouter', // Unified to OpenRouter
+    modelId: 'google/gemini-3-pro-preview', // OpenRouter model format
     systemPrompt: '你是一个乐于助人且反应迅速的助手。',
     enabled: true,
     config: {
@@ -188,11 +187,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-claude-sonnet',
-    name: 'Claude Sonnet',
+    id: 'agent-claude-3-7',
+    name: 'Claude 3.7',
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-3.5-sonnet',
+    modelId: 'anthropic/claude-3.7-sonnet',
     systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: false,
     config: {
@@ -200,11 +199,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-gpt4o',
-    name: 'GPT-4o',
+    id: 'agent-o3-mini',
+    name: 'OpenAI o3-mini',
     avatar: 'openai',
     providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-4o',
+    modelId: 'openai/o3-mini',
     systemPrompt: '你是一个乐于助人的助手。',
     enabled: false,
     config: {

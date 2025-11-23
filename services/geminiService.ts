@@ -43,9 +43,6 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<string
     let baseUrl = provider.baseURL || 'https://api.openai.com/v1';
     
     // Clean URL logic to ensure we hit the /models endpoint correctly
-    // If user provided "http://localhost:11434", we want "http://localhost:11434/v1/models"
-    // If user provided "http://localhost:11434/v1", we want "http://localhost:11434/v1/models"
-    
     if (baseUrl.endsWith('/chat/completions')) {
         baseUrl = baseUrl.replace('/chat/completions', '');
     }
@@ -53,9 +50,7 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<string
         baseUrl = baseUrl.slice(0, -1);
     }
     
-    // Heuristic: if URL doesn't end in /v1 and isn't openrouter, append /v1 for standard openai compat
-    // But strictly speaking, we should trust the user's base URL. 
-    // We will append /models.
+    // Append /models
     const modelsUrl = `${baseUrl}/models`;
 
     const headers: Record<string, string> = {
@@ -85,9 +80,6 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<string
     const data = await response.json();
     
     // Handle different API response structures
-    // Standard OpenAI: { data: [{ id: '...' }, ...] }
-    // Ollama: { models: [{ name: '...' }, ...] } (sometimes) or { data: ... }
-    
     let models: string[] = [];
 
     if (Array.isArray(data.data)) {
@@ -121,8 +113,14 @@ export const generateContentStream = async ({
   
   // 1. Handle Google GenAI Models
   if (provider.type === 'google') {
-    // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Prioritize key from Settings UI (provider.apiKey), fallback to Env Var
+    const apiKey = provider.apiKey || process.env.API_KEY;
+    
+    if (!apiKey) {
+        throw new Error("Google API Key is missing. Please set it in Settings > Providers or via .env file.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
 
     try {
       const response = await ai.models.generateContentStream({
@@ -161,7 +159,6 @@ export const generateContentStream = async ({
     const baseURL = provider.baseURL || 'https://api.openai.com/v1';
 
     if (!apiKey) {
-       // Some local endpoints might not need a key, but usually they do.
        // We allow empty key for localhost (Ollama usually doesn't need it).
        const isLocal = baseURL.includes('localhost') || baseURL.includes('127.0.0.1') || baseURL.includes('ollama');
        if (!isLocal) {
@@ -172,14 +169,13 @@ export const generateContentStream = async ({
     // Ensure URL ends with /chat/completions if not present
     let url = baseURL;
     if (!url.endsWith('/chat/completions')) {
-        // Handle potential double slash issues or missing path
         url = `${url.replace(/\/$/, '')}/chat/completions`;
     }
 
     // Standard headers
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey || 'nexus-chat'}`, // Some servers expect non-empty auth
+        'Authorization': `Bearer ${apiKey || 'nexus-chat'}`,
     };
     
     // OpenRouter specific recommended headers
