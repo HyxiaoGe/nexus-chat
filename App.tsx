@@ -211,65 +211,6 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       }
   };
 
-  // Helper to render grouped messages (Grid Layout logic)
-  const renderMessageList = () => {
-      const nodes: React.ReactNode[] = [];
-      let currentModelGroup: Message[] = [];
-
-      // Helper to flush current group into the render list
-      const flushModelGroup = () => {
-          if (currentModelGroup.length === 0) return;
-
-          const count = currentModelGroup.length;
-          // Determine Grid columns based on count
-          // 1 item: full width
-          // 2 items: 2 columns
-          // 3+ items: 3 columns (on large screens), 2 on medium
-          let gridClass = 'grid-cols-1';
-          if (count === 2) gridClass = 'grid-cols-1 md:grid-cols-2';
-          if (count >= 3) gridClass = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
-
-          nodes.push(
-              <div key={`group-${currentModelGroup[0].id}`} className={`grid ${gridClass} gap-4 w-full mb-8 animate-in fade-in slide-in-from-bottom-2`}>
-                  {currentModelGroup.map(m => (
-                      <div key={m.id} className="h-full">
-                           <MessageBubble 
-                              message={m} 
-                              config={agents.find(a => a.id === m.agentId)}
-                              layout={count > 1 ? 'grid' : 'default'}
-                            />
-                      </div>
-                  ))}
-              </div>
-          );
-          currentModelGroup = [];
-      };
-
-      messages.forEach(msg => {
-          if (msg.role === 'user') {
-              flushModelGroup(); // Flush any pending model responses
-              nodes.push(
-                  <MessageBubble 
-                    key={msg.id} 
-                    message={msg} 
-                    config={undefined} 
-                  />
-              );
-          } else {
-              // Delayed Rendering Logic:
-              // Only add to group if it has content OR error. 
-              // If it's purely loading without content, skip it (it will be handled by the Typing Indicator below)
-              if (msg.isStreaming && !msg.content && !msg.error) {
-                  return; 
-              }
-              currentModelGroup.push(msg);
-          }
-      });
-      flushModelGroup(); // Flush remaining at the end
-
-      return nodes;
-  };
-
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">
       
@@ -371,7 +312,21 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 /* Message Stream */
                 <div className="space-y-4 pb-4">
                     
-                    {renderMessageList()}
+                    {messages.map((msg) => {
+                        // Delayed Rendering Logic:
+                        // If it's a model message, streaming, empty content, and no error -> Hide it (it shows as typing indicator below)
+                        if (msg.role === 'model' && msg.isStreaming && !msg.content && !msg.error) {
+                            return null;
+                        }
+
+                        return (
+                            <MessageBubble 
+                                key={msg.id} 
+                                message={msg} 
+                                config={agents.find(a => a.id === msg.agentId)} 
+                            />
+                        );
+                    })}
 
                     {/* Pending Agents "Typing" Indicators (Compact Row) */}
                     {(() => {

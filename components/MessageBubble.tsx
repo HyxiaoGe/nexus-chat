@@ -9,13 +9,11 @@ import { BrandIcon } from './BrandIcons';
 interface MessageBubbleProps {
   message: Message;
   config?: AgentConfig;
-  layout?: 'default' | 'grid';
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config, layout = 'default' }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config }) => {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
-  const isGrid = layout === 'grid';
   
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -38,15 +36,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config, l
 
   return (
     <div className={`
-        flex w-full 
-        ${isGrid ? 'h-full' : 'mb-6'} 
+        flex w-full mb-6
         ${isUser ? 'justify-end' : 'justify-start'} 
         animate-in fade-in slide-in-from-bottom-2 duration-500
     `}>
       <div className={`
         flex gap-3 md:gap-4 
-        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : 'flex-row w-full'} 
-        ${!isGrid && !isUser ? 'max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : ''}
+        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : 'flex-row w-full max-w-[95%] md:max-w-[85%] lg:max-w-[80%]'} 
       `}>
         
         {/* Avatar */}
@@ -59,7 +55,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config, l
           {renderAvatar()}
         </div>
 
-        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0 w-full max-w-full`}>
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0 w-full`}>
           
           {/* Header Info */}
           <div className={`flex items-center gap-2 mb-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
@@ -87,7 +83,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config, l
 
           {/* Bubble Content */}
           <div className={`
-            relative group rounded-[1.25rem] px-5 md:px-6 py-4 md:py-5 shadow-sm text-[15px] md:text-[16px] leading-7 break-words w-full transition-all duration-200 h-full
+            relative group rounded-[1.25rem] px-5 md:px-6 py-4 md:py-5 shadow-sm text-[15px] md:text-[16px] leading-7 break-words w-full transition-all duration-200
             ${isUser 
                 ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-tr-none shadow-indigo-500/20' 
                 : 'bg-white dark:bg-[#151b26] text-gray-800 dark:text-gray-100 rounded-tl-none border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 shadow-gray-200/50 dark:shadow-black/20'}
