@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Message, AgentConfig, LLMProvider } from '../types';
 import { generateContentStream } from '../services/geminiService';
-import { generateId } from '../utils/common';
+import { generateId, generateSmartTitle } from '../utils/common';
 import { useTranslation } from 'react-i18next';
 
 interface UseChatOrchestratorProps {
@@ -12,6 +12,7 @@ interface UseChatOrchestratorProps {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   saveMessagesToStorage: (sessionId: string, messages: Message[]) => void;
   onScrollToBottom: () => void;
+  updateSessionTitle: (sessionId: string, title: string) => void;
 }
 
 export const useChatOrchestrator = ({
@@ -21,7 +22,8 @@ export const useChatOrchestrator = ({
   messages,
   setMessages,
   saveMessagesToStorage,
-  onScrollToBottom
+  onScrollToBottom,
+  updateSessionTitle
 }: UseChatOrchestratorProps) => {
   const { t } = useTranslation();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -55,6 +57,14 @@ export const useChatOrchestrator = ({
       content: currentInput,
       timestamp: Date.now(),
     };
+
+    // 1.5. Update session title if this is the first user message
+    const userMessages = messages.filter(m => m.role === 'user');
+    if (userMessages.length === 0) {
+      // This is the first message, generate smart title
+      const smartTitle = generateSmartTitle(currentInput);
+      updateSessionTitle(activeSessionId, smartTitle);
+    }
 
     // 2. Identify Active Agents
     const activeAgents = agents.filter(a => a.enabled);

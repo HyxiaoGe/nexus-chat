@@ -17,11 +17,16 @@ export const resources = {
         error: "Error",
         success: "Success",
         failed: "Failed",
-        text: "TEXT"
+        text: "TEXT",
+        newChat: "New Chat"
       },
       sidebar: {
         newChat: "New Chat",
         noSessions: "No active conversations.\nStart a new one!",
+        today: "Today",
+        yesterday: "Yesterday",
+        thisWeek: "This Week",
+        older: "Older",
         deleteSession: "Delete Session",
         footer: "Multi-LLM Orchestrator v{{version}}"
       },
@@ -222,9 +227,14 @@ export const resources = {
         error: "错误",
         success: "成功",
         failed: "失败",
-        text: "文本"
+        text: "文本",
+        newChat: "新对话"
       },
       sidebar: {
+        today: "今天",
+        yesterday: "昨天",
+        thisWeek: "本周",
+        older: "更早",
         newChat: "新建会话",
         noSessions: "暂无活跃会话。\n开始一个新的！",
         deleteSession: "删除会话",
