@@ -9,11 +9,13 @@ import { BrandIcon } from './BrandIcons';
 interface MessageBubbleProps {
   message: Message;
   config?: AgentConfig;
+  layout?: 'default' | 'grid';
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config, layout = 'default' }) => {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
+  const isGrid = layout === 'grid';
   
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -31,14 +33,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
       }
       
       // 2. Check if it's a known brand key (Official Icon)
-      // We assume anything else that isn't an emoji is a brand key
-      // Simple heuristic: If it's long and has no emoji-like chars, or matches our known keys
       return <BrandIcon brand={avatarStr} size={22} />;
   };
 
   return (
-    <div className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-      <div className={`flex max-w-[95%] md:max-w-[85%] lg:max-w-[80%] gap-3 md:gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`
+        flex w-full 
+        ${isGrid ? 'h-full' : 'mb-6'} 
+        ${isUser ? 'justify-end' : 'justify-start'} 
+        animate-in fade-in slide-in-from-bottom-2 duration-500
+    `}>
+      <div className={`
+        flex gap-3 md:gap-4 
+        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : 'flex-row w-full'} 
+        ${!isGrid && !isUser ? 'max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : ''}
+      `}>
         
         {/* Avatar */}
         <div className={`
@@ -69,7 +78,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
                         <div className="absolute left-0 bottom-full mb-2 w-72 p-3 bg-gray-900/95 dark:bg-black/95 backdrop-blur text-white text-xs rounded-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-10 shadow-2xl border border-gray-700">
                              <div className="font-bold mb-1.5 text-gray-300 uppercase text-[10px] tracking-wider">{t('app.systemPrompt')}</div>
                              <div className="line-clamp-6 italic text-gray-300 font-serif leading-relaxed">{config.systemPrompt}</div>
-                             {/* Arrow */}
                              <div className="absolute top-full left-1.5 -mt-1 border-4 border-transparent border-t-gray-900/95"></div>
                         </div>
                     </div>
@@ -79,7 +87,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, config })
 
           {/* Bubble Content */}
           <div className={`
-            relative group rounded-[1.25rem] px-5 md:px-6 py-4 md:py-5 shadow-sm text-[15px] md:text-[16px] leading-7 break-words w-full transition-all duration-200
+            relative group rounded-[1.25rem] px-5 md:px-6 py-4 md:py-5 shadow-sm text-[15px] md:text-[16px] leading-7 break-words w-full transition-all duration-200 h-full
             ${isUser 
                 ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-tr-none shadow-indigo-500/20' 
                 : 'bg-white dark:bg-[#151b26] text-gray-800 dark:text-gray-100 rounded-tl-none border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 shadow-gray-200/50 dark:shadow-black/20'}

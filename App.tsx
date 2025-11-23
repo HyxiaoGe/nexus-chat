@@ -211,6 +211,65 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       }
   };
 
+  // Helper to render grouped messages (Grid Layout logic)
+  const renderMessageList = () => {
+      const nodes: React.ReactNode[] = [];
+      let currentModelGroup: Message[] = [];
+
+      // Helper to flush current group into the render list
+      const flushModelGroup = () => {
+          if (currentModelGroup.length === 0) return;
+
+          const count = currentModelGroup.length;
+          // Determine Grid columns based on count
+          // 1 item: full width
+          // 2 items: 2 columns
+          // 3+ items: 3 columns (on large screens), 2 on medium
+          let gridClass = 'grid-cols-1';
+          if (count === 2) gridClass = 'grid-cols-1 md:grid-cols-2';
+          if (count >= 3) gridClass = 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
+
+          nodes.push(
+              <div key={`group-${currentModelGroup[0].id}`} className={`grid ${gridClass} gap-4 w-full mb-8 animate-in fade-in slide-in-from-bottom-2`}>
+                  {currentModelGroup.map(m => (
+                      <div key={m.id} className="h-full">
+                           <MessageBubble 
+                              message={m} 
+                              config={agents.find(a => a.id === m.agentId)}
+                              layout={count > 1 ? 'grid' : 'default'}
+                            />
+                      </div>
+                  ))}
+              </div>
+          );
+          currentModelGroup = [];
+      };
+
+      messages.forEach(msg => {
+          if (msg.role === 'user') {
+              flushModelGroup(); // Flush any pending model responses
+              nodes.push(
+                  <MessageBubble 
+                    key={msg.id} 
+                    message={msg} 
+                    config={undefined} 
+                  />
+              );
+          } else {
+              // Delayed Rendering Logic:
+              // Only add to group if it has content OR error. 
+              // If it's purely loading without content, skip it (it will be handled by the Typing Indicator below)
+              if (msg.isStreaming && !msg.content && !msg.error) {
+                  return; 
+              }
+              currentModelGroup.push(msg);
+          }
+      });
+      flushModelGroup(); // Flush remaining at the end
+
+      return nodes;
+  };
+
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 overflow-hidden">
       
@@ -270,9 +329,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
         <div 
             ref={scrollRef}
             onScroll={onScroll}
-            className="flex-1 overflow-y-auto pt-20 pb-32 px-4 md:px-0 scroll-smooth relative"
+            className="flex-1 overflow-y-auto pt-20 pb-32 px-4 md:px-6 scroll-smooth relative"
         >
-          <div className="max-w-4xl mx-auto w-full">
+          <div className="max-w-5xl mx-auto w-full">
               {messages.length === 0 ? (
                 /* Empty State Carousel */
                 <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500 px-4">
@@ -310,29 +369,17 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 </div>
               ) : (
                 /* Message Stream */
-                <div className="space-y-8 pb-4">
-                    {messages.map((msg) => {
-                        // Logic to delay showing agent bubble until content starts streaming or error occurs
-                        if (msg.role === 'model' && msg.isStreaming && !msg.content && !msg.error) {
-                            return null;
-                        }
+                <div className="space-y-4 pb-4">
+                    
+                    {renderMessageList()}
 
-                        return (
-                          <MessageBubble 
-                            key={msg.id} 
-                            message={msg} 
-                            config={agents.find(a => a.id === msg.agentId)}
-                          />
-                        );
-                    })}
-
-                    {/* Pending Agents "Typing" Indicators */}
+                    {/* Pending Agents "Typing" Indicators (Compact Row) */}
                     {(() => {
                         const pendingAgents = messages.filter(m => m.role === 'model' && m.isStreaming && !m.content && !m.error);
                         if (pendingAgents.length === 0) return null;
 
                         return (
-                            <div className="space-y-3 pt-2 animate-in fade-in duration-500">
+                            <div className="flex flex-wrap gap-3 animate-in fade-in duration-500 pt-2 pl-1">
                                 {pendingAgents.map(msg => {
                                     const agent = agents.find(a => a.id === msg.agentId);
                                     if (!agent) return null;
@@ -340,27 +387,23 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                                     const isUrl = agent.avatar?.startsWith('http') || agent.avatar?.startsWith('data:');
                                     
                                     return (
-                                        <div key={msg.id} className="flex w-full justify-start">
-                                            <div className="flex items-center gap-3 md:gap-4 pl-1">
-                                                {/* Ghost Avatar */}
-                                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center opacity-60 grayscale">
-                                                    {isUrl ? (
-                                                        <img src={agent.avatar} className="w-full h-full object-cover rounded-2xl" alt="typing" />
-                                                    ) : (
-                                                        <BrandIcon brand={agent.avatar || 'other'} size={18} />
-                                                    )}
-                                                </div>
-                                                
-                                                {/* Typing Status */}
-                                                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 bg-white/40 dark:bg-gray-800/40 px-3 py-1.5 rounded-full">
-                                                    <span className="font-semibold">{agent.name}</span>
-                                                    <span className="flex gap-1 items-center">
-                                                        <span className="w-1 h-1 bg-current rounded-full animate-bounce"></span>
-                                                        <span className="w-1 h-1 bg-current rounded-full animate-bounce delay-75"></span>
-                                                        <span className="w-1 h-1 bg-current rounded-full animate-bounce delay-150"></span>
-                                                    </span>
-                                                </div>
+                                        <div key={msg.id} className="flex items-center gap-2 bg-white/40 dark:bg-gray-800/40 rounded-full pr-3 pl-1 py-1 border border-transparent dark:border-gray-800">
+                                            {/* Mini Avatar */}
+                                            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center opacity-80 overflow-hidden">
+                                                {isUrl ? (
+                                                    <img src={agent.avatar} className="w-full h-full object-cover" alt="typing" />
+                                                ) : (
+                                                    <BrandIcon brand={agent.avatar || 'other'} size={14} />
+                                                )}
                                             </div>
+                                            
+                                            {/* Typing Dots */}
+                                            <div className="flex gap-0.5 items-center px-1">
+                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></span>
+                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce delay-75"></span>
+                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce delay-150"></span>
+                                            </div>
+                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{agent.name}</span>
                                         </div>
                                     );
                                 })}
