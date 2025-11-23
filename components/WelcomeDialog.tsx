@@ -5,10 +5,11 @@ import { useTranslation } from 'react-i18next';
 interface WelcomeDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  onRemindLater: () => void;
   onOpenSettings: () => void;
 }
 
-export const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ isOpen, onClose, onOpenSettings }) => {
+export const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ isOpen, onClose, onRemindLater, onOpenSettings }) => {
   const { t } = useTranslation();
 
   if (!isOpen) return null;
@@ -82,10 +83,10 @@ export const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ isOpen, onClose, o
         {/* Footer Actions */}
         <div className="p-6 pt-0 flex gap-3">
           <button
-            onClick={onClose}
+            onClick={onRemindLater}
             className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
-            {t('welcome.later', 'Maybe Later')}
+            {t('welcome.later', '7 Days Later')}
           </button>
           <button
             onClick={() => {

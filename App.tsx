@@ -41,6 +41,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<'general' | 'agents' | 'providers' | 'data'>('general');
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -93,8 +94,16 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   // --- Welcome Dialog Logic ---
   // Show welcome dialog if no API keys are configured
   useEffect(() => {
-    const hasWelcomeDismissed = localStorage.getItem('nexus_welcome_dismissed');
-    if (hasWelcomeDismissed) return;
+    const welcomeRemindAt = localStorage.getItem('nexus_welcome_remind_at');
+
+    // Check if user has set a reminder
+    if (welcomeRemindAt) {
+      const remindTime = parseInt(welcomeRemindAt);
+      if (Date.now() < remindTime) {
+        // Still within the reminder period, don't show
+        return;
+      }
+    }
 
     const hasConfiguredKey = providers.some(p => p.apiKey && p.apiKey.trim().length > 0);
     if (!hasConfiguredKey && providers.length > 0) {
@@ -510,15 +519,24 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             onClearData={handleClearData}
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
+            initialSection={settingsSection}
         />
 
         <WelcomeDialog
             isOpen={showWelcomeDialog}
             onClose={() => {
               setShowWelcomeDialog(false);
-              localStorage.setItem('nexus_welcome_dismissed', 'true');
             }}
-            onOpenSettings={() => setIsSettingsOpen(true)}
+            onRemindLater={() => {
+              setShowWelcomeDialog(false);
+              // Set reminder for 7 days later
+              const sevenDaysLater = Date.now() + (7 * 24 * 60 * 60 * 1000);
+              localStorage.setItem('nexus_welcome_remind_at', sevenDaysLater.toString());
+            }}
+            onOpenSettings={() => {
+              setSettingsSection('providers');
+              setIsSettingsOpen(true);
+            }}
         />
       </main>
     </div>

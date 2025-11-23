@@ -125,20 +125,6 @@ export const isNewModel = (createdTimestamp?: number): boolean => {
 
 export const DEFAULT_PROVIDERS: LLMProvider[] = [
   {
-    id: 'provider-google',
-    name: 'Google Gemini (Native)',
-    type: 'google',
-    apiKey: '', // Uses env if empty
-    enabled: false, // Disabled by default to unify usage under OpenRouter
-    suggestedModels: [
-      'gemini-2.0-flash-thinking-exp',
-      'gemini-2.0-flash',
-      'gemini-2.0-pro-exp',
-      'gemini-1.5-pro',
-      'gemini-1.5-flash'
-    ]
-  },
-  {
     id: 'provider-openrouter',
     name: 'OpenRouter',
     type: 'openai-compatible',
@@ -205,6 +191,78 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     enabled: true,
     config: {
       temperature: 0.6
+    }
+  },
+  {
+    id: 'agent-gemini-thinking',
+    name: 'Gemini 2.0 Flash Thinking',
+    avatar: 'gemini',
+    providerId: 'provider-openrouter',
+    modelId: 'google/gemini-2.0-flash-thinking-exp-01-21',
+    systemPrompt: '你是一个具有深度推理能力的助手。',
+    enabled: false,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-grok-2',
+    name: 'Grok 2',
+    avatar: 'grok',
+    providerId: 'provider-openrouter',
+    modelId: 'x-ai/grok-2-1212',
+    systemPrompt: '你是 Grok，一个由 xAI 开发的 AI 助手。',
+    enabled: false,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-qwen-72b',
+    name: 'Qwen 2.5 72B',
+    avatar: 'qwen',
+    providerId: 'provider-openrouter',
+    modelId: 'qwen/qwen-2.5-72b-instruct',
+    systemPrompt: '你是通义千问，由阿里巴巴开发的大语言模型。',
+    enabled: false,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    avatar: 'openai',
+    providerId: 'provider-openrouter',
+    modelId: 'openai/gpt-4o-mini',
+    systemPrompt: '你是一个高效的助手。',
+    enabled: false,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-claude-haiku',
+    name: 'Claude 3.5 Haiku',
+    avatar: 'anthropic',
+    providerId: 'provider-openrouter',
+    modelId: 'anthropic/claude-3.5-haiku',
+    systemPrompt: '你是 Claude，一个快速高效的助手。',
+    enabled: false,
+    config: {
+      temperature: 0.7
+    }
+  },
+  {
+    id: 'agent-deepseek-chat',
+    name: 'DeepSeek Chat',
+    avatar: 'deepseek',
+    providerId: 'provider-openrouter',
+    modelId: 'deepseek/deepseek-chat',
+    systemPrompt: '你是 DeepSeek 智能助手。',
+    enabled: false,
+    config: {
+      temperature: 0.7
     }
   }
 ];

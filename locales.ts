@@ -67,7 +67,7 @@ export const resources = {
         step2: "Get your API key from the Keys page",
         step3: "Paste it in Settings → Providers → OpenRouter",
         step4: "Start chatting with multiple AI models!",
-        later: "Maybe Later",
+        later: "Remind Me in 7 Days",
         configure: "Configure Now"
       },
       suggestions: {
@@ -271,7 +271,7 @@ export const resources = {
         step2: "从 Keys 页面获取您的 API 密钥",
         step3: "在 设置 → 提供商 → OpenRouter 中粘贴密钥",
         step4: "开始与多个 AI 模型对话！",
-        later: "稍后配置",
+        later: "7天后提醒我",
         configure: "立即配置"
       },
       suggestions: {
