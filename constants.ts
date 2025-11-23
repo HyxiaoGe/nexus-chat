@@ -1,10 +1,21 @@
 
 import { AgentConfig, LLMProvider, AppSettings } from "./types";
 
+// Detect browser language and default to it if supported
+const detectBrowserLanguage = (): 'en' | 'zh' => {
+  const browserLang = navigator.language.toLowerCase();
+  // Check if browser language starts with 'zh' (zh, zh-CN, zh-TW, etc.)
+  if (browserLang.startsWith('zh')) {
+    return 'zh';
+  }
+  // Default to English for all other languages
+  return 'en';
+};
+
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   theme: 'dark',
   enterToSend: true,
-  language: 'zh'
+  language: detectBrowserLanguage()
 };
 
 // Keys match the mapping in components/BrandIcons.tsx

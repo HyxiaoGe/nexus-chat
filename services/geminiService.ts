@@ -113,11 +113,10 @@ export const generateContentStream = async ({
   
   // 1. Handle Google GenAI Models
   if (provider.type === 'google') {
-    // Prioritize key from Settings UI (provider.apiKey), fallback to Env Var
-    const apiKey = provider.apiKey || process.env.API_KEY;
-    
+    const apiKey = provider.apiKey;
+
     if (!apiKey) {
-        throw new Error("Google API Key is missing. Please set it in Settings > Providers or via .env file.");
+        throw new Error("Google API Key is missing. Please set it in Settings > Providers.");
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -253,8 +252,8 @@ export const generateContentStream = async ({
             }
         }
 
-    } catch (error: any) {
-        if (error.name === 'AbortError') return;
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === 'AbortError') return;
         console.error("OpenAI Compatible API Error:", error);
         throw error;
     }

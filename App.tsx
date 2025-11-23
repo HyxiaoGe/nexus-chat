@@ -7,14 +7,16 @@ import i18n from './i18n';
 import { Sidebar } from './components/Sidebar';
 import { MessageBubble } from './components/MessageBubble';
 import { ModelSettings } from './components/ModelSettings';
-import { ToastProvider } from './components/Toast';
-import { DialogProvider } from './contexts/DialogContext';
+import { ToastProvider, useToast } from './components/Toast';
+import { DialogProvider, useConfirm } from './contexts/DialogContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { DEFAULT_AGENTS, DEFAULT_PROVIDERS, STORAGE_KEYS, DEFAULT_APP_SETTINGS } from './constants';
 import { Message, Session, AgentConfig, LLMProvider, AppSettings } from './types';
 import { generateId } from './utils/common';
 import { useChatOrchestrator } from './hooks/useChatOrchestrator';
 import { useScrollToBottom } from './hooks/useScrollToBottom';
 import { useVersionCheck } from './hooks/useVersionCheck';
+import { useDebounce } from './hooks/useDebounce';
 import { BrandIcon } from './components/BrandIcons';
 
 interface NexusChatProps {
@@ -24,7 +26,9 @@ interface NexusChatProps {
 
 const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) => {
   const { t, i18n } = useTranslation();
-  
+  const confirm = useConfirm();
+  const { success: toastSuccess, error: toastError } = useToast();
+
   // --- State ---
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -84,10 +88,24 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     }
   }, []);
 
-  // --- Persistence ---
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions)); }, [sessions]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.AGENTS, JSON.stringify(agents)); }, [agents]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(providers)); }, [providers]);
+  // --- Persistence with Debounce ---
+  const debouncedSessions = useDebounce(sessions, 1000);
+  const debouncedAgents = useDebounce(agents, 1000);
+  const debouncedProviders = useDebounce(providers, 1000);
+
+  useEffect(() => {
+    if (debouncedSessions.length > 0 || sessions.length === 0) {
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(debouncedSessions));
+    }
+  }, [debouncedSessions]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.AGENTS, JSON.stringify(debouncedAgents));
+  }, [debouncedAgents]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(debouncedProviders));
+  }, [debouncedProviders]);
 
   useEffect(() => {
     if (activeSessionId) {
@@ -204,8 +222,48 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       URL.revokeObjectURL(url);
   };
 
-  const handleClearData = () => {
-      if (confirm(t('settings.data.confirmClear'))) {
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          try {
+              const data = JSON.parse(e.target?.result as string);
+
+              // Validate data structure
+              if (!data.sessions || !data.agents || !data.providers) {
+                  toastError(t('settings.data.importError'));
+                  return;
+              }
+
+              // Import data
+              if (data.sessions) setSessions(data.sessions);
+              if (data.messages) localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(data.messages));
+              if (data.agents) setAgents(data.agents);
+              if (data.providers) setProviders(data.providers);
+              if (data.settings) setAppSettings(data.settings);
+
+              toastSuccess(t('settings.data.importSuccess'));
+
+              // Reset file input
+              event.target.value = '';
+          } catch (error) {
+              console.error('Import error:', error);
+              toastError(t('settings.data.importError'));
+          }
+      };
+      reader.readAsText(file);
+  };
+
+  const handleClearData = async () => {
+      const isConfirmed = await confirm({
+          title: t('settings.data.clear'),
+          description: t('settings.data.confirmClear'),
+          variant: 'danger',
+          confirmLabel: t('settings.data.clear')
+      });
+      if (isConfirmed) {
           localStorage.clear();
           window.location.reload();
       }
@@ -424,7 +482,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             </div>
         </div>
 
-        <ModelSettings 
+        <ModelSettings
             agents={agents}
             providers={providers}
             settings={appSettings}
@@ -432,6 +490,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             onUpdateProviders={setProviders}
             onUpdateSettings={setAppSettings}
             onExportData={handleExportData}
+            onImportData={handleImportData}
             onClearData={handleClearData}
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
@@ -460,13 +519,15 @@ const App = () => {
   }, [appSettings]);
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <ToastProvider>
-        <DialogProvider>
-          <NexusChat appSettings={appSettings} setAppSettings={setAppSettings} />
-        </DialogProvider>
-      </ToastProvider>
-    </I18nextProvider>
+    <ErrorBoundary>
+      <I18nextProvider i18n={i18n}>
+        <ToastProvider>
+          <DialogProvider>
+            <NexusChat appSettings={appSettings} setAppSettings={setAppSettings} />
+          </DialogProvider>
+        </ToastProvider>
+      </I18nextProvider>
+    </ErrorBoundary>
   );
 };
 
