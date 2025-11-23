@@ -119,6 +119,58 @@ export const isThinkingModel = (modelId: string): boolean => {
   );
 };
 
+// New models (released in 2025 or preview/experimental versions)
+export const NEW_MODELS = new Set([
+  // OpenAI - Next Gen
+  'openai/gpt-5.1',
+  'openai/gpt-5-turbo',
+  'openai/gpt-4.5-preview',
+  'openai/gpt-4.5-turbo',
+  'openai/o3-mini',
+
+  // Anthropic - Next Gen
+  'anthropic/claude-opus-4.5',
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-haiku-4.5',
+  'anthropic/claude-opus-4',
+  'anthropic/claude-sonnet-4',
+  'anthropic/claude-sonnet-3.7',
+
+  // Google - Gemini 3 & Latest 2.0
+  'google/gemini-3-ultra-preview',
+  'google/gemini-3-pro-preview',
+  'google/gemini-3-flash-preview',
+  'gemini-3-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-3-ultra-preview',
+  'google/gemini-2.0-flash-001',
+  'google/gemini-2.0-flash-lite-preview-02-05',
+  'google/gemini-2.0-pro-exp-02-05',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite-preview-02-05',
+  'gemini-2.0-pro-exp-02-05',
+  'google/gemini-2.0-flash-thinking-exp-01-21',
+  'gemini-2.0-flash-thinking-exp-01-21',
+
+  // DeepSeek - R1 (Reasoning)
+  'deepseek/deepseek-r1',
+
+  // xAI - Grok 3
+  'x-ai/grok-3',
+
+  // Mistral - Codestral 2025
+  'mistralai/codestral-2501',
+
+  // Perplexity - Reasoning models
+  'perplexity/sonar-reasoning-pro',
+  'perplexity/sonar-reasoning',
+]);
+
+// Helper to identify new models
+export const isNewModel = (modelId: string): boolean => {
+  return NEW_MODELS.has(modelId);
+};
+
 export const DEFAULT_PROVIDERS: LLMProvider[] = [
   {
     id: 'provider-google',
@@ -148,34 +200,49 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     // Comprehensive list of mainstream models
     suggestedModels: [
       // --- OpenAI ---
+      'openai/gpt-5.1',
+      'openai/gpt-5-turbo',
+      'openai/gpt-4.5-preview',
+      'openai/gpt-4.5-turbo',
+      'openai/o3-mini',
+      'openai/o1',
+      'openai/o1-mini',
       'openai/gpt-4o',
       'openai/gpt-4o-mini',
       'openai/gpt-4-turbo',
-      'openai/o1',
-      'openai/o1-mini',
-      'openai/o3-mini',
 
       // --- Anthropic ---
-      // Claude 3.5 (Current Gen)
+      // Future / Next Gen
+      'anthropic/claude-opus-4.5',
+      'anthropic/claude-sonnet-4.5',
+      'anthropic/claude-haiku-4.5',
+      'anthropic/claude-opus-4',
+      'anthropic/claude-sonnet-4',
+
+      // Current Gen
+      'anthropic/claude-sonnet-3.7',
       'anthropic/claude-3.5-sonnet',
       'anthropic/claude-3.5-haiku',
       'anthropic/claude-3-opus',
-      'anthropic/claude-3-sonnet',
-      'anthropic/claude-3-haiku',
 
       // --- Google ---
-      'google/gemini-pro-1.5',
+      'google/gemini-3-ultra-preview',
+      'google/gemini-3-pro-preview',
+      'google/gemini-3-flash-preview',
+      'google/gemini-2.0-flash-001',
+      'google/gemini-2.0-flash-lite-preview-02-05',
+      'google/gemini-2.0-pro-exp-02-05',
       'google/gemini-flash-1.5',
-      'google/gemini-2.0-flash-exp:free',
-      'google/gemini-exp-1206:free',
+      'google/gemini-pro-1.5',
+      'google/gemini-2.0-flash-thinking-exp-01-21',
 
       // --- DeepSeek ---
       'deepseek/deepseek-r1',
-      'deepseek/deepseek-chat',
+      'deepseek/deepseek-chat', // V3
 
       // --- xAI (Grok) ---
+      'x-ai/grok-3',
       'x-ai/grok-2-1212',
-      'x-ai/grok-beta',
 
       // --- Meta Llama ---
       'meta-llama/llama-3.3-70b-instruct',
@@ -184,13 +251,13 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
       'meta-llama/llama-3.1-70b-instruct',
 
       // --- Mistral ---
-      'mistralai/mistral-large',
-      'mistralai/mistral-small',
-      'mistralai/codestral-latest',
+      'mistralai/mistral-large-2411',
+      'mistralai/codestral-2501',
+      'mistralai/mistral-small-2402',
 
       // --- Perplexity ---
-      'perplexity/llama-3.1-sonar-huge-128k-online',
-      'perplexity/llama-3.1-sonar-large-128k-online',
+      'perplexity/sonar-reasoning-pro',
+      'perplexity/sonar-reasoning',
 
       // --- Qwen ---
       'qwen/qwen-2.5-72b-instruct',
@@ -200,18 +267,18 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
       'nvidia/llama-3.1-nemotron-70b-instruct',
 
       // --- Microsoft ---
-      'microsoft/phi-3.5-mini-128k-instruct'
+      'microsoft/phi-4'
     ]
   }
 ];
 
 export const DEFAULT_AGENTS: AgentConfig[] = [
   {
-    id: 'agent-gemini-pro',
-    name: 'Gemini Pro 1.5',
+    id: 'agent-gemini-3',
+    name: 'Gemini 3 Pro',
     avatar: 'gemini',
     providerId: 'provider-openrouter',
-    modelId: 'google/gemini-pro-1.5',
+    modelId: 'google/gemini-3-pro-preview',
     systemPrompt: '你是一个乐于助人且反应迅速的助手。',
     enabled: true,
     config: {
@@ -232,11 +299,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-claude-3-5',
-    name: 'Claude 3.5 Sonnet',
+    id: 'agent-claude-4-5',
+    name: 'Claude 4.5 Sonnet',
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-3.5-sonnet',
+    modelId: 'anthropic/claude-sonnet-4.5',
     systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: false,
     config: {
@@ -244,11 +311,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-gpt-4o',
-    name: 'GPT-4o',
+    id: 'agent-gpt-5',
+    name: 'GPT-5.1',
     avatar: 'openai',
     providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-4o',
+    modelId: 'openai/gpt-5.1',
     systemPrompt: '你是一个乐于助人的助手。',
     enabled: false,
     config: {

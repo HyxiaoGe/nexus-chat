@@ -12,8 +12,9 @@ import { fetchProviderModels } from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
-import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId, isThinkingModel } from '../constants';
+import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId, isThinkingModel, isNewModel } from '../constants';
 import { BrandIcon } from './BrandIcons';
+import { Sparkles } from 'lucide-react';
 
 interface ModelSettingsProps {
   agents: AgentConfig[];
@@ -96,19 +97,23 @@ const IconSelect = ({
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={`
-                    w-full flex items-center justify-between bg-gray-50 dark:bg-gray-800 
-                    border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 
-                    text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all
-                    ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-gray-300 dark:hover:border-gray-600'}
+                    w-full flex items-center justify-between bg-white dark:bg-gray-800
+                    border-2 border-gray-200 dark:border-gray-700 rounded-xl p-3
+                    text-sm text-gray-900 dark:text-white
+                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                    outline-none transition-all duration-200
+                    shadow-sm hover:shadow-md
+                    ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-blue-300 dark:hover:border-blue-600'}
+                    ${isOpen ? 'ring-2 ring-blue-500 border-blue-500' : ''}
                 `}
             >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                     {selectedOption ? (
                         <>
-                            <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                            <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                                 {renderIcon(selectedOption.icon)}
                             </div>
-                            <div className="flex items-center gap-2 truncate">
+                            <div className="flex items-center gap-2 truncate flex-wrap">
                                 <span className="truncate font-medium">{selectedOption.label}</span>
                                 {selectedOption.badges?.map((badge, idx) => (
                                     <span key={idx} className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${badge.colorClass}`}>
@@ -119,33 +124,33 @@ const IconSelect = ({
                             </div>
                         </>
                     ) : (
-                        <span className="text-gray-400">{placeholder || t('settings.editor.select')}</span>
+                        <span className="text-gray-400 font-medium">{placeholder || t('settings.editor.select')}</span>
                     )}
                 </div>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ml-2 flex-shrink-0`} />
+                <ChevronDown size={18} className={`text-gray-400 transition-all duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''} ml-2 flex-shrink-0`} />
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-72 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl max-h-80 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
                     {options.length > 10 && (
-                        <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                        <div className="p-3 border-b-2 border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
                             <div className="relative">
-                                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"/>
-                                <input 
-                                    type="text" 
+                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                                <input
+                                    type="text"
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
-                                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                                    className="w-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 transition-all"
                                     placeholder={t('settings.editor.search')}
                                     autoFocus
                                 />
                             </div>
                         </div>
                     )}
-                    
+
                     <div className="overflow-y-auto custom-scrollbar flex-1">
                         {filteredOptions.length === 0 ? (
-                             <div className="p-3 text-xs text-gray-500 text-center">{t('settings.editor.noOptions')}</div>
+                             <div className="p-4 text-sm text-gray-500 text-center font-medium">{t('settings.editor.noOptions')}</div>
                         ) : (
                             filteredOptions.map((opt) => (
                                 <button
@@ -156,28 +161,29 @@ const IconSelect = ({
                                         setIsOpen(false);
                                     }}
                                     className={`
-                                        w-full flex items-center gap-3 px-3 py-2 text-sm text-left transition-colors
-                                        ${value === opt.value 
-                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                                            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}
+                                        w-full flex items-center gap-3 px-4 py-3 text-sm text-left
+                                        transition-all duration-150 border-b border-gray-100 dark:border-gray-800 last:border-b-0
+                                        ${value === opt.value
+                                            ? 'bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-900/30 dark:to-blue-800/20 text-blue-700 dark:text-blue-300'
+                                            : 'text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 dark:hover:from-gray-700/30 dark:hover:to-gray-800/20'}
                                     `}
                                 >
-                                    <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                                    <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                                         {renderIcon(opt.icon)}
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="truncate font-medium">{opt.label}</span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="truncate font-semibold">{opt.label}</span>
                                             {opt.badges?.map((badge, idx) => (
-                                                <span key={idx} className={`flex-shrink-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${badge.colorClass}`}>
+                                                <span key={idx} className={`flex-shrink-0 flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide ${badge.colorClass}`}>
                                                     {badge.icon}
                                                     {badge.label}
                                                 </span>
                                             ))}
                                         </div>
-                                        {opt.subLabel && <span className="text-[10px] text-gray-400 truncate">{opt.subLabel}</span>}
+                                        {opt.subLabel && <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{opt.subLabel}</span>}
                                     </div>
-                                    {value === opt.value && <Check size={14} className="ml-auto text-blue-600 flex-shrink-0" />}
+                                    {value === opt.value && <Check size={16} className="ml-auto text-blue-600 dark:text-blue-400 flex-shrink-0" />}
                                 </button>
                             ))
                         )}
@@ -479,17 +485,31 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const modelOptions: IconOption[] = filteredModels.map(m => {
           const brand = getBrandFromModelId(m.modelId);
           const isThinking = isThinkingModel(m.modelId);
-          
+          const isNew = isNewModel(m.modelId);
+
+          // Build badges array
+          const badges: IconOption['badges'] = [];
+          if (isNew) {
+              badges.push({
+                  label: 'NEW',
+                  icon: <Sparkles size={10} />,
+                  colorClass: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm"
+              });
+          }
+          if (isThinking) {
+              badges.push({
+                  label: t('settings.editor.reasoningModel'),
+                  icon: <BrainCircuit size={10} />,
+                  colorClass: "bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm"
+              });
+          }
+
           return {
               value: m.modelId,
               label: m.modelId,
               subLabel: m.providerName,
               icon: BRAND_CONFIGS[brand]?.logo,
-              badges: isThinking ? [{
-                  label: t('settings.editor.reasoningModel'),
-                  icon: <BrainCircuit size={10} />,
-                  colorClass: "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300"
-              }] : undefined
+              badges: badges.length > 0 ? badges : undefined
           };
       });
 
@@ -519,12 +539,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                         <BrandIcon brand={effectiveAvatar} size={28} />
                      )}
                  </div>
-                 <div>
+                 <div className="flex-1">
                      <div className="text-xs text-gray-500 uppercase font-bold mb-0.5">{t('settings.editor.preview')}</div>
-                     <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                     <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                          {previewName}
+                         {isNewModel(agentForm.modelId || '') && (
+                             <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm">
+                                 <Sparkles size={10} />
+                                 NEW
+                             </span>
+                         )}
                          {isThinkingModel(agentForm.modelId || '') && (
-                             <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300">
+                             <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm">
                                  <BrainCircuit size={10} />
                                  {t('settings.editor.reasoningModel')}
                              </span>
@@ -957,35 +983,50 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                     return <div key={agent.id} className="md:col-span-2">{renderAgentForm()}</div>
                                 }
                                 return (
-                                    <div key={agent.id} className={`relative group border rounded-xl p-4 transition-all duration-200 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md ${agent.enabled ? 'border-blue-200 dark:border-blue-900' : 'border-gray-200 dark:border-gray-800 opacity-60'}`}>
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                                    <div key={agent.id} className={`relative group border-2 rounded-2xl p-5 transition-all duration-300 bg-gradient-to-br ${agent.enabled ? 'from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20 border-blue-300 dark:border-blue-800 shadow-md hover:shadow-xl hover:scale-[1.02]' : 'from-white to-gray-50 dark:from-gray-900 dark:to-gray-900 border-gray-200 dark:border-gray-800 opacity-60 hover:opacity-80'}`}>
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center shadow-lg overflow-hidden border-2 border-gray-100 dark:border-gray-700 flex-shrink-0">
                                                     {agent.avatar?.startsWith('http') ? (
-                                                        <img src={agent.avatar} className="w-9 h-9 object-contain" alt="avatar"/> 
+                                                        <img src={agent.avatar} className="w-10 h-10 object-contain" alt="avatar"/>
                                                     ) : (
-                                                        <BrandIcon brand={agent.avatar} size={24} />
+                                                        <BrandIcon brand={agent.avatar} size={28} />
                                                     )}
                                                 </div>
-                                                <div>
-                                                    <h3 className="font-bold text-gray-900 dark:text-white text-sm">{agent.name}</h3>
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${isGoogle ? 'border-green-200 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900' : 'border-purple-200 bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900'}`}>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                        <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">{agent.name}</h3>
+                                                        {isNewModel(agent.modelId) && (
+                                                            <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm flex-shrink-0">
+                                                                <Sparkles size={9} />
+                                                                NEW
+                                                            </span>
+                                                        )}
+                                                        {isThinkingModel(agent.modelId) && (
+                                                            <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm flex-shrink-0">
+                                                                <BrainCircuit size={9} />
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border shadow-sm ${isGoogle ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 dark:from-green-900/30 dark:to-emerald-900/20 dark:text-green-400 dark:border-green-900' : 'border-purple-200 bg-gradient-to-r from-purple-50 to-violet-50 text-purple-700 dark:from-purple-900/30 dark:to-violet-900/20 dark:text-purple-400 dark:border-purple-900'}`}>
                                                             {provider?.name || t('common.unknown')}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[10px] text-gray-500 mt-1 font-mono truncate w-32">{agent.modelId}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col gap-1">
-                                                <button onClick={() => handleToggleAgent(agent.id)} className={`${agent.enabled ? 'text-blue-500' : 'text-gray-400'}`}>
-                                                    {agent.enabled ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
+                                            <div className="flex flex-col gap-1 flex-shrink-0">
+                                                <button onClick={() => handleToggleAgent(agent.id)} className={`transition-colors ${agent.enabled ? 'text-blue-500 hover:text-blue-600' : 'text-gray-400 hover:text-gray-500'}`}>
+                                                    {agent.enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                             <button onClick={() => handleEditAgent(agent)} className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 rounded-lg shadow-sm">
-                                                <Edit2 size={14} />
+                                        <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+                                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">{agent.modelId}</p>
+                                        </div>
+                                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                                             <button onClick={() => handleEditAgent(agent)} className="p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
+                                                <Edit2 size={16} />
                                              </button>
                                         </div>
                                     </div>
@@ -993,8 +1034,11 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             })}
                         </div>
                         {!editingAgentId && (
-                            <button onClick={handleNewAgent} className="w-full py-4 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-500 text-gray-500 dark:text-gray-400 hover:text-blue-500 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-all bg-gray-50 dark:bg-gray-800/30">
-                                <Plus size={18} /> {t('settings.agents.new')}
+                            <button onClick={handleNewAgent} className="w-full py-5 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-600 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-2xl flex items-center justify-center gap-3 text-sm font-semibold transition-all duration-300 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/30 dark:to-gray-900/20 hover:shadow-lg hover:scale-[1.01] group">
+                                <div className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                                    <Plus size={18} />
+                                </div>
+                                {t('settings.agents.new')}
                             </button>
                         )}
                     </div>
