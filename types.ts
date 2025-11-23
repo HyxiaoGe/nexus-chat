@@ -7,6 +7,29 @@ export interface AppSettings {
   language: 'en' | 'zh';
 }
 
+// OpenRouter API model metadata
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+  created: number; // Unix timestamp
+  description?: string;
+  context_length: number;
+  max_completion_tokens?: number;
+  pricing: {
+    prompt: string;
+    completion: string;
+    image: string;
+    request: string;
+  };
+  architecture?: {
+    modality?: string;
+    tokenizer?: string;
+    instruct_type?: string;
+  };
+  top_provider?: string;
+  supported_parameters?: string[];
+}
+
 export interface LLMProvider {
   id: string;
   name: string;
@@ -15,8 +38,9 @@ export interface LLMProvider {
   apiKey: string; // Stored locally
   enabled: boolean;
   isCustom?: boolean;
-  suggestedModels: string[]; // Helper for default suggestions
-  fetchedModels?: string[]; // Models fetched dynamically from the API (e.g. OpenRouter)
+  suggestedModels: string[]; // Helper for default suggestions (fallback)
+  fetchedModels?: OpenRouterModel[]; // Models fetched dynamically from the API (e.g. OpenRouter)
+  lastFetched?: number; // Timestamp of last fetch for cache invalidation
 }
 
 export interface GenerationConfig {

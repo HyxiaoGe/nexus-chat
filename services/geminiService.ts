@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { AgentConfig, LLMProvider } from "../types";
+import { AgentConfig, LLMProvider, OpenRouterModel } from "../types";
 
 interface GenerateStreamParams {
   agent: AgentConfig;
@@ -37,11 +37,11 @@ export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> =>
   }
 };
 
-// Generalized function to fetch models from any OpenAI-compatible endpoint
-export const fetchProviderModels = async (provider: LLMProvider): Promise<string[]> => {
+// Fetch models from OpenRouter with full metadata
+export const fetchProviderModels = async (provider: LLMProvider): Promise<OpenRouterModel[]> => {
   try {
     let baseUrl = provider.baseURL || 'https://api.openai.com/v1';
-    
+
     // Clean URL logic to ensure we hit the /models endpoint correctly
     if (baseUrl.endsWith('/chat/completions')) {
         baseUrl = baseUrl.replace('/chat/completions', '');
@@ -49,7 +49,7 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<string
     if (baseUrl.endsWith('/')) {
         baseUrl = baseUrl.slice(0, -1);
     }
-    
+
     // Append /models
     const modelsUrl = `${baseUrl}/models`;
 
@@ -62,11 +62,11 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<string
 
     // Fetch with timeout to prevent hanging on local offline servers
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased to 10s for larger payloads
 
     console.log(`Fetching models from: ${modelsUrl}`);
 
-    const response = await fetch(modelsUrl, { 
+    const response = await fetch(modelsUrl, {
         method: 'GET',
         headers,
         signal: controller.signal
@@ -78,25 +78,64 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<string
     }
 
     const data = await response.json();
-    
+
     // Handle different API response structures
-    let models: string[] = [];
+    let models: OpenRouterModel[] = [];
 
     if (Array.isArray(data.data)) {
-        models = data.data.map((m: any) => m.id);
+        // OpenRouter / OpenAI format - returns full model objects
+        models = data.data.map((m: any) => ({
+          id: m.id,
+          name: m.name || m.id,
+          created: m.created || 0,
+          description: m.description,
+          context_length: m.context_length || 0,
+          max_completion_tokens: m.max_completion_tokens,
+          pricing: m.pricing || {
+            prompt: '0',
+            completion: '0',
+            image: '0',
+            request: '0'
+          },
+          architecture: m.architecture,
+          top_provider: m.top_provider,
+          supported_parameters: m.supported_parameters
+        }));
     } else if (Array.isArray(data.models)) {
-        // Ollama specific
-        models = data.models.map((m: any) => m.name || m.model || m.id);
+        // Ollama specific - minimal metadata
+        models = data.models.map((m: any) => ({
+          id: m.name || m.model || m.id,
+          name: m.name || m.model || m.id,
+          created: 0,
+          context_length: 0,
+          pricing: {
+            prompt: '0',
+            completion: '0',
+            image: '0',
+            request: '0'
+          }
+        }));
     } else if (Array.isArray(data)) {
         // Rare edge case where root is array
-        models = data.map((m: any) => m.id || m.name);
+        models = data.map((m: any) => ({
+          id: m.id || m.name,
+          name: m.name || m.id,
+          created: m.created || 0,
+          context_length: m.context_length || 0,
+          pricing: m.pricing || {
+            prompt: '0',
+            completion: '0',
+            image: '0',
+            request: '0'
+          }
+        }));
     } else {
         console.warn("Unknown model list format", data);
         throw new Error("Invalid API response format: could not find model list");
     }
 
-    // Filter out weird empty strings if any
-    return models.filter(m => m && typeof m === 'string').sort();
+    // Filter out invalid models and sort by name
+    return models.filter(m => m.id && typeof m.id === 'string').sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     console.error("Error fetching models:", error);
     throw error;

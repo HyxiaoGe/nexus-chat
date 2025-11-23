@@ -5,16 +5,16 @@ import {
   Google,
   DeepSeek,
   Anthropic,
-  Meta,
-  Mistral,
-  Perplexity,
   Grok,
   Qwen,
   Minimax,
-  Microsoft,
   LobeHub,
   Gemini
 } from '@lobehub/icons';
+
+// Import Moonshot and Zhipu from their specific paths
+import Moonshot from '@lobehub/icons/es/Moonshot';
+import Zhipu from '@lobehub/icons/es/Zhipu';
 
 const BRAND_MAP: Record<string, any> = {
   openai: OpenAI,
@@ -23,15 +23,13 @@ const BRAND_MAP: Record<string, any> = {
   anthropic: Anthropic,
   claude: Anthropic,
   deepseek: DeepSeek,
-  meta: Meta,
-  llama: Meta,
-  mistral: Mistral,
-  perplexity: Perplexity,
-  xai: Grok,
+  'x-ai': Grok,
   grok: Grok,
   qwen: Qwen,
   minimax: Minimax,
-  microsoft: Microsoft,
+  moonshot: Moonshot,
+  zhipuai: Zhipu,
+  zhipu: Zhipu,
   other: LobeHub
 };
 
