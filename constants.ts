@@ -148,85 +148,70 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     // Comprehensive list of mainstream models
     suggestedModels: [
       // --- OpenAI ---
-      'openai/gpt-5.1',
-      'openai/gpt-5-turbo',
-      'openai/gpt-4.5-preview', 
-      'openai/gpt-4.5-turbo',
-      'openai/o3-mini',
-      'openai/o1',
-      'openai/o1-mini',
       'openai/gpt-4o',
       'openai/gpt-4o-mini',
       'openai/gpt-4-turbo',
+      'openai/o1',
+      'openai/o1-mini',
+      'openai/o3-mini',
 
       // --- Anthropic ---
-      // Future / Next Gen
-      'anthropic/claude-4.5-opus',
-      'anthropic/claude-4.5-sonnet',
-      'anthropic/claude-4.5-haiku',
-      'anthropic/claude-4-opus',
-      'anthropic/claude-4-sonnet',
-      
-      // Current Gen
-      'anthropic/claude-3.7-sonnet',
+      // Claude 3.5 (Current Gen)
       'anthropic/claude-3.5-sonnet',
       'anthropic/claude-3.5-haiku',
       'anthropic/claude-3-opus',
+      'anthropic/claude-3-sonnet',
+      'anthropic/claude-3-haiku',
 
       // --- Google ---
-      'google/gemini-3-ultra-preview',
-      'google/gemini-3-pro-preview',
-      'google/gemini-3-flash-preview',
-      'google/gemini-2.0-flash-001',
-      'google/gemini-2.0-flash-lite-preview-02-05',
-      'google/gemini-2.0-pro-exp-02-05',
-      'google/gemini-flash-1.5',
       'google/gemini-pro-1.5',
-      'google/gemini-2.0-flash-thinking-exp-01-21',
-      
+      'google/gemini-flash-1.5',
+      'google/gemini-2.0-flash-exp:free',
+      'google/gemini-exp-1206:free',
+
       // --- DeepSeek ---
       'deepseek/deepseek-r1',
-      'deepseek/deepseek-chat', // V3
-      
+      'deepseek/deepseek-chat',
+
       // --- xAI (Grok) ---
-      'x-ai/grok-3',
       'x-ai/grok-2-1212',
-      
+      'x-ai/grok-beta',
+
       // --- Meta Llama ---
       'meta-llama/llama-3.3-70b-instruct',
       'meta-llama/llama-3.2-90b-vision-instruct',
       'meta-llama/llama-3.1-405b-instruct',
       'meta-llama/llama-3.1-70b-instruct',
-      
+
       // --- Mistral ---
-      'mistralai/mistral-large-2411',
-      'mistralai/codestral-2501',
-      'mistralai/mistral-small-2402',
-      
+      'mistralai/mistral-large',
+      'mistralai/mistral-small',
+      'mistralai/codestral-latest',
+
       // --- Perplexity ---
-      'perplexity/sonar-reasoning-pro',
-      'perplexity/sonar-reasoning',
-      
+      'perplexity/llama-3.1-sonar-huge-128k-online',
+      'perplexity/llama-3.1-sonar-large-128k-online',
+
       // --- Qwen ---
       'qwen/qwen-2.5-72b-instruct',
       'qwen/qwen-2.5-coder-32b-instruct',
 
       // --- Nvidia ---
       'nvidia/llama-3.1-nemotron-70b-instruct',
-      
+
       // --- Microsoft ---
-      'microsoft/phi-4'
+      'microsoft/phi-3.5-mini-128k-instruct'
     ]
   }
 ];
 
 export const DEFAULT_AGENTS: AgentConfig[] = [
   {
-    id: 'agent-gemini-3',
-    name: 'Gemini 3 Pro',
-    avatar: 'gemini', 
-    providerId: 'provider-openrouter', // Unified to OpenRouter
-    modelId: 'google/gemini-3-pro-preview', // OpenRouter model format
+    id: 'agent-gemini-pro',
+    name: 'Gemini Pro 1.5',
+    avatar: 'gemini',
+    providerId: 'provider-openrouter',
+    modelId: 'google/gemini-pro-1.5',
     systemPrompt: '你是一个乐于助人且反应迅速的助手。',
     enabled: true,
     config: {
@@ -247,11 +232,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-claude-4-5',
-    name: 'Claude 4.5',
+    id: 'agent-claude-3-5',
+    name: 'Claude 3.5 Sonnet',
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-4.5-sonnet',
+    modelId: 'anthropic/claude-3.5-sonnet',
     systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: false,
     config: {
@@ -259,11 +244,11 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     }
   },
   {
-    id: 'agent-gpt-5',
-    name: 'GPT-5.1',
+    id: 'agent-gpt-4o',
+    name: 'GPT-4o',
     avatar: 'openai',
     providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-5.1',
+    modelId: 'openai/gpt-4o',
     systemPrompt: '你是一个乐于助人的助手。',
     enabled: false,
     config: {
