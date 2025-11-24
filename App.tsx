@@ -176,7 +176,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   };
 
   // --- Hooks ---
-  const { isStreaming, sendMessage, stopGeneration, stopAgent } = useChatOrchestrator({
+  const { isStreaming, sendMessage, regenerateResponses, stopGeneration, stopAgent } = useChatOrchestrator({
       activeSessionId,
       agents,
       providers,
@@ -250,7 +250,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
 
     const userMessage = messages[userMessageIndex];
 
-    // Remove all messages from the AI response onwards
+    // Remove all AI messages after the user message (keep the user message)
     const updatedMessages = messages.slice(0, userMessageIndex + 1);
 
     // Save updated messages
@@ -259,8 +259,8 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       saveMessagesToStorage(activeSessionId, updatedMessages);
     }
 
-    // Resend the user message to regenerate responses
-    sendMessage(userMessage.content);
+    // Regenerate responses without adding a new user message
+    regenerateResponses(userMessage.content);
   };
 
   const handleSuggestionClick = (prompt: string) => {

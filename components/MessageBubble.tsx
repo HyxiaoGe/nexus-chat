@@ -176,62 +176,58 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
               </>
             )}
 
-            {/* Action Buttons */}
-            {!isEditing && (
-              <>
-                {/* User Message Actions */}
-                {isUser && !message.isStreaming && onEditMessage && (
-                  <button
-                    onClick={handleStartEdit}
-                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-indigo-200 hover:text-white transition-all hover:bg-indigo-500/30 rounded-lg p-1.5"
-                    title={t('common.edit')}
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                )}
-
-                {/* Model Message Actions */}
-                {!isUser && (
-                  <>
-                    {/* Stop Button - Only show when streaming */}
-                    {message.isStreaming && onStopAgent && (
-                      <button
-                        onClick={() => onStopAgent(message.id)}
-                        className="absolute top-3 right-3 text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg p-1.5 shadow-sm border border-red-200 dark:border-red-800/30"
-                        title={t('app.stop')}
-                      >
-                        <Square size={14} fill="currentColor" />
-                      </button>
-                    )}
-
-                    {/* Action Buttons Row - Only show when not streaming and has content */}
-                    {!message.isStreaming && message.content && (
-                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1">
-                        {/* Regenerate Button */}
-                        {onRegenerateMessage && (
-                          <button
-                            onClick={handleRegenerate}
-                            className="text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-1.5"
-                            title={t('common.regenerate')}
-                          >
-                            <RefreshCw size={14} />
-                          </button>
-                        )}
-                        {/* Copy Button */}
-                        <button
-                          onClick={handleCopy}
-                          className="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-1.5"
-                          title={t('common.copy')}
-                        >
-                          <Copy size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
+            {/* Stop Button - Only show when streaming (overlaid on top) */}
+            {!isEditing && message.isStreaming && onStopAgent && (
+              <button
+                onClick={() => onStopAgent(message.id)}
+                className="absolute top-3 right-3 text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg p-1.5 shadow-sm border border-red-200 dark:border-red-800/30"
+                title={t('app.stop')}
+              >
+                <Square size={14} fill="currentColor" />
+              </button>
             )}
           </div>
+
+          {/* Action Toolbar - Below message bubble */}
+          {!isEditing && !message.isStreaming && message.content && (
+            <div className="flex gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {/* User Message - Edit Button */}
+              {isUser && onEditMessage && (
+                <button
+                  onClick={handleStartEdit}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
+                  title={t('common.edit')}
+                >
+                  <Edit2 size={12} />
+                  <span>{t('common.edit')}</span>
+                </button>
+              )}
+
+              {/* AI Message - Regenerate & Copy Buttons */}
+              {!isUser && (
+                <>
+                  {onRegenerateMessage && (
+                    <button
+                      onClick={handleRegenerate}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
+                      title={t('common.regenerate')}
+                    >
+                      <RefreshCw size={12} />
+                      <span>{t('common.regenerate')}</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
+                    title={t('common.copy')}
+                  >
+                    <Copy size={12} />
+                    <span>{t('common.copy')}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           
           {/* Footer Timestamp */}
           <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 px-2 flex items-center gap-2 select-none opacity-80">

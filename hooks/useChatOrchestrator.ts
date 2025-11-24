@@ -206,9 +206,112 @@ export const useChatOrchestrator = ({
     }
   };
 
+  // Regenerate responses without adding a new user message
+  const regenerateResponses = async (userPrompt: string) => {
+    if (!userPrompt.trim() || !activeSessionId || isStreaming) return;
+
+    const currentInput = userPrompt.trim();
+
+    // 1. Identify Active Agents
+    const activeAgents = agents.filter(a => a.enabled);
+    if (activeAgents.length === 0) {
+        const errorMsg: Message = {
+            id: generateId(),
+            sessionId: activeSessionId,
+            role: 'model',
+            content: t('app.noAgentsEnabled'),
+            timestamp: Date.now()
+        };
+        const updated = [...messages, errorMsg];
+        setMessages(updated);
+        saveMessagesToStorage(activeSessionId, updated);
+        setTimeout(onScrollToBottom, 100);
+        return;
+    }
+
+    // 2. Create Placeholder Messages (no user message added)
+    const agentMessages: Message[] = activeAgents.map(agent => ({
+      id: generateId(),
+      sessionId: activeSessionId,
+      role: 'model',
+      content: '',
+      agentId: agent.id,
+      timestamp: Date.now(),
+      isStreaming: true,
+    }));
+
+    const newMessagesState = [...messages, ...agentMessages];
+    setMessages(newMessagesState);
+    saveMessagesToStorage(activeSessionId, newMessagesState);
+    setIsStreaming(true);
+
+    setTimeout(onScrollToBottom, 100);
+
+    // 3. Parallel Requests - Each agent gets its own AbortController
+    try {
+      await Promise.all(activeAgents.map(async (agent, index) => {
+        const messageId = agentMessages[index].id;
+        const provider = providers.find(p => p.id === agent.providerId);
+
+        // Create individual AbortController for this agent
+        const controller = new AbortController();
+        abortControllersRef.current.set(messageId, controller);
+        const signal = controller.signal;
+
+        if (!provider) {
+             setMessages(prev => {
+                 const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: t('app.configError') } : m);
+                 saveMessagesToStorage(activeSessionId, final);
+                 return final;
+             });
+             abortControllersRef.current.delete(messageId);
+             return;
+        }
+
+        try {
+          await generateContentStream({
+            agent: agent,
+            provider: provider,
+            prompt: currentInput,
+            signal: signal,
+            onChunk: (text) => {
+              if (signal.aborted) return;
+              setMessages(prev => prev.map(m =>
+                  m.id === messageId ? { ...m, content: m.content + text } : m
+              ));
+            }
+          });
+
+          if (!signal.aborted) {
+            setMessages(prev => {
+                const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false } : m);
+                saveMessagesToStorage(activeSessionId, final);
+                return final;
+            });
+            abortControllersRef.current.delete(messageId);
+          }
+        } catch (error: any) {
+          if (error.name === 'AbortError') return;
+          setMessages(prev => {
+            const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: error.message || 'Unknown error' } : m);
+            saveMessagesToStorage(activeSessionId, final);
+            return final;
+          });
+          abortControllersRef.current.delete(messageId);
+        }
+      }));
+    } finally {
+      // Check if all agents are done
+      if (abortControllersRef.current.size === 0) {
+        setIsStreaming(false);
+      }
+    }
+  };
+
   return {
     isStreaming,
     sendMessage,
+    regenerateResponses,
     stopGeneration,
     stopAgent // Export individual agent stop function
   };
