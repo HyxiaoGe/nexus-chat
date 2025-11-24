@@ -13,6 +13,7 @@ interface UseChatOrchestratorProps {
   saveMessagesToStorage: (sessionId: string, messages: Message[]) => void;
   onScrollToBottom: () => void;
   updateSessionTitle: (sessionId: string, title: string) => void;
+  showToast: (message: React.ReactNode) => void;
 }
 
 export const useChatOrchestrator = ({
@@ -23,7 +24,8 @@ export const useChatOrchestrator = ({
   setMessages,
   saveMessagesToStorage,
   onScrollToBottom,
-  updateSessionTitle
+  updateSessionTitle,
+  showToast
 }: UseChatOrchestratorProps) => {
   const { t } = useTranslation();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -34,8 +36,17 @@ export const useChatOrchestrator = ({
   const stopAgent = (messageId: string) => {
     const controller = abortControllersRef.current.get(messageId);
     if (controller) {
+      // Find the message to get agent info
+      const message = messages.find(m => m.id === messageId);
+      const agent = message ? agents.find(a => a.id === message.agentId) : null;
+
       controller.abort();
       abortControllersRef.current.delete(messageId);
+
+      // Show toast with agent name
+      if (agent) {
+        showToast(t('app.stoppedAgent', { agentName: agent.name }));
+      }
 
       // Mark this specific message as done
       setMessages(prev => {
@@ -61,6 +72,9 @@ export const useChatOrchestrator = ({
     });
     abortControllersRef.current.clear();
     setIsStreaming(false);
+
+    // Show global stop toast
+    showToast(t('app.stoppedAll'));
 
     // Mark all streaming messages as done
     setMessages(prev => {

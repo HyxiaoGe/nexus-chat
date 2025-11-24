@@ -28,7 +28,7 @@ interface NexusChatProps {
 const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) => {
   const { t, i18n } = useTranslation();
   const confirm = useConfirm();
-  const { success: toastSuccess, error: toastError } = useToast();
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
 
   // --- State ---
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -184,7 +184,8 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       setMessages,
       saveMessagesToStorage,
       onScrollToBottom: scrollToBottom,
-      updateSessionTitle
+      updateSessionTitle,
+      showToast: toastInfo
   });
 
   const deleteSession = (id: string, e: React.MouseEvent) => {
