@@ -181,21 +181,28 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
             ) : (
               <>
                 {/* Normal Display Mode */}
-                <div
-                  ref={contentRef}
-                  className={`overflow-hidden transition-all duration-300 ${shouldCollapse && !isContentExpanded ? 'max-h-[500px]' : ''}`}
-                >
-                  {message.content || message.isStreaming ? (
-                       isUser ? (
-                           <p className="whitespace-pre-wrap leading-7 tracking-wide text-indigo-50">{message.content}</p>
-                       ) : (
-                           <SmartContentRenderer content={message.content} isStreaming={message.isStreaming} />
-                       )
-                  ) : (
-                      <span className="text-gray-400 italic flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-gray-300 rounded-full"></span>
-                          {t('app.emptyResponse')}
-                      </span>
+                <div className="relative">
+                  <div
+                    ref={contentRef}
+                    className={`overflow-hidden transition-all duration-500 ${shouldCollapse && !isContentExpanded ? 'max-h-[500px]' : ''}`}
+                  >
+                    {message.content || message.isStreaming ? (
+                         isUser ? (
+                             <p className="whitespace-pre-wrap leading-7 tracking-wide text-indigo-50">{message.content}</p>
+                         ) : (
+                             <SmartContentRenderer content={message.content} isStreaming={message.isStreaming} />
+                         )
+                    ) : (
+                        <span className="text-gray-400 italic flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-gray-300 rounded-full"></span>
+                            {t('app.emptyResponse')}
+                        </span>
+                    )}
+                  </div>
+
+                  {/* Gradient Fade Overlay - Only show when collapsed */}
+                  {shouldCollapse && !isContentExpanded && !message.isStreaming && (
+                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-[#151b26] via-white/50 dark:via-[#151b26]/50 to-transparent pointer-events-none" />
                   )}
                 </div>
 
@@ -203,21 +210,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
                 {shouldCollapse && !message.isStreaming && (
                   <button
                     onClick={() => setIsContentExpanded(!isContentExpanded)}
-                    className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium flex items-center gap-1"
+                    className="mt-3 w-full text-xs text-center py-2 px-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 font-medium flex items-center justify-center gap-2 group"
                   >
                     {isContentExpanded ? (
                       <>
-                        <span>收起</span>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5 transition-transform group-hover:-translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                         </svg>
+                        <span>收起内容</span>
                       </>
                     ) : (
                       <>
-                        <span>展开全部</span>
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
+                        <span>展开查看全部内容</span>
                       </>
                     )}
                   </button>

@@ -75,8 +75,8 @@ export const SmartContentRenderer: React.FC<SmartContentRendererProps> = ({ cont
     mainContent = cleanedContent.replace(match[0], '').trim();
   }
 
-  // Initialize state: 
-  // If actively streaming, default to OPEN. 
+  // Initialize state:
+  // If actively streaming, default to OPEN.
   // If loading from history (isStreaming is false), default to CLOSED to save space.
   const [isThinkingOpen, setIsThinkingOpen] = useState(!!isThinkingActive);
 
@@ -86,6 +86,17 @@ export const SmartContentRenderer: React.FC<SmartContentRendererProps> = ({ cont
           setIsThinkingOpen(true);
       }
   }, [isThinkingActive]);
+
+  // Auto-collapse thinking when streaming completes
+  useEffect(() => {
+      if (!isStreaming && thinkingContent && isThinkingOpen) {
+          // Delay collapse slightly so user can see it's complete
+          const timer = setTimeout(() => {
+              setIsThinkingOpen(false);
+          }, 1500);
+          return () => clearTimeout(timer);
+      }
+  }, [isStreaming, thinkingContent, isThinkingOpen]);
 
   // Helper to detect and render tables
   const isTableRow = (line: string) => {
