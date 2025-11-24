@@ -394,15 +394,29 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                         <MessageSquare size={10} /> {t('app.activeAgents_other', { count: agents.filter(a => a.enabled).length })}
                     </span>
                     {sessionTokenUsage.totalTokens > 0 && (
-                        <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-medium">
-                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            <span>{sessionTokenUsage.totalTokens.toLocaleString()} tokens</span>
-                            {sessionTokenUsage.totalCost > 0 && (
-                                <span className="text-green-600 dark:text-green-400">• ${sessionTokenUsage.totalCost.toFixed(4)}</span>
-                            )}
-                        </span>
+                        <div className="relative group/token">
+                            <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-medium cursor-help">
+                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                <span>{sessionTokenUsage.totalTokens.toLocaleString()} tokens</span>
+                                {sessionTokenUsage.totalCost > 0 && (
+                                    <span className="text-green-600 dark:text-green-400">• ${sessionTokenUsage.totalCost.toFixed(4)}</span>
+                                )}
+                            </span>
+                            {/* Tooltip */}
+                            <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-gray-900/95 dark:bg-black/95 backdrop-blur text-white text-xs rounded-xl opacity-0 group-hover/token:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl border border-gray-700">
+                                <div className="font-bold mb-2 text-gray-200 uppercase text-[10px] tracking-wider">📊 本次会话统计</div>
+                                <div className="space-y-1.5 text-gray-300 leading-relaxed">
+                                    <div><span className="text-blue-400">Token:</span> 本次对话所有AI回复消耗的token总数</div>
+                                    {sessionTokenUsage.totalCost > 0 && (
+                                        <div><span className="text-green-400">成本:</span> 基于OpenRouter定价的估算费用（美元）</div>
+                                    )}
+                                    <div className="pt-1 border-t border-gray-700 text-[10px] text-gray-400">💡 提示: 刷新页面或切换会话后重新计算</div>
+                                </div>
+                                <div className="absolute bottom-full left-4 -mb-1 border-4 border-transparent border-b-gray-900/95"></div>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
