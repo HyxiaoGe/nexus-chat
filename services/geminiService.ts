@@ -344,6 +344,7 @@ export const generateContentStream = async ({
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let isInReasoningBlock = false; // Track if we're currently in a reasoning block
 
         while (true) {
             if (signal?.aborted) {
@@ -352,7 +353,13 @@ export const generateContentStream = async ({
             }
 
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+                // Close reasoning block if still open
+                if (isInReasoningBlock) {
+                    onChunk('</think>');
+                }
+                break;
+            }
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
@@ -361,9 +368,16 @@ export const generateContentStream = async ({
             for (const line of lines) {
                 const trimmed = line.trim();
                 if (!trimmed || !trimmed.startsWith('data: ')) continue;
-                
+
                 const data = trimmed.slice(6); // Remove "data: "
-                if (data === '[DONE]') continue;
+                if (data === '[DONE]') {
+                    // Close reasoning block if still open
+                    if (isInReasoningBlock) {
+                        onChunk('</think>');
+                        isInReasoningBlock = false;
+                    }
+                    continue;
+                }
 
                 try {
                     const json = JSON.parse(data);
@@ -374,17 +388,23 @@ export const generateContentStream = async ({
                     // Priority 1: Check for explicit reasoning field (OpenRouter format)
                     const reasoning = delta.reasoning || delta.reasoning_content;
                     if (reasoning) {
-                        // Only wrap if not already wrapped
-                        if (!reasoning.startsWith('<think>')) {
-                            onChunk(`<think>${reasoning}</think>`);
-                        } else {
-                            onChunk(reasoning);
+                        // Open the thinking block on first reasoning chunk
+                        if (!isInReasoningBlock) {
+                            onChunk('<think>');
+                            isInReasoningBlock = true;
                         }
+                        // Stream the reasoning content directly (already in the block)
+                        onChunk(reasoning);
                     }
 
                     // Priority 2: Regular content (might already contain <think> tags for DeepSeek)
                     const content = delta.content;
                     if (content) {
+                        // Close reasoning block before outputting content
+                        if (isInReasoningBlock) {
+                            onChunk('</think>');
+                            isInReasoningBlock = false;
+                        }
                         onChunk(content);
                     }
                 } catch (e) {
