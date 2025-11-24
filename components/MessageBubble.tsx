@@ -20,6 +20,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
   const isUser = message.role === 'user';
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
+  const [isErrorExpanded, setIsErrorExpanded] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -182,9 +183,23 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
                 {message.isStreaming && !message.content && <span className="animate-pulse inline-block w-2 h-4 bg-gray-400 ml-1 align-middle rounded-full"></span>}
 
                 {message.error && (
-                    <div className="flex items-center gap-2 text-red-500 dark:text-red-400 text-xs mt-3 pt-3 border-t border-red-200 dark:border-red-800/30 font-medium">
-                        <AlertCircle size={14} />
-                        <span>{message.error}</span>
+                    <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800/30">
+                        <div className="flex items-start gap-2 text-red-600 dark:text-red-400 text-xs">
+                            <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <div className={`break-words overflow-wrap-anywhere ${!isErrorExpanded && message.error.length > 150 ? 'line-clamp-2' : ''}`}>
+                                    {message.error}
+                                </div>
+                                {message.error.length > 150 && (
+                                    <button
+                                        onClick={() => setIsErrorExpanded(!isErrorExpanded)}
+                                        className="mt-1 text-[10px] text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 underline font-medium"
+                                    >
+                                        {isErrorExpanded ? '收起' : '展开详情'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
               </>
