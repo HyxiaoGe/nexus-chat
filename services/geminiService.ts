@@ -171,6 +171,9 @@ export const generateContentStream = async ({
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // Check if this is a thinking model
+    const isThinkingModel = agent.modelId.toLowerCase().includes('thinking');
+
     try {
       const response = await ai.models.generateContentStream({
         model: agent.modelId,
@@ -181,7 +184,13 @@ export const generateContentStream = async ({
           temperature: agent.config?.temperature,
           topP: agent.config?.topP,
           topK: agent.config?.topK,
-          maxOutputTokens: agent.config?.maxOutputTokens
+          maxOutputTokens: agent.config?.maxOutputTokens,
+          // Enable thinking for thinking models
+          ...(isThinkingModel && {
+            thinkingConfig: {
+              includeThoughts: true
+            }
+          })
         }
       });
 
@@ -189,9 +198,26 @@ export const generateContentStream = async ({
         if (signal?.aborted) {
             break;
         }
-        const text = chunk.text;
-        if (text) {
-          onChunk(text);
+
+        // Process thoughts if available (for thinking models)
+        // Iterate through parts to check for thought content
+        if (chunk.candidates?.[0]?.content?.parts) {
+          for (const part of chunk.candidates[0].content.parts) {
+            // Check if this part is a thought
+            if (part.thought && part.text) {
+              // Wrap thought content in <think> tags
+              onChunk(`<think>${part.text}</think>`);
+            } else if (part.text && !part.thought) {
+              // Regular text content
+              onChunk(part.text);
+            }
+          }
+        } else {
+          // Fallback to simple text extraction
+          const text = chunk.text;
+          if (text) {
+            onChunk(text);
+          }
         }
       }
     } catch (error) {
@@ -233,23 +259,35 @@ export const generateContentStream = async ({
         headers['X-Title'] = 'NexusChat';
     }
 
+    // Check if this is a reasoning/thinking model
+    const isReasoningModel = agent.modelId.toLowerCase().includes('r1') ||
+                             agent.modelId.toLowerCase().includes('reasoning') ||
+                             agent.modelId.toLowerCase().includes('thinking');
+
     try {
+        const requestBody: any = {
+            model: agent.modelId,
+            messages: [
+                { role: 'system', content: agent.systemPrompt },
+                { role: 'user', content: prompt }
+            ],
+            stream: true,
+            // Inject Config
+            temperature: agent.config?.temperature,
+            top_p: agent.config?.topP,
+            max_tokens: agent.config?.maxOutputTokens
+        };
+
+        // Enable reasoning tokens for OpenRouter reasoning models
+        if (baseURL.includes('openrouter') && isReasoningModel) {
+            requestBody.include_reasoning = true;
+        }
+
         const response = await fetch(url, {
             method: 'POST',
             headers,
             signal, // Pass the abort signal to fetch
-            body: JSON.stringify({
-                model: agent.modelId,
-                messages: [
-                    { role: 'system', content: agent.systemPrompt },
-                    { role: 'user', content: prompt }
-                ],
-                stream: true,
-                // Inject Config
-                temperature: agent.config?.temperature,
-                top_p: agent.config?.topP,
-                max_tokens: agent.config?.maxOutputTokens
-            }),
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -285,16 +323,25 @@ export const generateContentStream = async ({
 
                 try {
                     const json = JSON.parse(data);
-                    const content = json.choices?.[0]?.delta?.content;
-                    
+                    const delta = json.choices?.[0]?.delta;
+
+                    if (!delta) continue;
+
+                    // Priority 1: Check for explicit reasoning field (OpenRouter format)
+                    const reasoning = delta.reasoning || delta.reasoning_content;
+                    if (reasoning) {
+                        // Only wrap if not already wrapped
+                        if (!reasoning.startsWith('<think>')) {
+                            onChunk(`<think>${reasoning}</think>`);
+                        } else {
+                            onChunk(reasoning);
+                        }
+                    }
+
+                    // Priority 2: Regular content (might already contain <think> tags for DeepSeek)
+                    const content = delta.content;
                     if (content) {
                         onChunk(content);
-                    }
-                    
-                    // Handle DeepSeek R1 reasoning content if present (OpenRouter often passes this through)
-                    const reasoning = json.choices?.[0]?.delta?.reasoning_content;
-                    if (reasoning) {
-                         onChunk(`<think>${reasoning}</think>`);
                     }
                 } catch (e) {
                     // console.warn("Failed to parse SSE message", e);
