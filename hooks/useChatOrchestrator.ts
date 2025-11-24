@@ -240,9 +240,12 @@ export const useChatOrchestrator = ({
       isStreaming: true,
     }));
 
-    const newMessagesState = [...messages, ...agentMessages];
-    setMessages(newMessagesState);
-    saveMessagesToStorage(activeSessionId, newMessagesState);
+    // Use functional update to get the latest messages state
+    setMessages(prev => {
+      const newMessagesState = [...prev, ...agentMessages];
+      saveMessagesToStorage(activeSessionId, newMessagesState);
+      return newMessagesState;
+    });
     setIsStreaming(true);
 
     setTimeout(onScrollToBottom, 100);

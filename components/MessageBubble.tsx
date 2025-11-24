@@ -176,55 +176,61 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
               </>
             )}
 
-            {/* Stop Button - Only show when streaming (overlaid on top) */}
-            {!isEditing && message.isStreaming && onStopAgent && (
-              <button
-                onClick={() => onStopAgent(message.id)}
-                className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-red-400 dark:border-red-500 hover:scale-105 active:scale-95"
-                title={t('app.stop')}
-              >
-                <Square size={12} fill="currentColor" className="animate-pulse" />
-                <span>{t('app.stop')}</span>
-              </button>
-            )}
           </div>
 
           {/* Action Toolbar - Below message bubble */}
-          {!isEditing && !message.isStreaming && message.content && (
-            <div className="flex gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              {/* User Message - Edit Button */}
-              {isUser && onEditMessage && (
+          {!isEditing && (
+            <div className={`flex gap-1.5 mt-2 transition-opacity duration-200 ${message.isStreaming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+              {/* Stop Button - Show during streaming (always visible) */}
+              {message.isStreaming && onStopAgent && (
                 <button
-                  onClick={handleStartEdit}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
-                  title={t('common.edit')}
+                  onClick={() => onStopAgent(message.id)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 rounded-md shadow-md hover:shadow-lg transition-all duration-200"
+                  title={t('app.stop')}
                 >
-                  <Edit2 size={12} />
-                  <span>{t('common.edit')}</span>
+                  <Square size={12} fill="currentColor" className="animate-pulse" />
+                  <span>{t('app.stop')}</span>
                 </button>
               )}
 
-              {/* AI Message - Regenerate & Copy Buttons */}
-              {!isUser && (
+              {/* Show edit/regenerate/copy buttons only when not streaming and has content */}
+              {!message.isStreaming && message.content && (
                 <>
-                  {onRegenerateMessage && (
+                  {/* User Message - Edit Button */}
+                  {isUser && onEditMessage && (
                     <button
-                      onClick={handleRegenerate}
-                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
-                      title={t('common.regenerate')}
+                      onClick={handleStartEdit}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
+                      title={t('common.edit')}
                     >
-                      <RefreshCw size={12} />
-                      <span>{t('common.regenerate')}</span>
+                      <Edit2 size={12} />
+                      <span>{t('common.edit')}</span>
                     </button>
                   )}
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
-                    title={t('common.copy')}
-                  >
-                    <Copy size={12} />
-                    <span>{t('common.copy')}</span>
-                  </button>
+
+                  {/* AI Message - Regenerate & Copy Buttons */}
+                  {!isUser && (
+                    <>
+                      {onRegenerateMessage && (
+                        <button
+                          onClick={handleRegenerate}
+                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
+                          title={t('common.regenerate')}
+                        >
+                          <RefreshCw size={12} />
+                          <span>{t('common.regenerate')}</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={handleCopy}
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
+                        title={t('common.copy')}
+                      >
+                        <Copy size={12} />
+                        <span>{t('common.copy')}</span>
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
