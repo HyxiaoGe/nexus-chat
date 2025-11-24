@@ -110,7 +110,16 @@ export const useChatOrchestrator = ({
   };
 
   const sendMessage = async (input: string) => {
-    if (!input.trim() || !activeSessionId || isStreaming) return;
+    if (!input.trim() || !activeSessionId) return;
+
+    // Force reset streaming state if no active controllers (safety mechanism)
+    if (isStreaming && abortControllersRef.current.size === 0) {
+      console.warn('Detected stuck isStreaming state, force resetting...');
+      setIsStreaming(false);
+      // Continue execution instead of return
+    } else if (isStreaming) {
+      return; // Normal blocking when actually streaming
+    }
 
     const currentInput = input.trim();
 
