@@ -85,6 +85,10 @@ export interface Session {
   title: string;
   createdAt: number;
   updatedAt: number;
+  sessionTokenUsage?: {
+    totalTokens: number;
+    totalCost: number;
+  };
 }
 
 export interface TokenStats {

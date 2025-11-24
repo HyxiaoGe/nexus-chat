@@ -21,6 +21,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(message.content);
   const [isErrorExpanded, setIsErrorExpanded] = useState(false);
+  const [isContentExpanded, setIsContentExpanded] = useState(false);
+  const [shouldCollapse, setShouldCollapse] = useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  // Check if content height exceeds threshold (only for AI messages)
+  React.useEffect(() => {
+    if (!isUser && contentRef.current && !message.isStreaming) {
+      const height = contentRef.current.scrollHeight;
+      const threshold = 500; // 500px threshold
+      if (height > threshold && !shouldCollapse) {
+        setShouldCollapse(true);
+      }
+    }
+  }, [message.content, message.isStreaming, isUser, shouldCollapse]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -167,17 +181,46 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
             ) : (
               <>
                 {/* Normal Display Mode */}
-                {message.content || message.isStreaming ? (
-                     isUser ? (
-                         <p className="whitespace-pre-wrap leading-7 tracking-wide text-indigo-50">{message.content}</p>
-                     ) : (
-                         <SmartContentRenderer content={message.content} isStreaming={message.isStreaming} />
-                     )
-                ) : (
-                    <span className="text-gray-400 italic flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-gray-300 rounded-full"></span>
-                        {t('app.emptyResponse')}
-                    </span>
+                <div
+                  ref={contentRef}
+                  className={`overflow-hidden transition-all duration-300 ${shouldCollapse && !isContentExpanded ? 'max-h-[500px]' : ''}`}
+                >
+                  {message.content || message.isStreaming ? (
+                       isUser ? (
+                           <p className="whitespace-pre-wrap leading-7 tracking-wide text-indigo-50">{message.content}</p>
+                       ) : (
+                           <SmartContentRenderer content={message.content} isStreaming={message.isStreaming} />
+                       )
+                  ) : (
+                      <span className="text-gray-400 italic flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-gray-300 rounded-full"></span>
+                          {t('app.emptyResponse')}
+                      </span>
+                  )}
+                </div>
+
+                {/* Expand/Collapse Button */}
+                {shouldCollapse && !message.isStreaming && (
+                  <button
+                    onClick={() => setIsContentExpanded(!isContentExpanded)}
+                    className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline font-medium flex items-center gap-1"
+                  >
+                    {isContentExpanded ? (
+                      <>
+                        <span>收起</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        <span>展开全部</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
                 )}
 
                 {message.isStreaming && !message.content && <span className="animate-pulse inline-block w-2 h-4 bg-gray-400 ml-1 align-middle rounded-full"></span>}

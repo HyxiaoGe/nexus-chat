@@ -14,6 +14,7 @@ interface UseChatOrchestratorProps {
   saveMessagesToStorage: (sessionId: string, messages: Message[]) => void;
   onScrollToBottom: () => void;
   updateSessionTitle: (sessionId: string, title: string) => void;
+  updateSessionTokenUsage: (sessionId: string, tokenUsage: { totalTokens: number; totalCost: number }) => void;
   showToast: (message: React.ReactNode) => void;
 }
 
@@ -48,6 +49,7 @@ export const useChatOrchestrator = ({
   saveMessagesToStorage,
   onScrollToBottom,
   updateSessionTitle,
+  updateSessionTokenUsage,
   showToast
 }: UseChatOrchestratorProps) => {
   const { t } = useTranslation();
@@ -217,6 +219,11 @@ export const useChatOrchestrator = ({
               // Update global stats if usage is available
               if (usage) {
                 updateGlobalTokenStats(agent.modelId, usage);
+                // Update session-level token usage (accumulated)
+                updateSessionTokenUsage(activeSessionId, {
+                  totalTokens: usage.totalTokens,
+                  totalCost: usage.estimatedCost || 0
+                });
               }
 
               // Update message with token usage
@@ -245,10 +252,12 @@ export const useChatOrchestrator = ({
         }
       }));
     } finally {
-      // Check if all agents are done
-      if (abortControllersRef.current.size === 0) {
-        setIsStreaming(false);
-      }
+      // Use setTimeout to ensure all onComplete/error handlers have executed
+      setTimeout(() => {
+        if (abortControllersRef.current.size === 0) {
+          setIsStreaming(false);
+        }
+      }, 100);
     }
   };
 
@@ -349,6 +358,11 @@ export const useChatOrchestrator = ({
               // Update global stats if usage is available
               if (usage) {
                 updateGlobalTokenStats(agent.modelId, usage);
+                // Update session-level token usage (accumulated)
+                updateSessionTokenUsage(activeSessionId, {
+                  totalTokens: usage.totalTokens,
+                  totalCost: usage.estimatedCost || 0
+                });
               }
 
               // Update message with token usage
@@ -373,10 +387,12 @@ export const useChatOrchestrator = ({
         }
       }));
     } finally {
-      // Check if all agents are done
-      if (abortControllersRef.current.size === 0) {
-        setIsStreaming(false);
-      }
+      // Use setTimeout to ensure all onComplete/error handlers have executed
+      setTimeout(() => {
+        if (abortControllersRef.current.size === 0) {
+          setIsStreaming(false);
+        }
+      }, 100);
     }
   };
 
@@ -467,6 +483,11 @@ export const useChatOrchestrator = ({
             // Update global stats if usage is available
             if (usage) {
               updateGlobalTokenStats(targetAgent.modelId, usage);
+              // Update session-level token usage (accumulated)
+              updateSessionTokenUsage(activeSessionId, {
+                totalTokens: usage.totalTokens,
+                totalCost: usage.estimatedCost || 0
+              });
             }
 
             // Update message with token usage
