@@ -27,21 +27,47 @@ export const useChatOrchestrator = ({
 }: UseChatOrchestratorProps) => {
   const { t } = useTranslation();
   const [isStreaming, setIsStreaming] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  // Map to store AbortController for each message/agent
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
-  const stopGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsStreaming(false);
-      
-      // Mark current streaming messages as done
+  // Stop a specific agent by message ID
+  const stopAgent = (messageId: string) => {
+    const controller = abortControllersRef.current.get(messageId);
+    if (controller) {
+      controller.abort();
+      abortControllersRef.current.delete(messageId);
+
+      // Mark this specific message as done
       setMessages(prev => {
-        const final = prev.map(m => m.isStreaming ? { ...m, isStreaming: false } : m);
+        const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false } : m);
         if (activeSessionId) saveMessagesToStorage(activeSessionId, final);
+
+        // Check if all streaming is done
+        const stillStreaming = final.some(m => m.isStreaming);
+        if (!stillStreaming) {
+          setIsStreaming(false);
+        }
+
         return final;
       });
     }
+  };
+
+  // Stop all agents (global stop)
+  const stopGeneration = () => {
+    // Abort all controllers
+    abortControllersRef.current.forEach((controller) => {
+      controller.abort();
+    });
+    abortControllersRef.current.clear();
+    setIsStreaming(false);
+
+    // Mark all streaming messages as done
+    setMessages(prev => {
+      const final = prev.map(m => m.isStreaming ? { ...m, isStreaming: false } : m);
+      if (activeSessionId) saveMessagesToStorage(activeSessionId, final);
+      return final;
+    });
   };
 
   const sendMessage = async (input: string) => {
@@ -98,18 +124,19 @@ export const useChatOrchestrator = ({
     setMessages(newMessagesState);
     saveMessagesToStorage(activeSessionId, newMessagesState);
     setIsStreaming(true);
-    
+
     setTimeout(onScrollToBottom, 100);
 
-    // Setup Abort Controller
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-
-    // 4. Parallel Requests
+    // 4. Parallel Requests - Each agent gets its own AbortController
     try {
       await Promise.all(activeAgents.map(async (agent, index) => {
         const messageId = agentMessages[index].id;
         const provider = providers.find(p => p.id === agent.providerId);
+
+        // Create individual AbortController for this agent
+        const controller = new AbortController();
+        abortControllersRef.current.set(messageId, controller);
+        const signal = controller.signal;
 
         if (!provider) {
              setMessages(prev => {
@@ -117,6 +144,7 @@ export const useChatOrchestrator = ({
                  saveMessagesToStorage(activeSessionId, final);
                  return final;
              });
+             abortControllersRef.current.delete(messageId);
              return;
         }
 
@@ -128,7 +156,7 @@ export const useChatOrchestrator = ({
             signal: signal,
             onChunk: (text) => {
               if (signal.aborted) return;
-              setMessages(prev => prev.map(m => 
+              setMessages(prev => prev.map(m =>
                   m.id === messageId ? { ...m, content: m.content + text } : m
               ));
             }
@@ -140,6 +168,7 @@ export const useChatOrchestrator = ({
                 saveMessagesToStorage(activeSessionId, final);
                 return final;
             });
+            abortControllersRef.current.delete(messageId);
           }
 
         } catch (err: unknown) {
@@ -152,12 +181,13 @@ export const useChatOrchestrator = ({
             saveMessagesToStorage(activeSessionId, final);
             return final;
           });
+          abortControllersRef.current.delete(messageId);
         }
       }));
     } finally {
-      if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+      // Check if all agents are done
+      if (abortControllersRef.current.size === 0) {
         setIsStreaming(false);
-        abortControllerRef.current = null;
       }
     }
   };
@@ -165,6 +195,7 @@ export const useChatOrchestrator = ({
   return {
     isStreaming,
     sendMessage,
-    stopGeneration
+    stopGeneration,
+    stopAgent // Export individual agent stop function
   };
 };

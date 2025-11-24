@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Message, AgentConfig } from '../types';
-import { User, Copy, AlertCircle, Info } from 'lucide-react';
+import { User, Copy, AlertCircle, Info, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SmartContentRenderer } from './SmartContentRenderer';
 import { BrandIcon } from './BrandIcons';
@@ -9,9 +9,10 @@ import { BrandIcon } from './BrandIcons';
 interface MessageBubbleProps {
   message: Message;
   config?: AgentConfig;
+  onStopAgent?: (messageId: string) => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message, config }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message, config, onStopAgent }) => {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
   
@@ -112,10 +113,31 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
                 </div>
             )}
 
-            {!message.isStreaming && message.content && !isUser && (
-               <button onClick={handleCopy} className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-1.5" title={t('common.copy')}>
-                 <Copy size={14} />
-               </button>
+            {/* Action Buttons */}
+            {!isUser && (
+              <>
+                {/* Stop Button - Only show when streaming */}
+                {message.isStreaming && onStopAgent && (
+                  <button
+                    onClick={() => onStopAgent(message.id)}
+                    className="absolute top-3 right-3 text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg p-1.5 shadow-sm border border-red-200 dark:border-red-800/30"
+                    title={t('app.stop')}
+                  >
+                    <Square size={14} fill="currentColor" />
+                  </button>
+                )}
+
+                {/* Copy Button - Only show when not streaming and has content */}
+                {!message.isStreaming && message.content && (
+                  <button
+                    onClick={handleCopy}
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg p-1.5"
+                    title={t('common.copy')}
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
+              </>
             )}
           </div>
           
@@ -133,12 +155,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function: only re-render if message content, streaming state, or error changes
+  // Custom comparison function: only re-render if message content, streaming state, error, or onStopAgent changes
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.isStreaming === nextProps.message.isStreaming &&
     prevProps.message.error === nextProps.message.error &&
-    prevProps.config?.id === nextProps.config?.id
+    prevProps.config?.id === nextProps.config?.id &&
+    prevProps.onStopAgent === nextProps.onStopAgent
   );
 });

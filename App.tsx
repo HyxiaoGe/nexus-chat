@@ -176,7 +176,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   };
 
   // --- Hooks ---
-  const { isStreaming, sendMessage, stopGeneration } = useChatOrchestrator({
+  const { isStreaming, sendMessage, stopGeneration, stopAgent } = useChatOrchestrator({
       activeSessionId,
       agents,
       providers,
@@ -410,10 +410,11 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                         }
 
                         return (
-                            <MessageBubble 
-                                key={msg.id} 
-                                message={msg} 
-                                config={agents.find(a => a.id === msg.agentId)} 
+                            <MessageBubble
+                                key={msg.id}
+                                message={msg}
+                                config={agents.find(a => a.id === msg.agentId)}
+                                onStopAgent={stopAgent}
                             />
                         );
                     })}
