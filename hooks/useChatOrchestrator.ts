@@ -380,10 +380,128 @@ export const useChatOrchestrator = ({
     }
   };
 
+  // Regenerate response for a single specific agent
+  const regenerateSingleAgent = async (userPrompt: string, targetAgentId: string) => {
+    if (!userPrompt.trim() || !activeSessionId || isStreaming) return;
+
+    const currentInput = userPrompt.trim();
+
+    // Find the target agent
+    const targetAgent = agents.find(a => a.id === targetAgentId);
+    if (!targetAgent) {
+      console.error("Target agent not found:", targetAgentId);
+      return;
+    }
+
+    // Create placeholder message for this single agent
+    const agentMessage: Message = {
+      id: generateId(),
+      sessionId: activeSessionId,
+      role: 'model',
+      content: '',
+      agentId: targetAgent.id,
+      timestamp: Date.now(),
+      isStreaming: true,
+    };
+
+    // Add the placeholder message
+    setMessages(prev => {
+      const newMessagesState = [...prev, agentMessage];
+      saveMessagesToStorage(activeSessionId, newMessagesState);
+      return newMessagesState;
+    });
+    setIsStreaming(true);
+
+    setTimeout(onScrollToBottom, 100);
+
+    // Generate for this single agent
+    try {
+      const messageId = agentMessage.id;
+      const provider = providers.find(p => p.id === targetAgent.providerId);
+
+      // Create individual AbortController for this agent
+      const controller = new AbortController();
+      abortControllersRef.current.set(messageId, controller);
+      const signal = controller.signal;
+
+      if (!provider) {
+        setMessages(prev => {
+          const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: t('app.configError') } : m);
+          saveMessagesToStorage(activeSessionId, final);
+          return final;
+        });
+        abortControllersRef.current.delete(messageId);
+        setIsStreaming(false);
+        return;
+      }
+
+      try {
+        await generateContentStream({
+          agent: targetAgent,
+          provider: provider,
+          prompt: currentInput,
+          signal: signal,
+          onChunk: (text) => {
+            if (signal.aborted) return;
+            setMessages(prev => prev.map(m =>
+              m.id === messageId ? { ...m, content: m.content + text } : m
+            ));
+          },
+          onComplete: (usage) => {
+            if (signal.aborted) return;
+
+            // Calculate cost if pricing available
+            let estimatedCost: number | undefined;
+            if (usage && provider.fetchedModels) {
+              const model = provider.fetchedModels.find(m => m.id === targetAgent.modelId);
+              if (model && model.pricing) {
+                const promptCost = (usage.promptTokens / 1_000_000) * parseFloat(model.pricing.prompt);
+                const completionCost = (usage.completionTokens / 1_000_000) * parseFloat(model.pricing.completion);
+                estimatedCost = promptCost + completionCost;
+                if (usage) {
+                  usage.estimatedCost = estimatedCost;
+                }
+              }
+            }
+
+            // Update global stats if usage is available
+            if (usage) {
+              updateGlobalTokenStats(targetAgent.modelId, usage);
+            }
+
+            // Update message with token usage
+            setMessages(prev => {
+              const final = prev.map(m =>
+                m.id === messageId ? { ...m, isStreaming: false, tokenUsage: usage } : m
+              );
+              saveMessagesToStorage(activeSessionId, final);
+              return final;
+            });
+            abortControllersRef.current.delete(messageId);
+            setIsStreaming(false);
+          }
+        });
+      } catch (error: any) {
+        if (error.name === 'AbortError') return;
+        setMessages(prev => {
+          const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false, error: error.message || 'Unknown error' } : m);
+          saveMessagesToStorage(activeSessionId, final);
+          return final;
+        });
+        abortControllersRef.current.delete(messageId);
+        setIsStreaming(false);
+      }
+    } catch (error) {
+      console.error("Error regenerating single agent:", error);
+      setIsStreaming(false);
+    }
+  };
+
   return {
     isStreaming,
     sendMessage,
     regenerateResponses,
+    regenerateSingleAgent, // Export single agent regeneration
     stopGeneration,
     stopAgent // Export individual agent stop function
   };
