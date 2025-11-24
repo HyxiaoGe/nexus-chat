@@ -69,12 +69,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
   return (
     <div className={`
         flex w-full mb-6
-        ${isUser ? 'justify-end' : 'justify-start'} 
+        ${isUser ? 'justify-end' : 'justify-start'}
         animate-in fade-in slide-in-from-bottom-2 duration-500
     `}>
       <div className={`
-        flex gap-3 md:gap-4 
-        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : 'flex-row w-full max-w-[95%] md:max-w-[85%] lg:max-w-[80%]'} 
+        group flex gap-3 md:gap-4
+        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : 'flex-row w-full max-w-[95%] md:max-w-[85%] lg:max-w-[80%]'}
       `}>
         
         {/* Avatar */}
@@ -180,10 +180,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
             {!isEditing && message.isStreaming && onStopAgent && (
               <button
                 onClick={() => onStopAgent(message.id)}
-                className="absolute top-3 right-3 text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg p-1.5 shadow-sm border border-red-200 dark:border-red-800/30"
+                className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 border border-red-400 dark:border-red-500 hover:scale-105 active:scale-95"
                 title={t('app.stop')}
               >
-                <Square size={14} fill="currentColor" />
+                <Square size={12} fill="currentColor" className="animate-pulse" />
+                <span>{t('app.stop')}</span>
               </button>
             )}
           </div>
