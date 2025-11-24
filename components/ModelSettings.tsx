@@ -421,10 +421,33 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const handleSyncModels = async (providerId: string, providerConfig: LLMProvider) => {
       setIsSyncingModels(true);
       try {
+          // IMPORTANT: First validate the API key for OpenRouter
+          const isOpenRouter = providerConfig.baseURL?.includes('openrouter') || providerId === 'provider-openrouter';
+
+          if (isOpenRouter && providerConfig.apiKey) {
+              info(t('settings.providers.validating'));
+              const { validateOpenRouterKey } = await import('../services/geminiService');
+              const isValid = await validateOpenRouterKey(providerConfig.apiKey);
+
+              if (!isValid) {
+                  error(t('settings.providers.invalidKey'));
+                  setIsSyncingModels(false);
+                  return;
+              }
+              success(t('settings.providers.keyVerified'));
+          }
+
+          // Then fetch models
           const models = await fetchProviderModels(providerConfig);
           if (models.length > 0) {
+             // Update provider with BOTH the new apiKey from form AND the fetched models
              const updatedProviders = providers.map(p =>
-                 p.id === providerId ? { ...p, fetchedModels: models, lastFetched: Date.now() } : p
+                 p.id === providerId ? {
+                     ...p,
+                     apiKey: providerConfig.apiKey, // Save the API key!
+                     fetchedModels: models,
+                     lastFetched: Date.now()
+                 } : p
              );
              onUpdateProviders(updatedProviders);
              success(t('settings.providers.syncSuccess', { count: models.length }));
@@ -941,7 +964,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 )}
                 <button onClick={() => setExpandedProviderId(null)} className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-3">{t('settings.providers.cancel')}</button>
                 <button onClick={handleSaveProvider} className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm">
-                    <Save size={14} /> {t('settings.providers.saveVerify')}
+                    <Save size={14} /> {t('common.save')}
                 </button>
             </div>
         </div>
