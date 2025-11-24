@@ -198,10 +198,16 @@ export const generateContentStream = async ({
 
       let thoughtBuffer = '';
       let isCollectingThought = false;
+      let capturedUsageMetadata: any = null; // Capture usage from chunks
 
       for await (const chunk of response) {
         if (signal?.aborted) {
             break;
+        }
+
+        // Capture usageMetadata from chunk if available
+        if (chunk.usageMetadata) {
+          capturedUsageMetadata = chunk.usageMetadata;
         }
 
         // Debug: Log chunk structure for thinking models
@@ -269,12 +275,11 @@ export const generateContentStream = async ({
 
       // Capture token usage from usageMetadata
       if (onComplete) {
-        const usageMetadata = response.usageMetadata;
-        if (usageMetadata) {
+        if (capturedUsageMetadata) {
           const usage: TokenUsage = {
-            promptTokens: usageMetadata.promptTokenCount || 0,
-            completionTokens: usageMetadata.candidatesTokenCount || 0,
-            totalTokens: usageMetadata.totalTokenCount || 0,
+            promptTokens: capturedUsageMetadata.promptTokenCount || 0,
+            completionTokens: capturedUsageMetadata.candidatesTokenCount || 0,
+            totalTokens: capturedUsageMetadata.totalTokenCount || 0,
           };
           onComplete(usage);
         } else {
