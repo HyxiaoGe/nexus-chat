@@ -184,7 +184,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   };
 
   // --- Hooks ---
-  const { isStreaming, sendMessage, regenerateResponses, stopGeneration, stopAgent } = useChatOrchestrator({
+  const { isStreaming, sendMessage, regenerateResponses, regenerateSingleAgent, stopGeneration, stopAgent } = useChatOrchestrator({
       activeSessionId,
       agents,
       providers,
@@ -244,22 +244,35 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
 
   // Handle regenerating AI response
   const handleRegenerateMessage = (messageId: string) => {
-    // Find the AI message
-    const messageIndex = messages.findIndex(m => m.id === messageId);
-    if (messageIndex === -1) return;
+    // Find the AI message that needs to be regenerated
+    const targetMessage = messages.find(m => m.id === messageId);
+    if (!targetMessage || targetMessage.role !== 'model' || !targetMessage.agentId) return;
 
-    // Find the preceding user message
+    const targetAgentId = targetMessage.agentId;
+
+    // Find the preceding user message for this AI response
+    const messageIndex = messages.findIndex(m => m.id === messageId);
     let userMessageIndex = messageIndex - 1;
     while (userMessageIndex >= 0 && messages[userMessageIndex].role !== 'user') {
       userMessageIndex--;
     }
 
     if (userMessageIndex < 0) return;
-
     const userMessage = messages[userMessageIndex];
 
-    // Remove all AI messages after the user message (keep the user message)
-    const updatedMessages = messages.slice(0, userMessageIndex + 1);
+    // Find all AI responses from the same round (after this user message, before next user message)
+    let nextUserMessageIndex = userMessageIndex + 1;
+    while (nextUserMessageIndex < messages.length && messages[nextUserMessageIndex].role !== 'user') {
+      nextUserMessageIndex++;
+    }
+
+    // Only remove the specific agent's response from this round
+    const updatedMessages = messages.filter((m, idx) => {
+      // Keep all messages outside this round
+      if (idx <= userMessageIndex || idx >= nextUserMessageIndex) return true;
+      // Within this round, only remove messages from the target agent
+      return m.agentId !== targetAgentId;
+    });
 
     // Save updated messages
     setMessages(updatedMessages);
@@ -267,8 +280,8 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       saveMessagesToStorage(activeSessionId, updatedMessages);
     }
 
-    // Regenerate responses without adding a new user message
-    regenerateResponses(userMessage.content);
+    // Regenerate only for this specific agent
+    regenerateSingleAgent(userMessage.content, targetAgentId);
   };
 
   const handleSuggestionClick = (prompt: string) => {
