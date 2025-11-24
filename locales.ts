@@ -54,7 +54,9 @@ export const resources = {
         updateAvailable: "New version available",
         clickToRefresh: "Refresh to apply updates",
         refresh: "Refresh",
-        stop: "Stop Generating"
+        stop: "Stop Generating",
+        stoppedAgent: "Stopped {{agentName}}",
+        stoppedAll: "Stopped all agents"
       },
       welcome: {
         title: "Welcome to NexusChat",
@@ -264,7 +266,9 @@ export const resources = {
         updateAvailable: "发现新版本",
         clickToRefresh: "刷新以应用更新",
         refresh: "立即刷新",
-        stop: "停止生成"
+        stop: "停止生成",
+        stoppedAgent: "已停止 {{agentName}}",
+        stoppedAll: "已停止所有智能体"
       },
       welcome: {
         title: "欢迎使用 NexusChat",

@@ -28,7 +28,7 @@ interface NexusChatProps {
 const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) => {
   const { t, i18n } = useTranslation();
   const confirm = useConfirm();
-  const { success: toastSuccess, error: toastError } = useToast();
+  const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
 
   // --- State ---
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -176,7 +176,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   };
 
   // --- Hooks ---
-  const { isStreaming, sendMessage, stopGeneration } = useChatOrchestrator({
+  const { isStreaming, sendMessage, stopGeneration, stopAgent } = useChatOrchestrator({
       activeSessionId,
       agents,
       providers,
@@ -184,7 +184,8 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       setMessages,
       saveMessagesToStorage,
       onScrollToBottom: scrollToBottom,
-      updateSessionTitle
+      updateSessionTitle,
+      showToast: toastInfo
   });
 
   const deleteSession = (id: string, e: React.MouseEvent) => {
@@ -410,10 +411,11 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                         }
 
                         return (
-                            <MessageBubble 
-                                key={msg.id} 
-                                message={msg} 
-                                config={agents.find(a => a.id === msg.agentId)} 
+                            <MessageBubble
+                                key={msg.id}
+                                message={msg}
+                                config={agents.find(a => a.id === msg.agentId)}
+                                onStopAgent={stopAgent}
                             />
                         );
                     })}
