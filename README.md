@@ -1,82 +1,411 @@
+<div align="center">
 
-# NexusChat - Multi-LLM Orchestrator
+# 🌐 NexusChat
 
-[![中文文档](https://img.shields.io/badge/Docs-中文版-blue)](./README.zh-CN.md)
+### Multi-LLM Chat Orchestrator | Unified AI Conversation Platform
 
-**NexusChat** is a professional, multi-agent chat interface that allows you to converse with multiple Large Language Models (LLMs) simultaneously. It mimics the user experience of Telegram/WhatsApp but assigns a unique "Persona" (Agent) to different AI models, allowing for parallel generation, comparing outputs, and orchestrated reasoning.
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/HyxiaoGe/nexus-chat)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.2+-61DAFB.svg)](https://reactjs.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/HyxiaoGe/nexus-chat/pulls)
 
-![NexusChat Interface](https://placehold.co/1200x600/1a202c/ffffff?text=NexusChat+Interface+Preview)
+[English](./README.md) | [简体中文](./README.zh-CN.md)
+
+**Chat with multiple AI models simultaneously in a unified, elegant interface.**
+
+[✨ Features](#-features) • [🚀 Quick Start](#-quick-start) • [📸 Screenshots](#-screenshots) • [🛠️ Tech Stack](#️-tech-stack) • [📖 Documentation](#-documentation)
+
+</div>
+
+---
+
+## 🌟 What is NexusChat?
+
+**NexusChat** is a powerful, open-source multi-agent chat orchestrator that enables you to **converse with multiple Large Language Models (LLMs) simultaneously**. Inspired by modern messaging apps like Telegram and WhatsApp, NexusChat provides a seamless group-chat experience where each AI model acts as a unique "agent" with its own personality and capabilities.
+
+### 🎯 Why NexusChat?
+
+- **🔄 Compare AI Responses**: Get diverse perspectives from GPT-4, Claude, Gemini, and DeepSeek in one conversation
+- **💰 Cost Tracking**: Real-time token usage statistics and cost estimation for each model
+- **🎨 Beautiful UI**: Modern, responsive design with light/dark themes and smooth animations
+- **🌍 Universal Compatibility**: Support for OpenRouter, Google Gemini, OpenAI, and local models (Ollama/LM Studio)
+- **🔒 Privacy First**: All data stored locally in your browser - no server required
+- **⚡ Real-time Streaming**: Experience natural, typewriter-style responses with SSE streaming
+
+---
 
 ## ✨ Features
 
-*   **Multi-Agent System**: Trigger unlimited LLMs with a single user prompt.
-*   **Unified Interface**: Agents respond in a chat bubble stream, similar to a group chat.
-*   **Provider Agnostic**:
-    *   **Google Gemini**: Native support for Gemini 1.5 Pro/Flash and 2.0.
-    *   **OpenAI Compatible**: Support for **DeepSeek**, **Claude**, **Llama**, and **GPT-4** via OpenRouter or local endpoints (Ollama/LM Studio).
-*   **Real-time Streaming**: Smooth, typewriter-style text generation.
-*   **Internationalization (i18n)**: Full English and Chinese (中文) support.
-*   **Theming**: Built-in Light and Dark modes.
-*   **Data Management**: LocalStorage persistence with Export/Import capabilities.
+### 🤖 Multi-Agent System
+- **Unlimited Agents**: Create and manage multiple AI agents with custom personalities
+- **Parallel Generation**: All agents respond simultaneously to your prompts
+- **Agent-Specific Regeneration**: Regenerate responses for individual agents without affecting others
+- **Individual Stop Controls**: Stop specific agents mid-generation while others continue
 
-## 🚀 Getting Started
+### 💬 Advanced Chat Experience
+- **Real-time Streaming**: Smooth, typewriter-style text generation with Server-Sent Events (SSE)
+- **Smart Content Rendering**:
+  - Syntax-highlighted code blocks with language detection
+  - Markdown support (tables, lists, formatting)
+  - Thinking process visualization for reasoning models (DeepSeek R1, o1)
+  - Auto-collapse for long messages with gradient fade overlay
+- **Message Management**: Edit user messages, regenerate AI responses, copy/export conversations
+- **Session History**: Automatic session grouping (Today, Yesterday, This Week, Older)
+
+### 📊 Token Analytics & Cost Tracking
+- **Per-Message Statistics**: Token count and estimated cost for each AI response
+- **Session-Level Tracking**: Cumulative token usage and cost for current conversation
+- **Global Statistics**: Total usage by model in Settings dashboard
+- **OpenRouter Pricing**: Real-time cost calculation based on official pricing API
+
+### 🎨 User Experience
+- **Internationalization (i18n)**: Full support for English and Simplified Chinese
+- **Theme Support**: Light and Dark modes with smooth transitions
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Keyboard Shortcuts**: Enter to send (configurable to Ctrl/Cmd+Enter)
+- **Auto-scroll**: Smart scroll-to-bottom with manual scroll detection
+
+### 🔧 Provider Integration
+- **Google Gemini**: Native SDK integration for Gemini 1.5/2.0 models
+- **OpenRouter**: Access to 100+ models including GPT-4, Claude, Llama, DeepSeek
+- **OpenAI Compatible**: Connect to any OpenAI-compatible endpoint
+- **Local Models**: Support for Ollama, LM Studio, and other local inference servers
+- **Dynamic Model Loading**: Automatic model list synchronization from providers
+
+### 💾 Data Management
+- **Local Storage**: All data stored in browser localStorage (no server required)
+- **Export/Import**: Backup and restore your entire chat history and settings
+- **Session Management**: Create, delete, and organize conversation sessions
+- **Provider Persistence**: Securely store API keys locally (with security warnings)
+
+---
+
+## 📸 Screenshots
+
+<div align="center">
+
+### 💬 Multi-Agent Chat Interface
+![Multi-Agent Chat](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Multi-Agent+Chat+Interface)
+
+### 📊 Token Usage Statistics
+![Token Statistics](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Token+Usage+%26+Cost+Tracking)
+
+### ⚙️ Agent Configuration
+![Agent Settings](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Agent+Configuration+Panel)
+
+### 🌓 Dark Mode
+![Dark Mode](https://via.placeholder.com/1200x700/0f172a/ffffff?text=Beautiful+Dark+Mode)
+
+</div>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-*   Node.js (v18+) or a modern web browser supporting ES Modules.
-*   API Keys for [Google Gemini](https://aistudio.google.com/) or [OpenRouter](https://openrouter.ai/).
+- **Node.js** v18.0 or higher
+- **npm** or **yarn** package manager
+- API keys for at least one provider:
+  - [Google AI Studio](https://aistudio.google.com/) (Gemini)
+  - [OpenRouter](https://openrouter.ai/) (GPT-4, Claude, DeepSeek, etc.)
 
 ### Installation
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/nexus-chat.git
-    cd nexus-chat
-    ```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/HyxiaoGe/nexus-chat.git
+   cd nexus-chat
+   ```
 
-2.  Install dependencies (if using a local bundler like Vite):
-    ```bash
-    npm install
-    ```
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-3.  Configure Environment:
-    Copy the example environment file:
-    ```bash
-    cp .env.example .env
-    ```
-    Edit `.env` and add your default API keys (Optional, keys can also be set in the UI).
+3. **Configure environment (Optional)**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` to add default API keys:
+   ```env
+   VITE_GOOGLE_API_KEY=your_gemini_api_key
+   VITE_OPENROUTER_API_KEY=your_openrouter_api_key
+   ```
 
-4.  Run the app:
-    ```bash
-    npm run dev
-    ```
+4. **Start development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-## 🛠 Configuration
+5. **Open browser**
+   Navigate to `http://localhost:5173`
 
-### Managing Agents
-1.  Click **Settings** (Gear Icon).
-2.  Go to **My Agents**.
-3.  Create a new agent (e.g., "Coding Expert").
-4.  Select a **Provider** (Google or OpenRouter).
-5.  Select a **Model ID** (e.g., `deepseek/deepseek-r1`).
-6.  Set a **System Prompt** to define the persona.
+### First-Time Setup
 
-### Adding Providers
-NexusChat supports connecting to custom OpenAI-compatible endpoints.
-1.  Go to **Settings > Providers**.
-2.  Add **Custom Provider**.
-3.  Set Base URL (e.g., `http://localhost:11434/v1` for Ollama).
-4.  Enter API Key (if required).
+1. Click the **Settings** icon (⚙️) in the top-right corner
+2. Go to **Providers** tab:
+   - For **OpenRouter**: Enter your API key and click "Save & Verify"
+   - For **Google Gemini**: Add your API key in the Google Native API section
+3. Go to **My Agents** tab:
+   - Click "Create New Agent"
+   - Set a name (e.g., "GPT-4 Assistant")
+   - Select provider and model
+   - Write a system prompt to define the agent's personality
+   - Enable the agent
+4. Start chatting! Type your message and watch all enabled agents respond simultaneously.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **React 18.2** - Modern React with Hooks
+- **TypeScript 5.0** - Type-safe development
+- **Vite 5.x** - Lightning-fast build tool
+- **Tailwind CSS 3.x** - Utility-first CSS framework
+
+### State Management
+- **React Hooks** - useState, useEffect, useRef, useMemo
+- **Custom Hooks** - Modular logic for chat orchestration, scroll management
+- **LocalStorage API** - Client-side data persistence
+
+### AI Integration
+- **@google/genai** - Official Google Generative AI SDK
+- **OpenRouter API** - Multi-model aggregation API
+- **Server-Sent Events (SSE)** - Real-time streaming responses
+
+### UI/UX
+- **i18next** - Internationalization framework
+- **Lucide React** - Beautiful icon library
+- **@lobehub/icons** - Brand icons for AI models
+- **React Markdown** - Markdown rendering
+- **Syntax Highlighting** - Code block formatting
+
+### Developer Tools
+- **ESLint** - Code linting
+- **TypeScript Compiler** - Type checking
+- **Vite Build** - Production optimization
+
+---
+
+## 📖 Documentation
+
+### Configuration Guide
+
+#### Managing Agents
+
+1. **Create an Agent**
+   - Go to Settings → My Agents
+   - Click "Create New Agent"
+   - Configure:
+     - **Name**: Display name for the agent
+     - **Avatar**: Brand icon or custom image URL
+     - **Provider**: Select API provider
+     - **Model ID**: Choose or manually enter model
+     - **System Prompt**: Define agent behavior and personality
+     - **Advanced Settings**: Temperature, Top-P, Max Tokens
+
+2. **Enable/Disable Agents**
+   - Toggle the switch on agent cards
+   - Maximum 4 agents can be active simultaneously
+
+3. **Edit or Delete**
+   - Click the pencil icon to edit
+   - Click the trash icon to delete (with confirmation)
+
+#### Adding Custom Providers
+
+NexusChat supports any OpenAI-compatible API endpoint:
+
+1. Go to Settings → Providers
+2. Click "Add Custom Provider"
+3. Configure:
+   - **Name**: Provider display name
+   - **Base URL**: API endpoint (e.g., `http://localhost:11434/v1` for Ollama)
+   - **API Key**: Authentication key (if required)
+4. Click "Save & Verify" to test connection
+
+**Example Configurations:**
+- **Ollama**: `http://localhost:11434/v1`
+- **LM Studio**: `http://localhost:1234/v1`
+- **Local vLLM**: `http://localhost:8000/v1`
+
+#### Token Statistics
+
+- **Per-Message**: Hover over the token count in each AI response to see details
+- **Session Total**: View cumulative tokens and cost in the top header
+- **Global Stats**: Check total usage per model in Settings → My Agents
+- **Cost Calculation**: Automatically calculated using OpenRouter pricing data
+
+### Keyboard Shortcuts
+
+- **Enter**: Send message (configurable in Settings)
+- **Shift + Enter**: New line in input
+- **Ctrl/Cmd + Enter**: Send message (when Enter-to-send is disabled)
+
+### Data Privacy
+
+⚠️ **Important Security Notes:**
+- API keys are stored **unencrypted** in browser `localStorage`
+- Only use NexusChat on **trusted devices**
+- For production use, implement server-side key management
+- All chat data remains **local** - no data is sent to NexusChat servers
+
+---
 
 ## 📦 Deployment
 
-This project is optimized for Vercel deployment as a Single Page Application (SPA).
+### Vercel (Recommended)
 
-1.  Push to GitHub.
-2.  Import project into Vercel.
-3.  Vercel will automatically detect the framework settings.
-4.  (Optional) Add `API_KEY` to Vercel Environment Variables.
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
+
+2. **Import to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Import Project"
+   - Select your GitHub repository
+   - Vercel auto-detects Vite configuration
+
+3. **Configure Environment Variables** (Optional)
+   - Add `VITE_OPENROUTER_API_KEY` for default API key
+   - Add `VITE_GOOGLE_API_KEY` for Gemini integration
+
+4. **Deploy**
+   - Click "Deploy"
+   - Your app will be live at `your-project.vercel.app`
+
+### Netlify
+
+1. Build the project:
+   ```bash
+   npm run build
+   ```
+
+2. Deploy the `dist` folder to Netlify
+
+3. Configure redirects in `netlify.toml`:
+   ```toml
+   [[redirects]]
+     from = "/*"
+     to = "/index.html"
+     status = 200
+   ```
+
+### Docker (Coming Soon)
+
+Docker support is planned for v1.4.0.
+
+---
+
+## 🗺️ Roadmap
+
+### v1.4.0 (Q2 2025)
+- [ ] Docker containerization
+- [ ] Vision model support (image input)
+- [ ] Voice input/output (TTS/STT)
+- [ ] Plugin system for extensibility
+- [ ] Conversation branching
+
+### v1.5.0 (Q3 2025)
+- [ ] Multi-user support with authentication
+- [ ] Server-side API key management
+- [ ] Cloud synchronization
+- [ ] Advanced analytics dashboard
+- [ ] Team collaboration features
+
+### Future Considerations
+- Custom agent workflows (chaining, routing)
+- Integration with external tools (web search, calculators)
+- Mobile app (React Native)
+- Browser extension
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+### Reporting Bugs
+- Use the [GitHub Issues](https://github.com/HyxiaoGe/nexus-chat/issues) page
+- Include steps to reproduce, expected behavior, and screenshots
+
+### Feature Requests
+- Open an issue with the "enhancement" label
+- Describe the feature and its use case
+
+### Pull Requests
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Setup
+```bash
+# Install dependencies
+npm install
+
+# Start dev server with hot reload
+npm run dev
+
+# Run type checking
+npm run type-check
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## 💬 Community & Support
+
+- **GitHub Issues**: [Report bugs or request features](https://github.com/HyxiaoGe/nexus-chat/issues)
+- **Discussions**: [Join community discussions](https://github.com/HyxiaoGe/nexus-chat/discussions)
+- **Twitter**: Follow [@HyxiaoGe](https://twitter.com/HyxiaoGe) for updates
+
+---
 
 ## 📄 License
 
-MIT License.
+This project is licensed under the **MIT License** - see the [LICENSE](./LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [OpenRouter](https://openrouter.ai/) for providing unified API access to multiple LLMs
+- [Google Gemini](https://ai.google.dev/) for the powerful Generative AI SDK
+- [Lucide](https://lucide.dev/) for beautiful open-source icons
+- [Tailwind CSS](https://tailwindcss.com/) for the amazing utility-first CSS framework
+- All contributors and users who make this project better
+
+---
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=HyxiaoGe/nexus-chat&type=Date)](https://star-history.com/#HyxiaoGe/nexus-chat&Date)
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [HyxiaoGe](https://github.com/HyxiaoGe)**
+
+If you find NexusChat useful, please consider giving it a ⭐ on GitHub!
+
+[⬆ Back to Top](#-nexuschat)
+
+</div>
