@@ -208,6 +208,61 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
   };
 
+  // Handle editing user message
+  const handleEditMessage = (messageId: string, newContent: string) => {
+    // Find the message index
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Remove all messages after this one (including AI responses)
+    const updatedMessages = messages.slice(0, messageIndex + 1);
+
+    // Update the message content
+    updatedMessages[messageIndex] = {
+      ...updatedMessages[messageIndex],
+      content: newContent,
+      timestamp: Date.now()
+    };
+
+    // Save updated messages
+    setMessages(updatedMessages);
+    if (activeSessionId) {
+      saveMessagesToStorage(activeSessionId, updatedMessages);
+    }
+
+    // Resend the edited message
+    sendMessage(newContent);
+  };
+
+  // Handle regenerating AI response
+  const handleRegenerateMessage = (messageId: string) => {
+    // Find the AI message
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Find the preceding user message
+    let userMessageIndex = messageIndex - 1;
+    while (userMessageIndex >= 0 && messages[userMessageIndex].role !== 'user') {
+      userMessageIndex--;
+    }
+
+    if (userMessageIndex < 0) return;
+
+    const userMessage = messages[userMessageIndex];
+
+    // Remove all messages from the AI response onwards
+    const updatedMessages = messages.slice(0, userMessageIndex + 1);
+
+    // Save updated messages
+    setMessages(updatedMessages);
+    if (activeSessionId) {
+      saveMessagesToStorage(activeSessionId, updatedMessages);
+    }
+
+    // Resend the user message to regenerate responses
+    sendMessage(userMessage.content);
+  };
+
   const handleSuggestionClick = (prompt: string) => {
       setInput(prompt);
       if (textareaRef.current) {
@@ -416,6 +471,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                                 message={msg}
                                 config={agents.find(a => a.id === msg.agentId)}
                                 onStopAgent={stopAgent}
+                                showToast={toastInfo}
+                                onEditMessage={handleEditMessage}
+                                onRegenerateMessage={handleRegenerateMessage}
                             />
                         );
                     })}

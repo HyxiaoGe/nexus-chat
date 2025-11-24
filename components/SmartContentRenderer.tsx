@@ -87,13 +87,69 @@ export const SmartContentRenderer: React.FC<SmartContentRendererProps> = ({ cont
       }
   }, [isThinkingActive]);
 
+  // Helper to detect and render tables
+  const isTableRow = (line: string) => {
+    return line.includes('|') && line.trim().startsWith('|') && line.trim().endsWith('|');
+  };
+
+  const parseTable = (lines: string[], startIdx: number) => {
+    const tableLines: string[] = [];
+    let idx = startIdx;
+
+    while (idx < lines.length && isTableRow(lines[idx])) {
+      tableLines.push(lines[idx]);
+      idx++;
+    }
+
+    if (tableLines.length < 2) return { consumed: 0, element: null };
+
+    // Parse header
+    const headerCells = tableLines[0].split('|').map(c => c.trim()).filter(c => c);
+
+    // Skip separator row (index 1)
+
+    // Parse body rows
+    const bodyRows = tableLines.slice(2).map(row =>
+      row.split('|').map(c => c.trim()).filter(c => c)
+    );
+
+    const table = (
+      <div className="my-4 overflow-x-auto">
+        <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-700">
+          <thead className="bg-gray-100 dark:bg-gray-800">
+            <tr>
+              {headerCells.map((cell, i) => (
+                <th key={i} className="border border-gray-300 dark:border-gray-700 px-4 py-2 text-left font-semibold">
+                  {parseInlineStyles(cell)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {bodyRows.map((row, rowIdx) => (
+              <tr key={rowIdx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                {row.map((cell, cellIdx) => (
+                  <td key={cellIdx} className="border border-gray-300 dark:border-gray-700 px-4 py-2">
+                    {parseInlineStyles(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+
+    return { consumed: tableLines.length, element: table };
+  };
+
   // 2. Enhanced Parsing for Main Content
   const renderRichText = (text: string) => {
     if (!text) return null;
-    
-    // Split by code blocks first
-    const parts = text.split(/(```[\w-]*\n[\s\S]*?```)/g);
-    
+
+    // Split by code blocks and math blocks first
+    const parts = text.split(/(```[\w-]*\n[\s\S]*?```|\$\$[\s\S]*?\$\$)/g);
+
     return parts.map((part, index) => {
       // Code Block
       if (part.startsWith('```')) {
@@ -102,104 +158,183 @@ export const SmartContentRenderer: React.FC<SmartContentRendererProps> = ({ cont
         const code = lines.slice(1, part.endsWith('```') ? -1 : undefined).join('\n');
         return <CodeBlock key={index} language={language} code={code} />;
       }
-      
+
+      // Block Math ($$...$$)
+      if (part.startsWith('$$') && part.endsWith('$$')) {
+        const mathContent = part.slice(2, -2).trim();
+        return (
+          <div key={index} className="my-4 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg overflow-x-auto">
+            <div className="text-center font-serif italic text-blue-900 dark:text-blue-200">
+              {mathContent}
+            </div>
+          </div>
+        );
+      }
+
       // Process other markdown elements line by line
       const lines = part.split('\n');
+      const elements: React.ReactNode[] = [];
+      let lineIdx = 0;
+
+      while (lineIdx < lines.length) {
+        const line = lines[lineIdx];
+
+        if (!line.trim()) {
+          elements.push(<div key={`space-${lineIdx}`} className="h-2"></div>);
+          lineIdx++;
+          continue;
+        }
+
+        // Check for tables
+        if (isTableRow(line)) {
+          const { consumed, element } = parseTable(lines, lineIdx);
+          if (element) {
+            elements.push(<div key={`table-${lineIdx}`}>{element}</div>);
+            lineIdx += consumed;
+            continue;
+          }
+        }
+
+        // Headers (### Title)
+        if (line.startsWith('### ')) {
+          elements.push(<h3 key={lineIdx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white tracking-tight">{parseInlineStyles(line.replace('### ', ''))}</h3>);
+          lineIdx++;
+          continue;
+        }
+        if (line.startsWith('## ')) {
+          elements.push(<h2 key={lineIdx} className="text-xl font-bold mt-6 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2 text-gray-900 dark:text-white tracking-tight">{parseInlineStyles(line.replace('## ', ''))}</h2>);
+          lineIdx++;
+          continue;
+        }
+
+        // Blockquotes (> Text)
+        if (line.startsWith('> ')) {
+          elements.push(
+            <div key={lineIdx} className="flex gap-3 pl-4 border-l-4 border-blue-300 dark:border-blue-600/50 italic text-gray-600 dark:text-gray-400 my-2 py-1 bg-gray-50 dark:bg-gray-900/30 rounded-r">
+              <div>{parseInlineStyles(line.replace('> ', ''))}</div>
+            </div>
+          );
+          lineIdx++;
+          continue;
+        }
+
+        // Task Lists (- [ ] or - [x])
+        const taskMatch = line.trim().match(/^[-*]\s+\[([ xX])\]\s+(.+)$/);
+        if (taskMatch) {
+          const isChecked = taskMatch[1].toLowerCase() === 'x';
+          const taskText = taskMatch[2];
+          elements.push(
+            <div key={lineIdx} className="flex gap-2 ml-2 items-start">
+              <input
+                type="checkbox"
+                checked={isChecked}
+                disabled
+                className="mt-2 w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+              />
+              <div className={`flex-1 ${isChecked ? 'line-through text-gray-500 dark:text-gray-600' : ''}`}>
+                {parseInlineStyles(taskText)}
+              </div>
+            </div>
+          );
+          lineIdx++;
+          continue;
+        }
+
+        // Regular Lists (- Item or * Item)
+        if (line.trim().match(/^[-*]\s/)) {
+          elements.push(
+            <div key={lineIdx} className="flex gap-2 ml-2 items-start">
+              <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-blue-400 dark:bg-blue-500 flex-shrink-0"></div>
+              <div className="flex-1">{parseInlineStyles(line.replace(/^[-*]\s/, ''))}</div>
+            </div>
+          );
+          lineIdx++;
+          continue;
+        }
+
+        // Numbered Lists (1. Item)
+        const numMatch = line.match(/^(\d+)\.\s/);
+        if (numMatch) {
+          elements.push(
+            <div key={lineIdx} className="flex gap-2 ml-2 items-start">
+              <span className="font-mono text-gray-500 font-bold min-w-[1.5rem] text-right">{numMatch[1]}.</span>
+              <div className="flex-1">{parseInlineStyles(line.replace(/^(\d+)\.\s/, ''))}</div>
+            </div>
+          );
+          lineIdx++;
+          continue;
+        }
+
+        // Regular Paragraph
+        elements.push(<p key={lineIdx}>{parseInlineStyles(line)}</p>);
+        lineIdx++;
+      }
+
       return (
         <div key={index} className="text-gray-800 dark:text-gray-100 leading-7 space-y-1">
-            {lines.map((line, lineIdx) => {
-                if (!line.trim()) return <div key={lineIdx} className="h-2"></div>; // Spacing
-
-                // Headers (### Title)
-                if (line.startsWith('### ')) {
-                    return <h3 key={lineIdx} className="text-lg font-bold mt-4 mb-2 text-gray-900 dark:text-white tracking-tight">{line.replace('### ', '')}</h3>;
-                }
-                if (line.startsWith('## ')) {
-                    return <h2 key={lineIdx} className="text-xl font-bold mt-6 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2 text-gray-900 dark:text-white tracking-tight">{line.replace('## ', '')}</h2>;
-                }
-
-                // Blockquotes (> Text)
-                if (line.startsWith('> ')) {
-                    return (
-                        <div key={lineIdx} className="flex gap-3 pl-4 border-l-4 border-blue-300 dark:border-blue-600/50 italic text-gray-600 dark:text-gray-400 my-2 py-1 bg-gray-50 dark:bg-gray-900/30 rounded-r">
-                            <div>{parseInlineStyles(line.replace('> ', ''))}</div>
-                        </div>
-                    );
-                }
-
-                // Lists (- Item or * Item)
-                if (line.trim().match(/^[-*]\s/)) {
-                     return (
-                        <div key={lineIdx} className="flex gap-2 ml-2 items-start">
-                            <div className="mt-2.5 w-1.5 h-1.5 rounded-full bg-blue-400 dark:bg-blue-500 flex-shrink-0"></div>
-                            <div className="flex-1">{parseInlineStyles(line.replace(/^[-*]\s/, ''))}</div>
-                        </div>
-                     );
-                }
-
-                // Numbered Lists (1. Item)
-                const numMatch = line.match(/^(\d+)\.\s/);
-                if (numMatch) {
-                    return (
-                        <div key={lineIdx} className="flex gap-2 ml-2 items-start">
-                            <span className="font-mono text-gray-500 font-bold min-w-[1.5rem] text-right">{numMatch[1]}.</span>
-                            <div className="flex-1">{parseInlineStyles(line.replace(/^(\d+)\.\s/, ''))}</div>
-                        </div>
-                    );
-                }
-
-                // Regular Paragraph
-                return <p key={lineIdx}>{parseInlineStyles(line)}</p>;
-            })}
+          {elements}
         </div>
       );
     });
   };
 
-  // Helper for inline styles (**bold**, `code`, [link](url), *italic*)
+  // Helper for inline styles (**bold**, `code`, [link](url), *italic*, $math$)
   const parseInlineStyles = (text: string) => {
-    // 1. Split by Inline Code (High priority, preserves content)
-    const codeParts = text.split(/(`[^`]+`)/g);
-    
-    return codeParts.map((part, i) => {
-        if (part.startsWith('`') && part.endsWith('`')) {
-            return <code key={i} className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600 dark:text-pink-400 break-all">{part.slice(1, -1)}</code>;
+    // 1. Split by Inline Math ($ ... $)
+    const mathParts = text.split(/(\$[^$]+\$)/g);
+
+    return mathParts.map((mathPart, i) => {
+        if (mathPart.startsWith('$') && mathPart.endsWith('$') && mathPart.length > 2) {
+            const mathContent = mathPart.slice(1, -1);
+            return (
+              <span key={i} className="inline-block bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded text-sm font-serif italic text-blue-800 dark:text-blue-300 mx-1">
+                {mathContent}
+              </span>
+            );
         }
 
-        // 2. Split by Links
-        const linkParts = part.split(/(\[[^\]]+\]\([^)]+\))/g);
-        return linkParts.map((subPart, j) => {
-            const linkMatch = subPart.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-            if (linkMatch) {
-                return (
-                    <a 
-                        key={`${i}-${j}`} 
-                        href={linkMatch[2]} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
-                    >
-                        {linkMatch[1]}
-                        <ExternalLink size={10} className="opacity-70" />
-                    </a>
-                );
+        // 2. Split by Inline Code (High priority, preserves content)
+        const codeParts = mathPart.split(/(`[^`]+`)/g);
+
+        return codeParts.map((codePart, j) => {
+            if (codePart.startsWith('`') && codePart.endsWith('`')) {
+                return <code key={`${i}-${j}`} className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600 dark:text-pink-400 break-all">{codePart.slice(1, -1)}</code>;
             }
 
-            // 3. Split by Bold
-            const boldParts = subPart.split(/(\*\*.*?\*\*)/g);
-            return boldParts.map((bPart, k) => {
-                if (bPart.startsWith('**') && bPart.endsWith('**')) {
-                    return <strong key={`${i}-${j}-${k}`} className="font-bold text-gray-900 dark:text-white">{bPart.slice(2, -2)}</strong>;
+            // 3. Split by Links
+            const linkParts = codePart.split(/(\[[^\]]+\]\([^)]+\))/g);
+            return linkParts.map((subPart, k) => {
+                const linkMatch = subPart.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+                if (linkMatch) {
+                    return (
+                        <a
+                            key={`${i}-${j}-${k}`}
+                            href={linkMatch[2]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
+                        >
+                            {linkMatch[1]}
+                            <ExternalLink size={10} className="opacity-70" />
+                        </a>
+                    );
                 }
 
-                // 4. Split by Italic
-                // Simple regex for *text* or _text_
-                const italicParts = bPart.split(/(\*[^*]+\*)/g);
-                return italicParts.map((iPart, l) => {
-                    if (iPart.startsWith('*') && iPart.endsWith('*')) {
-                         return <em key={`${i}-${j}-${k}-${l}`} className="italic text-gray-800 dark:text-gray-200">{iPart.slice(1, -1)}</em>;
+                // 4. Split by Bold
+                const boldParts = subPart.split(/(\*\*.*?\*\*)/g);
+                return boldParts.map((bPart, l) => {
+                    if (bPart.startsWith('**') && bPart.endsWith('**')) {
+                        return <strong key={`${i}-${j}-${k}-${l}`} className="font-bold text-gray-900 dark:text-white">{bPart.slice(2, -2)}</strong>;
                     }
-                    return iPart;
+
+                    // 5. Split by Italic
+                    const italicParts = bPart.split(/(\*[^*]+\*)/g);
+                    return italicParts.map((iPart, m) => {
+                        if (iPart.startsWith('*') && iPart.endsWith('*')) {
+                             return <em key={`${i}-${j}-${k}-${l}-${m}`} className="italic text-gray-800 dark:text-gray-200">{iPart.slice(1, -1)}</em>;
+                        }
+                        return iPart;
+                    });
                 });
             });
         });
