@@ -192,7 +192,8 @@ export const resources = {
           confirmDelete: "Delete this provider? associated agents may break.",
           googleApi: "Google Native API",
           openaiApi: "OpenAI Compatible Endpoint",
-          connected: "Connected"
+          connected: "Connected",
+          autoRefreshed: "Models automatically refreshed for {{name}}"
         },
         data: {
           title: "Data Management",
@@ -405,7 +406,8 @@ export const resources = {
           confirmDelete: "删除此提供商？关联的智能体可能会失效。",
           googleApi: "Google 原生 API",
           openaiApi: "OpenAI 兼容端点",
-          connected: "已连接"
+          connected: "已连接",
+          autoRefreshed: "已自动刷新 {{name}} 的模型列表"
         },
         data: {
           title: "数据管理",

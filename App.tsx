@@ -200,13 +200,19 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     e.stopPropagation();
     const newSessions = sessions.filter(s => s.id !== id);
     setSessions(newSessions);
-    
+
     const allMessages = JSON.parse(localStorage.getItem(STORAGE_KEYS.MESSAGES) || '{}');
     delete allMessages[id];
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(allMessages));
 
     if (activeSessionId === id) {
-      setActiveSessionId(newSessions.length > 0 ? newSessions[0].id : null);
+      if (newSessions.length > 0) {
+        setActiveSessionId(newSessions[0].id);
+      } else {
+        // Last session deleted - clear everything
+        setActiveSessionId(null);
+        setMessages([]);
+      }
     }
   };
 
