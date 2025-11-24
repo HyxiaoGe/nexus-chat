@@ -194,9 +194,17 @@ export const generateContentStream = async ({
         }
       });
 
+      let thoughtBuffer = '';
+      let isCollectingThought = false;
+
       for await (const chunk of response) {
         if (signal?.aborted) {
             break;
+        }
+
+        // Debug: Log chunk structure for thinking models
+        if (isThinkingModel && chunk.candidates?.[0]?.content?.parts) {
+          console.log('[Gemini Thinking Debug] Chunk parts:', JSON.stringify(chunk.candidates[0].content.parts, null, 2));
         }
 
         // Process thoughts if available (for thinking models)
@@ -205,9 +213,37 @@ export const generateContentStream = async ({
           for (const part of chunk.candidates[0].content.parts) {
             // Check if this part is a thought
             if (part.thought && part.text) {
-              // Wrap thought content in <think> tags
-              onChunk(`<think>${part.text}</think>`);
+              // Stream thought content in chunks for better UX
+              const text = part.text;
+
+              // If starting a new thought, open the tag
+              if (!isCollectingThought) {
+                onChunk('<think>');
+                isCollectingThought = true;
+              }
+
+              // Stream the thought text in chunks (every ~20 chars)
+              let buffer = thoughtBuffer + text;
+              thoughtBuffer = '';
+
+              const chunkSize = 20;
+              while (buffer.length >= chunkSize) {
+                onChunk(buffer.slice(0, chunkSize));
+                buffer = buffer.slice(chunkSize);
+              }
+              thoughtBuffer = buffer;
+
             } else if (part.text && !part.thought) {
+              // If we were collecting thoughts, close the think tag
+              if (isCollectingThought) {
+                // Send remaining thought buffer
+                if (thoughtBuffer) {
+                  onChunk(thoughtBuffer);
+                  thoughtBuffer = '';
+                }
+                onChunk('</think>');
+                isCollectingThought = false;
+              }
               // Regular text content
               onChunk(part.text);
             }
@@ -219,6 +255,14 @@ export const generateContentStream = async ({
             onChunk(text);
           }
         }
+      }
+
+      // Handle any remaining thought content at the end
+      if (isCollectingThought) {
+        if (thoughtBuffer) {
+          onChunk(thoughtBuffer);
+        }
+        onChunk('</think>');
       }
     } catch (error) {
       if (signal?.aborted) return; // Ignore abort errors for GenAI
