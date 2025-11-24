@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { AgentConfig, LLMProvider, AppSettings } from '../types';
-import { 
-    Settings, X, Plus, Save, Trash2, RefreshCw, Loader2, 
-    Monitor, Server, Database, Bot, ToggleLeft, ToggleRight, 
+import { AgentConfig, LLMProvider, AppSettings, TokenStats } from '../types';
+import {
+    Settings, X, Plus, Save, Trash2, RefreshCw, Loader2,
+    Monitor, Server, Database, Bot, ToggleLeft, ToggleRight,
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
     Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench, Sliders,
     BrainCircuit
@@ -12,7 +12,7 @@ import { fetchProviderModels } from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
-import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId, isThinkingModel, isNewModel } from '../constants';
+import { SYSTEM_PROMPT_TEMPLATES, PROVIDER_PRESETS, BRAND_CONFIGS, getBrandFromModelId, isThinkingModel, isNewModel, STORAGE_KEYS } from '../constants';
 import { BrandIcon } from './BrandIcons';
 import { Sparkles } from 'lucide-react';
 
@@ -224,8 +224,22 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const [showApiKey, setShowApiKey] = useState(false);
   
   const [isSyncingModels, setIsSyncingModels] = useState(false);
-  const [manualModelEntry, setManualModelEntry] = useState(false); 
+  const [manualModelEntry, setManualModelEntry] = useState(false);
   const { success, error, info } = useToast();
+
+  // Load global token stats from localStorage
+  const [tokenStats, setTokenStats] = useState<TokenStats>(() => {
+    const statsJson = localStorage.getItem(STORAGE_KEYS.TOKEN_STATS);
+    return statsJson ? JSON.parse(statsJson) : { byModel: {} };
+  });
+
+  // Refresh token stats whenever modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const statsJson = localStorage.getItem(STORAGE_KEYS.TOKEN_STATS);
+      setTokenStats(statsJson ? JSON.parse(statsJson) : { byModel: {} });
+    }
+  }, [isOpen]);
 
   // --- Aggregated Models Logic ---
   // Combine models from ALL providers into a single searchable list
@@ -1146,6 +1160,26 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                                 <Edit2 size={14} />
                                             </button>
                                         </div>
+
+                                        {/* Token Usage Statistics */}
+                                        {tokenStats.byModel[agent.modelId] && (
+                                            <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                                                <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
+                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                                    </svg>
+                                                    <span className="font-semibold">{tokenStats.byModel[agent.modelId].totalTokens.toLocaleString()} tokens</span>
+                                                    <span className="text-gray-400">•</span>
+                                                    <span>{tokenStats.byModel[agent.modelId].requestCount} requests</span>
+                                                    {tokenStats.byModel[agent.modelId].totalCost > 0 && (
+                                                        <>
+                                                            <span className="text-gray-400">•</span>
+                                                            <span className="text-green-600 dark:text-green-400 font-semibold">${tokenStats.byModel[agent.modelId].totalCost.toFixed(4)}</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}

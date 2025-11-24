@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { Message, AgentConfig, LLMProvider } from '../types';
+import { Message, AgentConfig, LLMProvider, TokenUsage, TokenStats } from '../types';
 import { generateContentStream } from '../services/geminiService';
 import { generateId, generateSmartTitle } from '../utils/common';
 import { useTranslation } from 'react-i18next';
+import { STORAGE_KEYS } from '../constants';
 
 interface UseChatOrchestratorProps {
   activeSessionId: string | null;
@@ -15,6 +16,28 @@ interface UseChatOrchestratorProps {
   updateSessionTitle: (sessionId: string, title: string) => void;
   showToast: (message: React.ReactNode) => void;
 }
+
+// Helper function to update global token stats
+const updateGlobalTokenStats = (modelId: string, usage: TokenUsage) => {
+  const statsJson = localStorage.getItem(STORAGE_KEYS.TOKEN_STATS);
+  const stats: TokenStats = statsJson ? JSON.parse(statsJson) : { byModel: {} };
+
+  if (!stats.byModel[modelId]) {
+    stats.byModel[modelId] = {
+      totalTokens: 0,
+      totalCost: 0,
+      requestCount: 0,
+      lastUsed: Date.now(),
+    };
+  }
+
+  stats.byModel[modelId].totalTokens += usage.totalTokens;
+  stats.byModel[modelId].totalCost += usage.estimatedCost || 0;
+  stats.byModel[modelId].requestCount += 1;
+  stats.byModel[modelId].lastUsed = Date.now();
+
+  localStorage.setItem(STORAGE_KEYS.TOKEN_STATS, JSON.stringify(stats));
+};
 
 export const useChatOrchestrator = ({
   activeSessionId,
@@ -173,17 +196,40 @@ export const useChatOrchestrator = ({
               setMessages(prev => prev.map(m =>
                   m.id === messageId ? { ...m, content: m.content + text } : m
               ));
-            }
-          });
+            },
+            onComplete: (usage) => {
+              if (signal.aborted) return;
 
-          if (!signal.aborted) {
-            setMessages(prev => {
-                const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false } : m);
+              // Calculate cost if pricing available
+              let estimatedCost: number | undefined;
+              if (usage && provider.fetchedModels) {
+                const model = provider.fetchedModels.find(m => m.id === agent.modelId);
+                if (model && model.pricing) {
+                  const promptCost = (usage.promptTokens / 1_000_000) * parseFloat(model.pricing.prompt);
+                  const completionCost = (usage.completionTokens / 1_000_000) * parseFloat(model.pricing.completion);
+                  estimatedCost = promptCost + completionCost;
+                  if (usage) {
+                    usage.estimatedCost = estimatedCost;
+                  }
+                }
+              }
+
+              // Update global stats if usage is available
+              if (usage) {
+                updateGlobalTokenStats(agent.modelId, usage);
+              }
+
+              // Update message with token usage
+              setMessages(prev => {
+                const final = prev.map(m =>
+                  m.id === messageId ? { ...m, isStreaming: false, tokenUsage: usage } : m
+                );
                 saveMessagesToStorage(activeSessionId, final);
                 return final;
-            });
-            abortControllersRef.current.delete(messageId);
-          }
+              });
+              abortControllersRef.current.delete(messageId);
+            }
+          });
 
         } catch (err: unknown) {
           if (signal.aborted) return;
@@ -282,17 +328,40 @@ export const useChatOrchestrator = ({
               setMessages(prev => prev.map(m =>
                   m.id === messageId ? { ...m, content: m.content + text } : m
               ));
-            }
-          });
+            },
+            onComplete: (usage) => {
+              if (signal.aborted) return;
 
-          if (!signal.aborted) {
-            setMessages(prev => {
-                const final = prev.map(m => m.id === messageId ? { ...m, isStreaming: false } : m);
+              // Calculate cost if pricing available
+              let estimatedCost: number | undefined;
+              if (usage && provider.fetchedModels) {
+                const model = provider.fetchedModels.find(m => m.id === agent.modelId);
+                if (model && model.pricing) {
+                  const promptCost = (usage.promptTokens / 1_000_000) * parseFloat(model.pricing.prompt);
+                  const completionCost = (usage.completionTokens / 1_000_000) * parseFloat(model.pricing.completion);
+                  estimatedCost = promptCost + completionCost;
+                  if (usage) {
+                    usage.estimatedCost = estimatedCost;
+                  }
+                }
+              }
+
+              // Update global stats if usage is available
+              if (usage) {
+                updateGlobalTokenStats(agent.modelId, usage);
+              }
+
+              // Update message with token usage
+              setMessages(prev => {
+                const final = prev.map(m =>
+                  m.id === messageId ? { ...m, isStreaming: false, tokenUsage: usage } : m
+                );
                 saveMessagesToStorage(activeSessionId, final);
                 return final;
-            });
-            abortControllersRef.current.delete(messageId);
-          }
+              });
+              abortControllersRef.current.delete(messageId);
+            }
+          });
         } catch (error: any) {
           if (error.name === 'AbortError') return;
           setMessages(prev => {

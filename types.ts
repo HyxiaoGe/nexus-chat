@@ -61,6 +61,13 @@ export interface AgentConfig {
   config?: GenerationConfig; // New field for advanced settings
 }
 
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimatedCost?: number; // In USD
+}
+
 export interface Message {
   id: string;
   sessionId: string;
@@ -70,6 +77,7 @@ export interface Message {
   agentId?: string; // Replaces modelConfigId
   isStreaming?: boolean;
   error?: string;
+  tokenUsage?: TokenUsage; // Token consumption stats
 }
 
 export interface Session {
@@ -77,6 +85,17 @@ export interface Session {
   title: string;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface TokenStats {
+  byModel: {
+    [modelId: string]: {
+      totalTokens: number;
+      totalCost: number;
+      requestCount: number;
+      lastUsed: number;
+    };
+  };
 }
 
 export enum LoadingState {

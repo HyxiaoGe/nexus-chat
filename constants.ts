@@ -263,6 +263,7 @@ export const STORAGE_KEYS = {
   PROVIDERS: 'nexus_providers',
   AGENTS: 'nexus_agents',
   SETTINGS: 'nexus_settings',
+  TOKEN_STATS: 'nexus_token_stats',
 };
 
 // --- UX Presets ---
