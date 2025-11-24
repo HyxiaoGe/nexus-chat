@@ -54,13 +54,11 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       { icon: <Feather size={20} className="text-green-500" />, label: t('suggestions.philosophy.label'), prompt: t('suggestions.philosophy.prompt') },
   ];
 
-  // Calculate session token usage
+  // Get session token usage from current session (accumulated, not from messages)
   const sessionTokenUsage = useMemo(() => {
-    const aiMessages = messages.filter(m => m.role === 'model' && m.tokenUsage);
-    const totalTokens = aiMessages.reduce((sum, m) => sum + (m.tokenUsage?.totalTokens || 0), 0);
-    const totalCost = aiMessages.reduce((sum, m) => sum + (m.tokenUsage?.estimatedCost || 0), 0);
-    return { totalTokens, totalCost };
-  }, [messages]);
+    const activeSession = sessions.find(s => s.id === activeSessionId);
+    return activeSession?.sessionTokenUsage || { totalTokens: 0, totalCost: 0 };
+  }, [sessions, activeSessionId]);
 
   // Sync language with i18next
   useEffect(() => {
@@ -183,6 +181,28 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     ));
   };
 
+  const updateSessionTokenUsage = (sessionId: string, tokenUsage: { totalTokens: number; totalCost: number }) => {
+    setSessions(prev => {
+      const updated = prev.map(s => {
+        if (s.id === sessionId) {
+          const currentUsage = s.sessionTokenUsage || { totalTokens: 0, totalCost: 0 };
+          return {
+            ...s,
+            sessionTokenUsage: {
+              totalTokens: currentUsage.totalTokens + tokenUsage.totalTokens,
+              totalCost: currentUsage.totalCost + tokenUsage.totalCost,
+            },
+            updatedAt: Date.now()
+          };
+        }
+        return s;
+      });
+      // Persist sessions to localStorage
+      localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   // --- Hooks ---
   const { isStreaming, sendMessage, regenerateResponses, regenerateSingleAgent, stopGeneration, stopAgent } = useChatOrchestrator({
       activeSessionId,
@@ -193,6 +213,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       saveMessagesToStorage,
       onScrollToBottom: scrollToBottom,
       updateSessionTitle,
+      updateSessionTokenUsage,
       showToast: toastInfo
   });
 
