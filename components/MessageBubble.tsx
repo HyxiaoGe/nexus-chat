@@ -230,13 +230,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
             </div>
           )}
           
-          {/* Footer Timestamp */}
-          <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 px-2 flex items-center gap-2 select-none opacity-80">
+          {/* Footer Timestamp & Token Usage */}
+          <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 px-2 flex items-center gap-2 select-none opacity-80 flex-wrap">
             {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
             {message.isStreaming && <span className="text-blue-600 dark:text-blue-400 animate-pulse font-semibold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                {t('app.typing')}
             </span>}
+
+            {/* Token Usage Display - Only for completed AI messages */}
+            {!isUser && !message.isStreaming && message.tokenUsage && (
+              <span className="flex items-center gap-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>{message.tokenUsage.totalTokens.toLocaleString()} tokens</span>
+                {message.tokenUsage.estimatedCost && message.tokenUsage.estimatedCost > 0 && (
+                  <span className="text-green-600 dark:text-green-400">• ${message.tokenUsage.estimatedCost.toFixed(4)}</span>
+                )}
+              </span>
+            )}
           </div>
 
         </div>
@@ -244,12 +257,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison function: only re-render if message content, streaming state, error, or callbacks change
+  // Custom comparison function: only re-render if message content, streaming state, error, tokenUsage, or callbacks change
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.isStreaming === nextProps.message.isStreaming &&
     prevProps.message.error === nextProps.message.error &&
+    prevProps.message.tokenUsage?.totalTokens === nextProps.message.tokenUsage?.totalTokens &&
     prevProps.config?.id === nextProps.config?.id &&
     prevProps.onStopAgent === nextProps.onStopAgent &&
     prevProps.showToast === nextProps.showToast &&

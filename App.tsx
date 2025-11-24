@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather, RefreshCw } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
@@ -53,6 +53,14 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       { icon: <Zap size={20} className="text-purple-500" />, label: t('suggestions.brainstorm.label'), prompt: t('suggestions.brainstorm.prompt') },
       { icon: <Feather size={20} className="text-green-500" />, label: t('suggestions.philosophy.label'), prompt: t('suggestions.philosophy.prompt') },
   ];
+
+  // Calculate session token usage
+  const sessionTokenUsage = useMemo(() => {
+    const aiMessages = messages.filter(m => m.role === 'model' && m.tokenUsage);
+    const totalTokens = aiMessages.reduce((sum, m) => sum + (m.tokenUsage?.totalTokens || 0), 0);
+    const totalCost = aiMessages.reduce((sum, m) => sum + (m.tokenUsage?.estimatedCost || 0), 0);
+    return { totalTokens, totalCost };
+  }, [messages]);
 
   // Sync language with i18next
   useEffect(() => {
@@ -381,9 +389,22 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-sm md:text-base truncate max-w-[200px] md:max-w-md">
                     {sessions.find(s => s.id === activeSessionId)?.title || t('sidebar.newChat')}
                 </h2>
-                <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                    <MessageSquare size={10} /> {t('app.activeAgents_other', { count: agents.filter(a => a.enabled).length })}
-                </span>
+                <div className="flex items-center gap-2 text-[10px] text-gray-500 flex-wrap">
+                    <span className="flex items-center gap-1">
+                        <MessageSquare size={10} /> {t('app.activeAgents_other', { count: agents.filter(a => a.enabled).length })}
+                    </span>
+                    {sessionTokenUsage.totalTokens > 0 && (
+                        <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-medium">
+                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <span>{sessionTokenUsage.totalTokens.toLocaleString()} tokens</span>
+                            {sessionTokenUsage.totalCost > 0 && (
+                                <span className="text-green-600 dark:text-green-400">• ${sessionTokenUsage.totalCost.toFixed(4)}</span>
+                            )}
+                        </span>
+                    )}
+                </div>
             </div>
           </div>
           

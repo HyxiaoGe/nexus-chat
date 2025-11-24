@@ -1,12 +1,13 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { AgentConfig, LLMProvider, OpenRouterModel } from "../types";
+import { AgentConfig, LLMProvider, OpenRouterModel, TokenUsage } from "../types";
 
 interface GenerateStreamParams {
   agent: AgentConfig;
   provider: LLMProvider;
   prompt: string;
   onChunk: (text: string) => void;
+  onComplete?: (usage?: TokenUsage) => void; // Callback when streaming is complete with token usage
   signal?: AbortSignal;
 }
 
@@ -158,6 +159,7 @@ export const generateContentStream = async ({
   provider,
   prompt,
   onChunk,
+  onComplete,
   signal
 }: GenerateStreamParams): Promise<void> => {
   
@@ -264,6 +266,21 @@ export const generateContentStream = async ({
         }
         onChunk('</think>');
       }
+
+      // Capture token usage from usageMetadata
+      if (onComplete) {
+        const usageMetadata = response.usageMetadata;
+        if (usageMetadata) {
+          const usage: TokenUsage = {
+            promptTokens: usageMetadata.promptTokenCount || 0,
+            completionTokens: usageMetadata.candidatesTokenCount || 0,
+            totalTokens: usageMetadata.totalTokenCount || 0,
+          };
+          onComplete(usage);
+        } else {
+          onComplete();
+        }
+      }
     } catch (error) {
       if (signal?.aborted) return; // Ignore abort errors for GenAI
       console.error("Gemini API Error:", error);
@@ -345,6 +362,7 @@ export const generateContentStream = async ({
         const decoder = new TextDecoder();
         let buffer = '';
         let isInReasoningBlock = false; // Track if we're currently in a reasoning block
+        let capturedUsage: TokenUsage | undefined; // Capture usage from SSE
 
         while (true) {
             if (signal?.aborted) {
@@ -381,6 +399,16 @@ export const generateContentStream = async ({
 
                 try {
                     const json = JSON.parse(data);
+
+                    // Capture token usage if available (usually in the last message)
+                    if (json.usage) {
+                        capturedUsage = {
+                            promptTokens: json.usage.prompt_tokens || 0,
+                            completionTokens: json.usage.completion_tokens || 0,
+                            totalTokens: json.usage.total_tokens || 0,
+                        };
+                    }
+
                     const delta = json.choices?.[0]?.delta;
 
                     if (!delta) continue;
@@ -411,6 +439,11 @@ export const generateContentStream = async ({
                     // console.warn("Failed to parse SSE message", e);
                 }
             }
+        }
+
+        // Call onComplete with captured usage data
+        if (onComplete) {
+            onComplete(capturedUsage);
         }
 
     } catch (error: unknown) {
