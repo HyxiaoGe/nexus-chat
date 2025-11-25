@@ -133,12 +133,15 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
     enabled: true,
     // Fallback models (will be replaced by dynamic fetching)
     suggestedModels: [
-      'anthropic/claude-3.5-sonnet',
-      'openai/gpt-4o',
-      'google/gemini-2.0-flash-thinking-exp-01-21',
+      'anthropic/claude-opus-4.5',
+      'openai/gpt-5.1-chat',
+      'google/gemini-3-pro-preview',
       'deepseek/deepseek-r1',
-      'x-ai/grok-2-1212',
-      'qwen/qwen-2.5-72b-instruct'
+      'x-ai/grok-4.1-fast',
+      'qwen/qwen3-max',
+      'moonshotai/kimi-k2-thinking',
+      'z-ai/glm-4.6',
+      'minimax/minimax-m2'
     ]
   }
 ];
@@ -150,7 +153,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'Anthropic Claude',
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
-    modelId: 'anthropic/claude-3.5-sonnet',
+    modelId: 'anthropic/claude-opus-4.5',
     systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
     enabled: true,
     config: {
@@ -163,7 +166,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'OpenAI GPT',
     avatar: 'openai',
     providerId: 'provider-openrouter',
-    modelId: 'openai/gpt-4o',
+    modelId: 'openai/gpt-5.1-chat',
     systemPrompt: '你是一个乐于助人的助手。',
     enabled: true,
     config: {
@@ -175,7 +178,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'Google Gemini',
     avatar: 'gemini',
     providerId: 'provider-openrouter',
-    modelId: 'google/gemini-2.0-flash-exp',
+    modelId: 'google/gemini-3-pro-preview',
     systemPrompt: '你是一个乐于助人且反应迅速的助手。',
     enabled: true,
     config: {
@@ -200,7 +203,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'xAI Grok',
     avatar: 'grok',
     providerId: 'provider-openrouter',
-    modelId: 'x-ai/grok-2-1212',
+    modelId: 'x-ai/grok-4.1-fast',
     systemPrompt: '你是 Grok，一个由 xAI 开发的 AI 助手。',
     enabled: false,
     config: {
@@ -212,7 +215,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'Qwen (通义千问)',
     avatar: 'qwen',
     providerId: 'provider-openrouter',
-    modelId: 'qwen/qwen-2.5-72b-instruct',
+    modelId: 'qwen/qwen3-max',
     systemPrompt: '你是通义千问，由阿里巴巴开发的大语言模型。',
     enabled: false,
     config: {
@@ -224,7 +227,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'Moonshot AI',
     avatar: 'moonshot',
     providerId: 'provider-openrouter',
-    modelId: 'moonshot/moonshot-v1-8k',
+    modelId: 'moonshotai/kimi-k2-thinking',
     systemPrompt: '你是 Kimi，由 Moonshot AI 开发的智能助手。',
     enabled: false,
     config: {
@@ -236,7 +239,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'Zhipu AI (智谱)',
     avatar: 'zhipu',
     providerId: 'provider-openrouter',
-    modelId: 'zhipuai/glm-4-plus',
+    modelId: 'z-ai/glm-4.6',
     systemPrompt: '你是智谱清言，由智谱 AI 开发的语言模型。',
     enabled: false,
     config: {
@@ -248,7 +251,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     name: 'MiniMax',
     avatar: 'minimax',
     providerId: 'provider-openrouter',
-    modelId: 'minimax/minimax-01',
+    modelId: 'minimax/minimax-m2',
     systemPrompt: '你是 MiniMax 智能助手。',
     enabled: false,
     config: {
