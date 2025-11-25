@@ -98,7 +98,7 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative">
-              <BrandIcon brand={agent.brand} className="w-8 h-8" />
+              <BrandIcon brand={agent.avatar} className="w-8 h-8" />
               {isStreaming && (
                 <div className="absolute -top-1 -right-1 w-3 h-3">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
@@ -147,9 +147,11 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
               <Sparkles className="w-3 h-3" />
               {latestMessage.tokenUsage.totalTokens.toLocaleString()} tokens
             </span>
-            <span className="text-green-600 dark:text-green-400">
-              ≈ ${latestMessage.tokenUsage.totalCost.toFixed(6)}
-            </span>
+            {latestMessage.tokenUsage.estimatedCost && latestMessage.tokenUsage.estimatedCost > 0 && (
+              <span className="text-green-600 dark:text-green-400">
+                ≈ ${latestMessage.tokenUsage.estimatedCost.toFixed(6)}
+              </span>
+            )}
           </div>
         )}
       </div>

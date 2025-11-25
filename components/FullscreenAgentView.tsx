@@ -125,7 +125,7 @@ export const FullscreenAgentView: React.FC<FullscreenAgentViewProps> = ({
 
             {/* 中间：AI信息 */}
             <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <BrandIcon brand={currentAgent?.brand || ''} className="w-7 h-7" />
+              <BrandIcon brand={currentAgent?.avatar || ''} className="w-7 h-7" />
               <div className="text-center">
                 <div className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                   {currentAgent?.name}
@@ -179,14 +179,16 @@ export const FullscreenAgentView: React.FC<FullscreenAgentViewProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                    ${message.tokenUsage.totalCost.toFixed(6)}
+                {message.tokenUsage.estimatedCost && message.tokenUsage.estimatedCost > 0 && (
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                      ${message.tokenUsage.estimatedCost.toFixed(6)}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      预估成本
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    预估成本
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -243,7 +245,7 @@ export const FullscreenAgentView: React.FC<FullscreenAgentViewProps> = ({
               <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
               {prevAgent && (
                 <div className="flex items-center gap-2">
-                  <BrandIcon brand={prevAgent.brand} className="w-6 h-6" />
+                  <BrandIcon brand={prevAgent.avatar} className="w-6 h-6" />
                   <div className="text-left">
                     <div className="text-xs text-gray-500 dark:text-gray-400">上一个</div>
                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -298,7 +300,7 @@ export const FullscreenAgentView: React.FC<FullscreenAgentViewProps> = ({
                       {nextAgent.name}
                     </div>
                   </div>
-                  <BrandIcon brand={nextAgent.brand} className="w-6 h-6" />
+                  <BrandIcon brand={nextAgent.avatar} className="w-6 h-6" />
                 </div>
               )}
               <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />

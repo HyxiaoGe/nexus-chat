@@ -316,6 +316,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     regenerateSingleAgent(userMessage.content, targetAgentId);
   };
 
+  // Alias for new components
+  const regenerateAgent = handleRegenerateMessage;
+
   const handleSuggestionClick = (prompt: string) => {
       setInput(prompt);
       if (textareaRef.current) {
