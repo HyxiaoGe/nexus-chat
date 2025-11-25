@@ -87,8 +87,16 @@ export const SmartContentRenderer: React.FC<SmartContentRendererProps> = ({ cont
       }
   }, [isThinkingActive]);
 
-  // Keep thinking chain open after streaming completes (user can manually close it)
-  // Removed auto-collapse behavior as per user feedback
+  // Auto-collapse thinking chain after streaming completes
+  useEffect(() => {
+      if (!isStreaming && thinkingContent && isThinkingOpen) {
+          // Delay collapse slightly so user can see it's complete
+          const timer = setTimeout(() => {
+              setIsThinkingOpen(false);
+          }, 2000);
+          return () => clearTimeout(timer);
+      }
+  }, [isStreaming, thinkingContent, isThinkingOpen]);
 
   // Helper to detect and render tables
   const isTableRow = (line: string) => {
