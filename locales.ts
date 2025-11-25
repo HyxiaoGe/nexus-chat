@@ -67,16 +67,26 @@ export const resources = {
           desc: "Get responses from Claude, GPT-4, Gemini, and DeepSeek simultaneously."
         },
         feature2: {
-          title: "Setup Required",
-          desc: "You need to configure your OpenRouter API key to get started."
+          title: "Ready to Use",
+          desc: "Start chatting immediately with our free tier, or configure your own API key for unlimited access."
         },
         getStarted: "Get Started:",
-        step1: "Visit OpenRouter.ai and create an account",
-        step2: "Get your API key from the Keys page",
-        step3: "Paste it in Settings → Providers → OpenRouter",
-        step4: "Start chatting with multiple AI models!",
-        later: "Remind Me Later",
-        configure: "Configure Now"
+        step1: "You can start chatting right away with the free tier",
+        step2: "For unlimited access, get an API key from OpenRouter",
+        step3: "Visit Settings → Providers → OpenRouter to configure",
+        step4: "Enjoy chatting with multiple AI models!",
+        later: "Start with Free Tier",
+        configure: "Configure API Key"
+      },
+      freeTier: {
+        badge: "Free Tier",
+        badgeOwn: "Your API Key",
+        usingFree: "Using free tier (daily limit applies)",
+        usingOwn: "Using your own API key",
+        limitReached: "Daily limit reached",
+        limitReachedDesc: "Free tier daily limit has been reached. Please try again tomorrow or configure your own API key for unlimited access.",
+        configureKey: "Configure API Key",
+        tryAgainTomorrow: "Try again tomorrow"
       },
       suggestions: {
         creative: {
@@ -168,14 +178,22 @@ export const resources = {
         providers: {
           title: "Providers",
           desc: "Configure API keys and connection endpoints.",
-          securityWarning: "Security Notice",
-          securityWarningDesc: "API keys are stored in your browser's localStorage (unencrypted). Only use this app on trusted devices. For production use, implement server-side key management.",
-          infoTitle: "Why configure providers?",
-          infoDesc: "Providers are the actual AI services. Configure them once (API Key, URL) and link multiple agents to them.",
+          securityWarning: "Your Data is Safe",
+          securityWarningDesc: "Your API key is stored only in your browser's local storage and never sent to our servers. We cannot see or access your key.",
+          infoTitle: "Why configure your own API key?",
+          infoDesc: "While free tier is available, configuring your own key removes daily limits and gives you access to all models.",
+          openRouterGuide: "Get Your API Key",
+          openRouterGuideDesc: "Create a free OpenRouter account and get your API key in seconds:",
+          openRouterStep1: "Visit OpenRouter Keys page",
+          openRouterStep2: "Click 'Create Key' and copy it",
+          openRouterStep3: "Paste it below and click 'Verify & Sync'",
+          openRouterLink: "Open OpenRouter Keys →",
+          openRouterUrl: "https://openrouter.ai/settings/keys",
           name: "Provider Name",
           baseUrl: "Base URL",
           apiKey: "API Key",
-          apiKeyOptional: "(Optional if using Env)",
+          apiKeyPlaceholder: "sk-or-v1-...",
+          apiKeyOptional: "(Optional - Free tier available)",
           defaultCorrect: "(Default is correct)",
           verifySync: "Verify & Sync",
           validating: "Key will be validated securely against OpenRouter Auth.",
@@ -186,14 +204,17 @@ export const resources = {
           apiKeyRequired: "OpenRouter API Key is required.",
           invalidKey: "Invalid API Key. Please check your OpenRouter credentials.",
           keyVerified: "API Key Verified!",
-          syncSuccess: "Verified & Synced models!",
+          syncSuccess: "Verified & Synced {{count}} models!",
           noModels: "No models found. Check your permissions.",
           saved: "Provider configuration saved",
           confirmDelete: "Delete this provider? associated agents may break.",
           googleApi: "Google Native API",
           openaiApi: "OpenAI Compatible Endpoint",
           connected: "Connected",
-          autoRefreshed: "Models automatically refreshed for {{name}}"
+          freeTier: "Free Tier",
+          autoRefreshed: "Models automatically refreshed for {{name}}",
+          removeKey: "Remove API Key",
+          removeKeyConfirm: "Remove your API key and switch back to free tier?"
         },
         data: {
           title: "Data Management",
@@ -281,16 +302,26 @@ export const resources = {
           desc: "同时获取 Claude、GPT-4、Gemini 和 DeepSeek 的回复。"
         },
         feature2: {
-          title: "需要配置",
-          desc: "您需要配置 OpenRouter API 密钥才能开始使用。"
+          title: "开箱即用",
+          desc: "可直接使用免费额度体验，或配置自己的 API Key 解锁无限使用。"
         },
         getStarted: "开始使用：",
-        step1: "访问 OpenRouter.ai 并创建账户",
-        step2: "从 Keys 页面获取您的 API 密钥",
-        step3: "在 设置 → 提供商 → OpenRouter 中粘贴密钥",
-        step4: "开始与多个 AI 模型对话！",
-        later: "稍后提醒",
-        configure: "立即配置"
+        step1: "您可以直接使用免费额度开始体验",
+        step2: "如需无限使用，请前往 OpenRouter 获取 API Key",
+        step3: "在 设置 → 提供商 → OpenRouter 中配置",
+        step4: "畅享多模型 AI 对话！",
+        later: "先用免费额度",
+        configure: "配置 API Key"
+      },
+      freeTier: {
+        badge: "免费额度",
+        badgeOwn: "自有 Key",
+        usingFree: "使用免费额度（有每日限制）",
+        usingOwn: "使用您自己的 API Key",
+        limitReached: "今日额度已用完",
+        limitReachedDesc: "免费额度今日已达上限。请明天再试，或配置自己的 API Key 解锁无限使用。",
+        configureKey: "配置 API Key",
+        tryAgainTomorrow: "明天再试"
       },
       suggestions: {
         creative: {
@@ -382,14 +413,22 @@ export const resources = {
         providers: {
           title: "提供商",
           desc: "配置 API 密钥和连接端点。",
-          securityWarning: "安全提示",
-          securityWarningDesc: "API 密钥以明文形式存储在浏览器的 localStorage 中（未加密）。请仅在受信任的设备上使用此应用。生产环境请使用服务端密钥管理。",
-          infoTitle: "为什么要配置提供商？",
-          infoDesc: "提供商是实际的 AI 服务。配置一次（API Key, URL），即可关联多个智能体。",
+          securityWarning: "您的数据是安全的",
+          securityWarningDesc: "您的 API Key 仅存储在浏览器本地，不会发送到我们的服务器。我们无法查看或访问您的密钥。",
+          infoTitle: "为什么要配置自己的 API Key？",
+          infoDesc: "虽然可以使用免费额度，但配置自己的 Key 可以解除每日限制，并获得所有模型的访问权限。",
+          openRouterGuide: "获取您的 API Key",
+          openRouterGuideDesc: "创建免费的 OpenRouter 账户，几秒钟即可获取 API Key：",
+          openRouterStep1: "访问 OpenRouter Keys 页面",
+          openRouterStep2: "点击 'Create Key' 并复制",
+          openRouterStep3: "粘贴到下方并点击 '验证并同步'",
+          openRouterLink: "打开 OpenRouter Keys →",
+          openRouterUrl: "https://openrouter.ai/settings/keys",
           name: "提供商名称",
           baseUrl: "Base URL",
           apiKey: "API Key",
-          apiKeyOptional: "（如果使用环境变量则可选）",
+          apiKeyPlaceholder: "sk-or-v1-...",
+          apiKeyOptional: "（可选 - 可使用免费额度）",
           defaultCorrect: "（默认即可）",
           verifySync: "验证并同步",
           validating: "密钥将通过 OpenRouter Auth 安全验证。",
@@ -400,14 +439,17 @@ export const resources = {
           apiKeyRequired: "需要 OpenRouter API Key。",
           invalidKey: "API Key 无效，请检查您的凭证。",
           keyVerified: "API Key 验证通过！",
-          syncSuccess: "验证并同步了模型！",
+          syncSuccess: "验证并同步了 {{count}} 个模型！",
           noModels: "未找到模型。请检查权限。",
           saved: "提供商配置已保存",
           confirmDelete: "删除此提供商？关联的智能体可能会失效。",
           googleApi: "Google 原生 API",
           openaiApi: "OpenAI 兼容端点",
           connected: "已连接",
-          autoRefreshed: "已自动刷新 {{name}} 的模型列表"
+          freeTier: "免费额度",
+          autoRefreshed: "已自动刷新 {{name}} 的模型列表",
+          removeKey: "移除 API Key",
+          removeKeyConfirm: "移除您的 API Key 并切换回免费额度？"
         },
         data: {
           title: "数据管理",

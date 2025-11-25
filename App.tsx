@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather, RefreshCw } from 'lucide-react';
+import { Menu, Send, Settings as SettingsIcon, Plus, MessageSquare, Square, ArrowDown, Sparkles, Zap, Code, Feather, RefreshCw, Gift, Key } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
 
@@ -64,6 +64,12 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     const activeSession = sessions.find(s => s.id === activeSessionId);
     return activeSession?.sessionTokenUsage || { totalTokens: 0, totalCost: 0 };
   }, [sessions, activeSessionId]);
+
+  // Check if using free tier (OpenRouter without API key)
+  const isUsingFreeTier = useMemo(() => {
+    const openRouterProvider = providers.find(p => p.id === 'provider-openrouter');
+    return openRouterProvider && !openRouterProvider.apiKey;
+  }, [providers]);
 
   // Sync language with i18next
   useEffect(() => {
@@ -454,6 +460,18 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                     <span className="flex items-center gap-1">
                         <MessageSquare size={10} /> {t('app.activeAgents_other', { count: agents.filter(a => a.enabled).length })}
                     </span>
+                    <button
+                        onClick={() => { setSettingsSection('providers'); setIsSettingsOpen(true); }}
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium cursor-pointer transition-colors ${
+                            isUsingFreeTier
+                                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                                : 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40'
+                        }`}
+                        title={isUsingFreeTier ? t('freeTier.usingFree') : t('freeTier.usingOwn')}
+                    >
+                        {isUsingFreeTier ? <Gift size={10} /> : <Key size={10} />}
+                        {isUsingFreeTier ? t('freeTier.badge') : t('freeTier.badgeOwn')}
+                    </button>
                     {sessionTokenUsage.totalTokens > 0 && (
                         <div className="relative group/token">
                             <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full font-medium cursor-help">

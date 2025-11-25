@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Settings, X, Rocket, Key } from 'lucide-react';
+import { Sparkles, Settings, X, Rocket, Gift, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface WelcomeDialogProps {
@@ -54,49 +54,59 @@ export const WelcomeDialog: React.FC<WelcomeDialogProps> = ({ isOpen, onClose, o
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-              <Key size={20} className="text-purple-600 dark:text-purple-400" />
+            <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+              <Gift size={20} className="text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                {t('welcome.feature2.title', 'Setup Required')}
+                {t('welcome.feature2.title', 'Ready to Use')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t('welcome.feature2.desc', 'You need to configure your OpenRouter API key to get started.')}
+                {t('welcome.feature2.desc', 'Start chatting immediately with our free tier, or configure your own API key for unlimited access.')}
               </p>
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
               <strong>{t('welcome.getStarted', 'Get Started:')}</strong>
             </p>
             <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-4 list-decimal">
-              <li>{t('welcome.step1', 'Visit OpenRouter.ai and create an account')}</li>
-              <li>{t('welcome.step2', 'Get your API key from the Keys page')}</li>
-              <li>{t('welcome.step3', 'Paste it in Settings → Providers → OpenRouter')}</li>
-              <li>{t('welcome.step4', 'Start chatting with multiple AI models!')}</li>
+              <li>{t('welcome.step1', 'You can start chatting right away with the free tier')}</li>
+              <li>{t('welcome.step2', 'For unlimited access, get an API key from OpenRouter')}</li>
+              <li>{t('welcome.step3', 'Visit Settings → Providers → OpenRouter to configure')}</li>
+              <li>{t('welcome.step4', 'Enjoy chatting with multiple AI models!')}</li>
             </ol>
+            <a
+              href="https://openrouter.ai/settings/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-3 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              <ExternalLink size={12} />
+              openrouter.ai/settings/keys
+            </a>
           </div>
         </div>
 
         {/* Footer Actions */}
         <div className="p-6 pt-0 flex gap-3">
           <button
-            onClick={onRemindLater}
-            className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            {t('welcome.later', '7 Days Later')}
-          </button>
-          <button
             onClick={() => {
               onClose();
               onOpenSettings();
             }}
-            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
           >
             <Settings size={18} />
-            {t('welcome.configure', 'Configure Now')}
+            {t('welcome.configure', 'Configure API Key')}
+          </button>
+          <button
+            onClick={onRemindLater}
+            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+          >
+            <Gift size={18} />
+            {t('welcome.later', 'Start with Free Tier')}
           </button>
         </div>
       </div>
