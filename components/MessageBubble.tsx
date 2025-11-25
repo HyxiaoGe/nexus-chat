@@ -101,64 +101,68 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
 
   return (
     <div className={`
-        flex w-full mb-6
+        flex w-full ${isInColumn ? 'mb-0' : 'mb-6'}
         ${isUser ? 'justify-end' : 'justify-start'}
-        animate-in fade-in slide-in-from-bottom-2 duration-500
+        ${!isInColumn && 'animate-in fade-in slide-in-from-bottom-2 duration-500'}
     `}>
       <div className={`
         group flex gap-3 md:gap-4
-        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : 'flex-row w-full max-w-[95%] md:max-w-[85%] lg:max-w-[80%]'}
+        ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : `flex-row w-full ${isInColumn ? '' : 'max-w-[95%] md:max-w-[85%] lg:max-w-[80%]'}`}
       `}>
-        
-        {/* Avatar */}
-        <div className={`
-            flex-shrink-0 w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shadow-md border overflow-hidden
-            ${isUser 
-                ? 'bg-indigo-600 border-indigo-500 text-white' 
-                : 'bg-white dark:bg-[#1e2530] border-gray-200 dark:border-gray-700/50'}
-        `}>
-          {renderAvatar()}
-        </div>
+
+        {/* Avatar - Hide in column layout */}
+        {!isInColumn && (
+          <div className={`
+              flex-shrink-0 w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shadow-md border overflow-hidden
+              ${isUser
+                  ? 'bg-indigo-600 border-indigo-500 text-white'
+                  : 'bg-white dark:bg-[#1e2530] border-gray-200 dark:border-gray-700/50'}
+          `}>
+            {renderAvatar()}
+          </div>
+        )}
 
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0 w-full`}>
-          
-          {/* Header Info */}
-          <div className={`flex items-center gap-2 mb-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-            <span className={`text-sm font-bold tracking-tight ${isUser ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-gray-200'}`}>
-              {isUser ? t('common.you') : config?.name || t('app.configError')}
-            </span>
 
-            {!isUser && config && (
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 font-mono border border-gray-200 dark:border-gray-700/50 rounded px-1.5 py-0.5 bg-gray-100/50 dark:bg-gray-800/50">
-                        {config.modelId}
-                    </span>
+          {/* Header Info - Hide in column layout */}
+          {!isInColumn && (
+            <div className={`flex items-center gap-2 mb-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
+              <span className={`text-sm font-bold tracking-tight ${isUser ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-gray-200'}`}>
+                {isUser ? t('common.you') : config?.name || t('app.configError')}
+              </span>
 
-                    {/* Token Usage - Only show when completed */}
-                    {!message.isStreaming && message.tokenUsage && (
-                      <span className="flex items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-1.5 py-0.5 rounded">
-                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <span>{message.tokenUsage.totalTokens.toLocaleString()}</span>
-                        {message.tokenUsage.estimatedCost && message.tokenUsage.estimatedCost > 0 && (
-                          <span className="text-green-600 dark:text-green-400">• ${message.tokenUsage.estimatedCost.toFixed(4)}</span>
-                        )}
+              {!isUser && config && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 font-mono border border-gray-200 dark:border-gray-700/50 rounded px-1.5 py-0.5 bg-gray-100/50 dark:bg-gray-800/50">
+                          {config.modelId}
                       </span>
-                    )}
 
-                    {/* System Prompt Tooltip */}
-                    <div className="relative group/info">
-                        <Info size={13} className="text-gray-300 dark:text-gray-600 hover:text-blue-500 dark:hover:text-blue-400 cursor-help transition-colors" />
-                        <div className="absolute left-0 bottom-full mb-2 w-72 p-3 bg-gray-900/95 dark:bg-black/95 backdrop-blur text-white text-xs rounded-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-10 shadow-2xl border border-gray-700">
-                             <div className="font-bold mb-1.5 text-gray-300 uppercase text-[10px] tracking-wider">{t('app.systemPrompt')}</div>
-                             <div className="line-clamp-6 italic text-gray-300 font-serif leading-relaxed">{config.systemPrompt}</div>
-                             <div className="absolute top-full left-1.5 -mt-1 border-4 border-transparent border-t-gray-900/95"></div>
-                        </div>
-                    </div>
-                </div>
-            )}
-          </div>
+                      {/* Token Usage - Only show when completed */}
+                      {!message.isStreaming && message.tokenUsage && (
+                        <span className="flex items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-1.5 py-0.5 rounded">
+                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          <span>{message.tokenUsage.totalTokens.toLocaleString()}</span>
+                          {message.tokenUsage.estimatedCost && message.tokenUsage.estimatedCost > 0 && (
+                            <span className="text-green-600 dark:text-green-400">• ${message.tokenUsage.estimatedCost.toFixed(4)}</span>
+                          )}
+                        </span>
+                      )}
+
+                      {/* System Prompt Tooltip */}
+                      <div className="relative group/info">
+                          <Info size={13} className="text-gray-300 dark:text-gray-600 hover:text-blue-500 dark:hover:text-blue-400 cursor-help transition-colors" />
+                          <div className="absolute left-0 bottom-full mb-2 w-72 p-3 bg-gray-900/95 dark:bg-black/95 backdrop-blur text-white text-xs rounded-xl opacity-0 group-hover/info:opacity-100 transition-opacity pointer-events-none z-10 shadow-2xl border border-gray-700">
+                               <div className="font-bold mb-1.5 text-gray-300 uppercase text-[10px] tracking-wider">{t('app.systemPrompt')}</div>
+                               <div className="line-clamp-6 italic text-gray-300 font-serif leading-relaxed">{config.systemPrompt}</div>
+                               <div className="absolute top-full left-1.5 -mt-1 border-4 border-transparent border-t-gray-900/95"></div>
+                          </div>
+                      </div>
+                  </div>
+              )}
+            </div>
+          )}
 
           {/* Bubble Content */}
           <div className={`
