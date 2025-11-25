@@ -81,7 +81,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
         className={`
           grid gap-4
           ${getGridClasses()}
-          ${useTwoByTwoGrid ? 'grid-rows-2 h-full' : 'auto-rows-fr'}
+          ${useTwoByTwoGrid ? 'grid-rows-2 min-h-full' : 'auto-rows-fr'}
           transition-all duration-300 ease-in-out
         `}
       >
