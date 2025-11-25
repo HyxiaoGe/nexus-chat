@@ -41,15 +41,24 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
   const isStreaming = latestMessage?.isStreaming;
   const hasContent = aiMessages.length > 0;
 
-  // 智能滚动：仅在用户在底部时自动滚动
+  // 智能滚动：新消息时自动滚动到底部
   useEffect(() => {
-    if (isNearBottom && scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+    if (scrollRef.current) {
+      // 检查是否有新的用户消息（表示新一轮对话开始）
+      const userMessages = messages.filter(m => m.role === 'user');
+      const hasNewUserMessage = userMessages.length > 0;
+
+      // 如果是新一轮对话或用户在底部，自动滚动
+      if (hasNewUserMessage || isNearBottom) {
+        scrollRef.current.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+        // 重置为底部状态
+        setIsNearBottom(true);
+      }
     }
-  }, [messages, isNearBottom]);
+  }, [messages]);
 
   // 监听滚动位置
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -83,7 +92,7 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
 
   return (
     <div
-      className="group relative flex flex-col min-h-[600px] bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+      className="group relative flex flex-col min-h-[600px] max-h-[600px] bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       style={{
         animation: 'slideInUp 0.4s ease-out',
         animationDelay,
@@ -100,7 +109,7 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
             <div className="relative">
               <BrandIcon brand={agent.avatar} className="w-8 h-8" />
               {isStreaming && (
-                <div className="absolute -top-1 -right-1 w-3 h-3">
+                <div className="absolute top-0 right-0 w-3 h-3">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
                 </div>
