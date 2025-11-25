@@ -19,6 +19,8 @@ import { useScrollToBottom } from './hooks/useScrollToBottom';
 import { useVersionCheck } from './hooks/useVersionCheck';
 import { useDebounce } from './hooks/useDebounce';
 import { BrandIcon } from './components/BrandIcons';
+import { ResponsiveGrid } from './components/ResponsiveGrid';
+import { FullscreenAgentView } from './components/FullscreenAgentView';
 
 interface NexusChatProps {
   appSettings: AppSettings;
@@ -43,6 +45,9 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<'general' | 'agents' | 'providers' | 'data'>('general');
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+
+  // Fullscreen agent view state
+  const [fullscreenView, setFullscreenView] = useState<{ agentId: string; messageId: string } | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -340,6 +345,19 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
   };
 
+  // --- Fullscreen Agent View ---
+  const openFullscreenView = (agentId: string, messageId: string) => {
+    setFullscreenView({ agentId, messageId });
+  };
+
+  const closeFullscreenView = () => {
+    setFullscreenView(null);
+  };
+
+  const navigateToAgent = (agentId: string, messageId: string) => {
+    setFullscreenView({ agentId, messageId });
+  };
+
   // --- Data Management ---
   const handleExportData = () => {
       const data = {
@@ -488,13 +506,15 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
         )}
 
         {/* Chat Area */}
-        <div 
-            ref={scrollRef}
-            onScroll={onScroll}
-            className="flex-1 overflow-y-auto pt-20 pb-32 px-4 md:px-6 scroll-smooth relative"
-        >
-          <div className="max-w-5xl mx-auto w-full">
-              {messages.length === 0 ? (
+        <div className="flex-1 overflow-hidden pt-16 relative">
+          {messages.length === 0 ? (
+              <div
+                  ref={scrollRef}
+                  onScroll={onScroll}
+                  className="h-full overflow-y-auto scroll-smooth px-4 md:px-6"
+              >
+              <div className="max-w-5xl mx-auto w-full h-full flex items-center justify-center">
+              {/* Empty state stays the same */}
                 /* Empty State Carousel */
                 <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500 px-4">
                     <div className="space-y-4">
@@ -529,80 +549,23 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                         </div>
                     </div>
                 </div>
+              </div>
+              </div>
               ) : (
-                /* Message Stream */
-                <div className="space-y-4 pb-4">
-                    
-                    {messages.map((msg) => {
-                        // Delayed Rendering Logic:
-                        // If it's a model message, streaming, empty content, and no error -> Hide it (it shows as typing indicator below)
-                        if (msg.role === 'model' && msg.isStreaming && !msg.content && !msg.error) {
-                            return null;
-                        }
-
-                        return (
-                            <MessageBubble
-                                key={msg.id}
-                                message={msg}
-                                config={agents.find(a => a.id === msg.agentId)}
-                                onStopAgent={stopAgent}
-                                showToast={toastInfo}
-                                onEditMessage={handleEditMessage}
-                                onRegenerateMessage={handleRegenerateMessage}
-                            />
-                        );
-                    })}
-
-                    {/* Pending Agents "Typing" Indicators (Compact Row) */}
-                    {(() => {
-                        const pendingAgents = messages.filter(m => m.role === 'model' && m.isStreaming && !m.content && !m.error);
-                        if (pendingAgents.length === 0) return null;
-
-                        return (
-                            <div className="flex flex-wrap gap-3 animate-in fade-in duration-500 pt-2 pl-1">
-                                {pendingAgents.map(msg => {
-                                    const agent = agents.find(a => a.id === msg.agentId);
-                                    if (!agent) return null;
-                                    
-                                    const isUrl = agent.avatar?.startsWith('http') || agent.avatar?.startsWith('data:');
-                                    
-                                    return (
-                                        <div key={msg.id} className="flex items-center gap-2 bg-white/40 dark:bg-gray-800/40 rounded-full pr-3 pl-1 py-1 border border-transparent dark:border-gray-800">
-                                            {/* Mini Avatar */}
-                                            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center opacity-80 overflow-hidden">
-                                                {isUrl ? (
-                                                    <img src={agent.avatar} className="w-full h-full object-cover" alt="typing" />
-                                                ) : (
-                                                    <BrandIcon brand={agent.avatar || 'other'} size={14} />
-                                                )}
-                                            </div>
-                                            
-                                            {/* Typing Dots */}
-                                            <div className="flex gap-0.5 items-center px-1">
-                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></span>
-                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce delay-75"></span>
-                                                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce delay-150"></span>
-                                            </div>
-                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{agent.name}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )
-                    })()}
-                </div>
+                /* Message Stream - New Responsive Grid Layout */
+                <ResponsiveGrid
+                  agents={agents.filter(a => a.enabled)}
+                  messages={messages}
+                  onOpenFullscreen={openFullscreenView}
+                  onStopAgent={stopAgent}
+                  onRegenerateAgent={regenerateAgent}
+                  onCopyMessage={(content) => {
+                    navigator.clipboard.writeText(content);
+                    toastSuccess(t('common.copied'));
+                  }}
+                  config={undefined}
+                />
               )}
-          </div>
-          
-          {/* Floating Scroll Button */}
-          {showScrollButton && (
-            <button
-              onClick={() => scrollToBottom()}
-              className="fixed bottom-32 right-6 md:right-10 p-3 bg-white dark:bg-gray-800 text-gray-600 dark:text-white rounded-full shadow-xl border border-gray-100 dark:border-gray-700 hover:scale-110 transition-all animate-in fade-in zoom-in z-30"
-            >
-              <ArrowDown size={20} />
-            </button>
-          )}
         </div>
 
         {/* Floating Input Bar (Cockpit) */}
@@ -687,6 +650,28 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             }}
         />
       </main>
+
+      {/* Fullscreen Agent View */}
+      {fullscreenView && (() => {
+        const message = messages.find(m => m.id === fullscreenView.messageId);
+        if (!message) return null;
+
+        return (
+          <FullscreenAgentView
+            agentId={fullscreenView.agentId}
+            message={message}
+            allAgents={agents.filter(a => a.enabled)}
+            allMessages={messages}
+            onClose={closeFullscreenView}
+            onNavigate={navigateToAgent}
+            onRegenerateAgent={regenerateAgent}
+            onCopyMessage={(content) => {
+              navigator.clipboard.writeText(content);
+              toastSuccess(t('common.copied'));
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };

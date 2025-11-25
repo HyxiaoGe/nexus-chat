@@ -13,9 +13,22 @@ interface MessageBubbleProps {
   showToast?: (message: string) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
   onRegenerateMessage?: (messageId: string) => void;
+  isInColumn?: boolean; // New prop for column layout
+  onCopyMessage?: (content: string) => void;
+  onRegenerateAgent?: (messageId: string) => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message, config, onStopAgent, showToast, onEditMessage, onRegenerateMessage }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
+  message,
+  config,
+  onStopAgent,
+  showToast,
+  onEditMessage,
+  onRegenerateMessage,
+  isInColumn = false,
+  onCopyMessage,
+  onRegenerateAgent
+}) => {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
   const [isEditing, setIsEditing] = useState(false);
@@ -38,6 +51,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
+    if (onCopyMessage) {
+      onCopyMessage(message.content);
+    }
     if (showToast) {
       showToast(t('common.copied'));
     }
@@ -61,7 +77,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({ message
   };
 
   const handleRegenerate = () => {
-    if (onRegenerateMessage) {
+    if (onRegenerateAgent) {
+      onRegenerateAgent(message.id);
+    } else if (onRegenerateMessage) {
       onRegenerateMessage(message.id);
     }
   };
