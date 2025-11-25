@@ -110,8 +110,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
         ${isUser ? 'flex-row-reverse max-w-[95%] md:max-w-[85%] lg:max-w-[80%]' : `flex-row w-full ${isInColumn ? '' : 'max-w-[95%] md:max-w-[85%] lg:max-w-[80%]'}`}
       `}>
 
-        {/* Avatar - Hide in column layout */}
-        {!isInColumn && (
+        {/* Avatar - Hide for AI messages in column layout, always show for user */}
+        {(!isInColumn || isUser) && (
           <div className={`
               flex-shrink-0 w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center shadow-md border overflow-hidden
               ${isUser
@@ -124,8 +124,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
 
         <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0 w-full`}>
 
-          {/* Header Info - Hide in column layout */}
-          {!isInColumn && (
+          {/* Header Info - Hide for AI messages in column layout, always show for user */}
+          {(!isInColumn || isUser) && (
             <div className={`flex items-center gap-2 mb-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
               <span className={`text-sm font-bold tracking-tight ${isUser ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-gray-200'}`}>
                 {isUser ? t('common.you') : config?.name || t('app.configError')}

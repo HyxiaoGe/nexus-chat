@@ -35,9 +35,11 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const latestMessage = messages[messages.length - 1];
+  // 只关注AI消息
+  const aiMessages = messages.filter(m => m.role === 'model');
+  const latestMessage = aiMessages[aiMessages.length - 1];
   const isStreaming = latestMessage?.isStreaming;
-  const hasContent = messages.length > 0;
+  const hasContent = aiMessages.length > 0;
 
   // 智能滚动：仅在用户在底部时自动滚动
   useEffect(() => {
@@ -164,7 +166,7 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
           scrollbarColor: 'rgb(203 213 225) transparent'
         }}
       >
-        {messages.length === 0 ? (
+        {messages.filter(m => m.role === 'model').length === 0 ? (
           // 空状态
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
