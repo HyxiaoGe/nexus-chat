@@ -308,7 +308,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
               {/* AI Message - Regenerate & Copy Buttons */}
               {!isUser && (
                 <>
-                  {onRegenerateMessage && (
+                  {(onRegenerateMessage || onRegenerateAgent) && (
                     <button
                       onClick={handleRegenerate}
                       className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-all"
@@ -333,7 +333,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
           
           {/* Footer Timestamp */}
           <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 px-2 flex items-center gap-2 select-none opacity-80">
-            {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}
             {message.isStreaming && <span className="text-blue-600 dark:text-blue-400 animate-pulse font-semibold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                {t('app.typing')}
