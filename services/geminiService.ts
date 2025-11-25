@@ -358,12 +358,33 @@ export const generateContentStream = async ({
                              agent.modelId.toLowerCase().includes('thinking');
 
     try {
+        // Build messages array with conversation history
+        const messages: any[] = [
+            { role: 'system', content: agent.systemPrompt }
+        ];
+
+        // Add conversation history if available
+        if (conversationHistory && conversationHistory.length > 0) {
+            conversationHistory.forEach(msg => {
+                messages.push({
+                    role: msg.role === 'model' ? 'assistant' : 'user',
+                    content: msg.content
+                });
+            });
+        }
+
+        // Add current user prompt
+        messages.push({ role: 'user', content: prompt });
+
+        // Debug: Log OpenRouter messages
+        console.log('[OpenRouter API] Messages being sent:', messages.map(m => ({
+            role: m.role,
+            content: m.content.substring(0, 50) + '...'
+        })));
+
         const requestBody: any = {
             model: agent.modelId,
-            messages: [
-                { role: 'system', content: agent.systemPrompt },
-                { role: 'user', content: prompt }
-            ],
+            messages: messages,
             stream: true,
             // Inject Config
             temperature: agent.config?.temperature,
