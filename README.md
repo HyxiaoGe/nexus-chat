@@ -89,16 +89,16 @@
 <div align="center">
 
 ### 💬 Multi-Agent Chat Interface
-![Multi-Agent Chat](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Multi-Agent+Chat+Interface)
+![Multi-Agent Chat](./docs/screenshots/chat-interface.png)
 
 ### 📊 Token Usage Statistics
-![Token Statistics](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Token+Usage+%26+Cost+Tracking)
+![Token Statistics](./docs/screenshots/token-statistics.png)
 
 ### ⚙️ Agent Configuration
-![Agent Settings](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Agent+Configuration+Panel)
+![Agent Settings](./docs/screenshots/agent-settings.png)
 
 ### 🌓 Dark Mode
-![Dark Mode](https://via.placeholder.com/1200x700/0f172a/ffffff?text=Beautiful+Dark+Mode)
+![Dark Mode](./docs/screenshots/dark-mode.png)
 
 </div>
 
