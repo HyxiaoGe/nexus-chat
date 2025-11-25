@@ -191,8 +191,15 @@ export const generateContentStream = async ({
         role: 'user',
         parts: [{ text: prompt }]
       });
+
+      // Debug: Log formatted contents
+      console.log('[Google API] Formatted conversation:', contents.map((c: any) => ({
+        role: c.role,
+        text: c.parts[0].text.substring(0, 50) + '...'
+      })));
     } else {
       // Fallback: just use the prompt
+      console.log('[Google API] No history, using prompt only');
       contents = prompt;
     }
 
