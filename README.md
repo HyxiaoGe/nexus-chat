@@ -4,7 +4,7 @@
 
 ### Multi-LLM Chat Orchestrator | Unified AI Conversation Platform
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/HyxiaoGe/nexus-chat)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/HyxiaoGe/nexus-chat)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.2+-61DAFB.svg)](https://reactjs.org/)
@@ -13,6 +13,8 @@
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 **Chat with multiple AI models simultaneously in a unified, elegant interface.**
+
+🎉 **New: Try instantly with Free Tier - No API key required!**
 
 [✨ Features](#-features) • [🚀 Quick Start](#-quick-start) • [📸 Screenshots](#-screenshots) • [🛠️ Tech Stack](#️-tech-stack) • [📖 Documentation](#-documentation)
 
@@ -26,6 +28,7 @@
 
 ### 🎯 Why NexusChat?
 
+- **🆓 Free Tier Available**: Start chatting immediately - no API key required (daily limit applies)
 - **🔄 Compare AI Responses**: Get diverse perspectives from GPT-4, Claude, Gemini, and DeepSeek in one conversation
 - **💰 Cost Tracking**: Real-time token usage statistics and cost estimation for each model
 - **🎨 Beautiful UI**: Modern, responsive design with light/dark themes and smooth animations
@@ -103,15 +106,23 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Try Online (Recommended)
+
+Visit the live demo and start chatting immediately with the **Free Tier** - no setup required!
+
+> 🎁 **Free Tier**: Daily limit applies. For unlimited access, configure your own [OpenRouter API key](https://openrouter.ai/settings/keys).
+
+### Option 2: Self-Host
+
+#### Prerequisites
 
 - **Node.js** v18.0 or higher
 - **npm** or **yarn** package manager
-- API keys for at least one provider:
+- (Optional) API keys for providers:
   - [Google AI Studio](https://aistudio.google.com/) (Gemini)
   - [OpenRouter](https://openrouter.ai/) (GPT-4, Claude, DeepSeek, etc.)
 
-### Installation
+#### Installation
 
 1. **Clone the repository**
    ```bash
@@ -148,17 +159,17 @@
 
 ### First-Time Setup
 
+**Using Free Tier (No API Key):**
+1. Open the app - you'll see the Welcome dialog
+2. Click **"Start with Free Tier"** to begin immediately
+3. Start chatting! All enabled agents will respond using the shared free quota
+
+**Using Your Own API Key (Unlimited):**
 1. Click the **Settings** icon (⚙️) in the top-right corner
-2. Go to **Providers** tab:
-   - For **OpenRouter**: Enter your API key and click "Save & Verify"
-   - For **Google Gemini**: Add your API key in the Google Native API section
-3. Go to **My Agents** tab:
-   - Click "Create New Agent"
-   - Set a name (e.g., "GPT-4 Assistant")
-   - Select provider and model
-   - Write a system prompt to define the agent's personality
-   - Enable the agent
-4. Start chatting! Type your message and watch all enabled agents respond simultaneously.
+2. Go to **Providers** tab
+3. Click on **OpenRouter** and follow the guide to get your API key from [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
+4. Paste your API key and click **"Save"**
+5. Enjoy unlimited access to 100+ AI models!
 
 ---
 
@@ -276,13 +287,22 @@ NexusChat supports any OpenAI-compatible API endpoint:
    - Select your GitHub repository
    - Vercel auto-detects Vite configuration
 
-3. **Configure Environment Variables** (Optional)
-   - Add `VITE_OPENROUTER_API_KEY` for default API key
+3. **Configure Environment Variables**
+
+   **For Free Tier Support (Recommended):**
+   - Add `OPENROUTER_API_KEY` - Shared API key for free tier users
+     - Create a dedicated key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
+     - Set daily credit limit (e.g., $0.50/day) to control costs
+
+   **Optional:**
+   - Add `VITE_OPENROUTER_API_KEY` for default client-side API key
    - Add `VITE_GOOGLE_API_KEY` for Gemini integration
 
 4. **Deploy**
    - Click "Deploy"
    - Your app will be live at `your-project.vercel.app`
+
+> ⚠️ **Important**: The `OPENROUTER_API_KEY` (without VITE_ prefix) is used by the serverless API proxy and is never exposed to the client. This enables the free tier feature securely.
 
 ### Netlify
 
@@ -309,18 +329,22 @@ Docker support is planned for v1.4.0.
 
 ## 🗺️ Roadmap
 
-### v1.4.0 (Q2 2025)
+### v1.4.0 (Current) ✅
+- [x] **Free Tier Support** - Start using without API key (daily limit)
+- [x] **Serverless API Proxy** - Secure API key management via Vercel Edge Functions
+- [x] **Improved Onboarding** - Better guidance for new users and API key setup
 - [ ] Docker containerization
 - [ ] Vision model support (image input)
+
+### v1.5.0 (Q2 2025)
 - [ ] Voice input/output (TTS/STT)
 - [ ] Plugin system for extensibility
 - [ ] Conversation branching
-
-### v1.5.0 (Q3 2025)
-- [ ] Multi-user support with authentication
-- [ ] Server-side API key management
-- [ ] Cloud synchronization
 - [ ] Advanced analytics dashboard
+
+### v1.6.0 (Q3 2025)
+- [ ] Multi-user support with authentication
+- [ ] Cloud synchronization
 - [ ] Team collaboration features
 
 ### Future Considerations
