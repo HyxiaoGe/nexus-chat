@@ -6,6 +6,7 @@ interface GenerateStreamParams {
   agent: AgentConfig;
   provider: LLMProvider;
   prompt: string;
+  conversationHistory?: any[]; // Full conversation history for context
   onChunk: (text: string) => void;
   onComplete?: (usage?: TokenUsage) => void; // Callback when streaming is complete with token usage
   signal?: AbortSignal;
@@ -158,11 +159,12 @@ export const generateContentStream = async ({
   agent,
   provider,
   prompt,
+  conversationHistory,
   onChunk,
   onComplete,
   signal
 }: GenerateStreamParams): Promise<void> => {
-  
+
   // 1. Handle Google GenAI Models
   if (provider.type === 'google') {
     const apiKey = provider.apiKey;
@@ -176,10 +178,28 @@ export const generateContentStream = async ({
     // Check if this is a thinking model
     const isThinkingModel = agent.modelId.toLowerCase().includes('thinking');
 
+    // Build conversation history for Google API format
+    let contents: any;
+    if (conversationHistory && conversationHistory.length > 0) {
+      // Format messages for Google API: array of {role, parts: [{text}]}
+      contents = conversationHistory.map(msg => ({
+        role: msg.role === 'model' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      }));
+      // Add current prompt as last user message
+      contents.push({
+        role: 'user',
+        parts: [{ text: prompt }]
+      });
+    } else {
+      // Fallback: just use the prompt
+      contents = prompt;
+    }
+
     try {
       const response = await ai.models.generateContentStream({
         model: agent.modelId,
-        contents: prompt,
+        contents: contents,
         config: {
           systemInstruction: agent.systemPrompt,
           // Map Agent Config to Gemini Generation Config

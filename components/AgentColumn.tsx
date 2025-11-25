@@ -108,11 +108,12 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative">
               <BrandIcon brand={agent.avatar} className="w-8 h-8" />
+              {/* 流式输出时的波纹扩散效果 */}
               {isStreaming && (
-                <div className="absolute top-0 right-0 w-3 h-3">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
-                </div>
+                <>
+                  <div className="absolute inset-0 rounded-full border-2 border-blue-400 animate-ping opacity-75" style={{ animationDuration: '1.5s' }} />
+                  <div className="absolute inset-0 rounded-full border-2 border-blue-500 animate-pulse" style={{ animationDuration: '1s' }} />
+                </>
               )}
             </div>
             <div className="flex-1 min-w-0">

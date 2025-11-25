@@ -197,10 +197,16 @@ export const useChatOrchestrator = ({
         }
 
         try {
+          // Build conversation history (all previous messages except the placeholders we just added)
+          const historyMessages = messages.filter(m =>
+            m.role === 'user' || (m.role === 'model' && m.agentId === agent.id && m.content)
+          );
+
           await generateContentStream({
             agent: agent,
             provider: provider,
             prompt: currentInput,
+            conversationHistory: historyMessages,
             signal: signal,
             onChunk: (text) => {
               if (signal.aborted) return;
@@ -336,10 +342,16 @@ export const useChatOrchestrator = ({
         }
 
         try {
+          // Build conversation history (all previous messages except the placeholders we just added)
+          const historyMessages = messages.filter(m =>
+            m.role === 'user' || (m.role === 'model' && m.agentId === agent.id && m.content)
+          );
+
           await generateContentStream({
             agent: agent,
             provider: provider,
             prompt: currentInput,
+            conversationHistory: historyMessages,
             signal: signal,
             onChunk: (text) => {
               if (signal.aborted) return;
