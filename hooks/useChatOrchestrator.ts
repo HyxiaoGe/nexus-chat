@@ -202,6 +202,13 @@ export const useChatOrchestrator = ({
             m.role === 'user' || (m.role === 'model' && m.agentId === agent.id && m.content)
           );
 
+          // Debug: Log conversation history
+          console.log(`[${agent.name}] Conversation history:`, historyMessages.map(m => ({
+            role: m.role,
+            content: m.content?.substring(0, 50) + '...',
+            agentId: m.agentId
+          })));
+
           await generateContentStream({
             agent: agent,
             provider: provider,
@@ -346,6 +353,13 @@ export const useChatOrchestrator = ({
           const historyMessages = messages.filter(m =>
             m.role === 'user' || (m.role === 'model' && m.agentId === agent.id && m.content)
           );
+
+          // Debug: Log conversation history
+          console.log(`[${agent.name}] Conversation history:`, historyMessages.map(m => ({
+            role: m.role,
+            content: m.content?.substring(0, 50) + '...',
+            agentId: m.agentId
+          })));
 
           await generateContentStream({
             agent: agent,
