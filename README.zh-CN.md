@@ -4,7 +4,7 @@
 
 ### 多模型聊天协调器 | 统一 AI 对话平台
 
-[![版本](https://img.shields.io/badge/版本-1.3.0-blue.svg)](https://github.com/HyxiaoGe/nexus-chat)
+[![版本](https://img.shields.io/badge/版本-1.4.0-blue.svg)](https://github.com/HyxiaoGe/nexus-chat)
 [![许可证](https://img.shields.io/badge/许可证-MIT-green.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.2+-61DAFB.svg)](https://reactjs.org/)
@@ -13,6 +13,8 @@
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 **在统一优雅的界面中同时与多个 AI 模型对话**
+
+🎉 **新功能：免费额度体验 - 无需配置 API Key 即可使用！**
 
 [✨ 功能特性](#-功能特性) • [🚀 快速开始](#-快速开始) • [📸 界面预览](#-界面预览) • [🛠️ 技术栈](#️-技术栈) • [📖 使用文档](#-使用文档)
 
@@ -26,6 +28,7 @@
 
 ### 🎯 为什么选择 NexusChat？
 
+- **🆓 免费额度可用**：无需 API Key 即可开始体验（有每日限制）
 - **🔄 对比 AI 回复**：在一次对话中获得 GPT-4、Claude、Gemini 和 DeepSeek 的不同观点
 - **💰 成本追踪**：实时的 token 使用统计和每个模型的成本估算
 - **🎨 精美界面**：现代化、响应式设计，支持亮色/暗色主题和流畅动画
@@ -103,15 +106,23 @@
 
 ## 🚀 快速开始
 
-### 前置要求
+### 方式一：在线体验（推荐）
+
+直接访问在线演示，使用 **免费额度** 立即开始体验 - 无需任何配置！
+
+> 🎁 **免费额度**：有每日使用限制。如需无限使用，请配置自己的 [OpenRouter API Key](https://openrouter.ai/settings/keys)。
+
+### 方式二：自托管部署
+
+#### 前置要求
 
 - **Node.js** v18.0 或更高版本
 - **npm** 或 **yarn** 包管理器
-- 至少一个提供商的 API 密钥：
+- （可选）提供商的 API 密钥：
   - [Google AI Studio](https://aistudio.google.com/)（Gemini）
   - [OpenRouter](https://openrouter.ai/)（GPT-4、Claude、DeepSeek 等）
 
-### 安装步骤
+#### 安装步骤
 
 1. **克隆仓库**
    ```bash
@@ -146,19 +157,19 @@
 5. **打开浏览器**
    访问 `http://localhost:5173`
 
-### 首次设置
+### 首次使用
 
+**使用免费额度（无需 API Key）：**
+1. 打开应用 - 你会看到欢迎弹窗
+2. 点击 **"先用免费额度"** 立即开始
+3. 开始聊天！所有启用的智能体将使用共享的免费额度响应
+
+**使用自己的 API Key（无限使用）：**
 1. 点击右上角的**设置**图标（⚙️）
-2. 进入**提供商**标签页：
-   - 对于 **OpenRouter**：输入 API 密钥并点击"保存并验证"
-   - 对于 **Google Gemini**：在 Google 原生 API 部分添加 API 密钥
-3. 进入**我的智能体**标签页：
-   - 点击"创建新智能体"
-   - 设置名称（例如："GPT-4 助手"）
-   - 选择提供商和模型
-   - 编写系统提示词来定义智能体的个性
-   - 启用智能体
-4. 开始聊天！输入消息，观看所有启用的智能体同时响应。
+2. 进入**提供商**标签页
+3. 点击 **OpenRouter**，按照引导从 [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) 获取 API Key
+4. 粘贴你的 API Key 并点击 **"保存"**
+5. 尽情享受 100+ AI 模型的无限访问！
 
 ---
 
@@ -276,13 +287,22 @@ NexusChat 支持任何 OpenAI 兼容的 API 端点：
    - 选择你的 GitHub 仓库
    - Vercel 自动检测 Vite 配置
 
-3. **配置环境变量**（可选）
-   - 添加 `VITE_OPENROUTER_API_KEY` 作为默认 API 密钥
+3. **配置环境变量**
+
+   **启用免费额度支持（推荐）：**
+   - 添加 `OPENROUTER_API_KEY` - 用于免费用户的共享 API Key
+     - 在 [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) 创建专用密钥
+     - 设置每日额度限制（如 $0.50/天）来控制成本
+
+   **可选配置：**
+   - 添加 `VITE_OPENROUTER_API_KEY` 作为客户端默认 API Key
    - 添加 `VITE_GOOGLE_API_KEY` 用于 Gemini 集成
 
 4. **部署**
    - 点击"部署"
    - 你的应用将在 `your-project.vercel.app` 上线
+
+> ⚠️ **重要提示**：`OPENROUTER_API_KEY`（不带 VITE_ 前缀）由服务端 API 代理使用，永远不会暴露给客户端。这确保了免费额度功能的安全性。
 
 ### Netlify
 
@@ -309,18 +329,22 @@ Docker 支持计划在 v1.4.0 版本中推出。
 
 ## 🗺️ 路线图
 
-### v1.4.0（2025年第二季度）
+### v1.4.0（当前版本）✅
+- [x] **免费额度支持** - 无需 API Key 即可开始使用（有每日限制）
+- [x] **服务端 API 代理** - 通过 Vercel Edge Functions 安全管理 API Key
+- [x] **优化新手引导** - 更好的用户引导和 API Key 配置指南
 - [ ] Docker 容器化
 - [ ] 视觉模型支持（图像输入）
+
+### v1.5.0（2025年第二季度）
 - [ ] 语音输入/输出（TTS/STT）
 - [ ] 可扩展的插件系统
 - [ ] 对话分支
-
-### v1.5.0（2025年第三季度）
-- [ ] 带认证的多用户支持
-- [ ] 服务器端 API 密钥管理
-- [ ] 云同步
 - [ ] 高级分析仪表板
+
+### v1.6.0（2025年第三季度）
+- [ ] 带认证的多用户支持
+- [ ] 云同步
 - [ ] 团队协作功能
 
 ### 未来考虑
