@@ -89,16 +89,16 @@
 <div align="center">
 
 ### 💬 多智能体聊天界面
-![多智能体聊天](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Multi-Agent+Chat+Interface)
+![多智能体聊天](./docs/screenshots/chat-interface.png)
 
 ### 📊 Token 使用统计
-![Token 统计](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Token+Usage+%26+Cost+Tracking)
+![Token 统计](./docs/screenshots/token-statistics.png)
 
 ### ⚙️ 智能体配置
-![智能体设置](https://via.placeholder.com/1200x700/1a202c/ffffff?text=Agent+Configuration+Panel)
+![智能体设置](./docs/screenshots/agent-settings.png)
 
 ### 🌓 暗色模式
-![暗色模式](https://via.placeholder.com/1200x700/0f172a/ffffff?text=Beautiful+Dark+Mode)
+![暗色模式](./docs/screenshots/dark-mode.png)
 
 </div>
 
