@@ -12,6 +12,36 @@ interface GenerateStreamParams {
   signal?: AbortSignal;
 }
 
+// Check if we should use the proxy (no user API key configured)
+export const shouldUseProxy = (provider: LLMProvider): boolean => {
+  // Only use proxy for OpenRouter provider without API key
+  const isOpenRouter = provider.baseURL?.includes('openrouter') || provider.id === 'provider-openrouter';
+  return isOpenRouter && !provider.apiKey;
+};
+
+// Check proxy availability
+export const checkProxyStatus = async (): Promise<{ available: boolean; message?: string }> => {
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'test', messages: [] }),
+    });
+
+    if (response.status === 503) {
+      const data = await response.json();
+      if (data.code === 'NO_SERVER_KEY') {
+        return { available: false, message: data.message };
+      }
+    }
+
+    // Even a 400 error means the proxy is available (just invalid request)
+    return { available: true };
+  } catch {
+    return { available: false, message: 'Proxy service unavailable' };
+  }
+};
+
 export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> => {
   try {
     const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
@@ -326,7 +356,10 @@ export const generateContentStream = async ({
     const apiKey = provider.apiKey;
     const baseURL = provider.baseURL || 'https://api.openai.com/v1';
 
-    if (!apiKey) {
+    // Check if we should use proxy (OpenRouter without API key)
+    const useProxy = shouldUseProxy(provider);
+
+    if (!apiKey && !useProxy) {
        // We allow empty key for localhost (Ollama usually doesn't need it).
        const isLocal = baseURL.includes('localhost') || baseURL.includes('127.0.0.1') || baseURL.includes('ollama');
        if (!isLocal) {
@@ -334,22 +367,33 @@ export const generateContentStream = async ({
        }
     }
 
-    // Ensure URL ends with /chat/completions if not present
-    let url = baseURL;
-    if (!url.endsWith('/chat/completions')) {
-        url = `${url.replace(/\/$/, '')}/chat/completions`;
-    }
+    // Use proxy URL or direct URL
+    let url: string;
+    let headers: Record<string, string>;
 
-    // Standard headers
-    const headers: Record<string, string> = {
+    if (useProxy) {
+      // Use our Vercel serverless function as proxy
+      url = '/api/chat';
+      headers = {
+        'Content-Type': 'application/json',
+      };
+    } else {
+      // Direct connection
+      url = baseURL;
+      if (!url.endsWith('/chat/completions')) {
+        url = `${url.replace(/\/$/, '')}/chat/completions`;
+      }
+
+      headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey || 'nexus-chat'}`,
-    };
-    
-    // OpenRouter specific recommended headers
-    if (baseURL.includes('openrouter')) {
+      };
+
+      // OpenRouter specific recommended headers
+      if (baseURL.includes('openrouter')) {
         headers['HTTP-Referer'] = window.location.origin;
         headers['X-Title'] = 'NexusChat';
+      }
     }
 
     // Check if this is a reasoning/thinking model
@@ -406,6 +450,25 @@ export const generateContentStream = async ({
 
         if (!response.ok) {
             const errText = await response.text();
+
+            // Try to parse error response for more details
+            try {
+              const errData = JSON.parse(errText);
+
+              // Handle rate limit / quota exceeded from proxy
+              if (errData.code === 'RATE_LIMIT_EXCEEDED') {
+                throw new Error(`FREE_TIER_LIMIT: ${errData.message}`);
+              }
+
+              // Handle server configuration error
+              if (errData.code === 'NO_SERVER_KEY') {
+                throw new Error(`NO_FREE_TIER: ${errData.message}`);
+              }
+            } catch (parseErr) {
+              // If not JSON, use raw text
+              if (!(parseErr instanceof SyntaxError)) throw parseErr;
+            }
+
             throw new Error(`API Error (${provider.name} - ${response.status}): ${errText}`);
         }
 

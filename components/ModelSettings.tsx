@@ -6,7 +6,7 @@ import {
     Monitor, Server, Database, Bot, ToggleLeft, ToggleRight,
     Download, Eraser, Moon, Sun, Edit2, Check, ShieldCheck,
     Eye, EyeOff, Globe, Info, ChevronDown, Search, Wrench, Sliders,
-    BrainCircuit
+    BrainCircuit, ExternalLink, Gift, Key
 } from 'lucide-react';
 import { fetchProviderModels } from '../services/geminiService';
 import { useToast } from './Toast';
@@ -896,6 +896,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       const isCustom = providerForm.isCustom;
       const isOpenRouter = providerId === 'provider-openrouter';
       const canSyncModels = !!providerForm.baseURL;
+      const hasApiKey = !!providerForm.apiKey;
 
       return (
         <div className="mt-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -914,42 +915,95 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 </div>
             )}
 
+            {/* OpenRouter Guide Section */}
+            {isOpenRouter && !hasApiKey && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                            <Key size={20} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">{t('settings.providers.openRouterGuide')}</h4>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">{t('settings.providers.openRouterGuideDesc')}</p>
+                            <ol className="text-sm text-blue-600 dark:text-blue-400 space-y-1 mb-3">
+                                <li>1. {t('settings.providers.openRouterStep1')}</li>
+                                <li>2. {t('settings.providers.openRouterStep2')}</li>
+                                <li>3. {t('settings.providers.openRouterStep3')}</li>
+                            </ol>
+                            <a
+                                href="https://openrouter.ai/settings/keys"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                            >
+                                <ExternalLink size={14} />
+                                {t('settings.providers.openRouterLink')}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Current Status Badge */}
+            {isOpenRouter && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${hasApiKey
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                    : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}`}>
+                    {hasApiKey ? (
+                        <>
+                            <Key size={16} />
+                            <span className="font-medium">{t('settings.providers.connected')}</span>
+                            <span className="text-xs opacity-75">- {t('freeTier.usingOwn')}</span>
+                        </>
+                    ) : (
+                        <>
+                            <Gift size={16} />
+                            <span className="font-medium">{t('settings.providers.freeTier')}</span>
+                            <span className="text-xs opacity-75">- {t('freeTier.usingFree')}</span>
+                        </>
+                    )}
+                </div>
+            )}
+
             <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.providers.name')}</label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     value={providerForm.name || ''}
                     onChange={e => setProviderForm({...providerForm, name: e.target.value})}
                     disabled={!isCustom}
                     className={`w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm text-gray-900 dark:text-white outline-none ${!isCustom ? 'text-gray-500 cursor-not-allowed' : 'focus:ring-2 focus:ring-blue-500'}`}
                 />
             </div>
-            
+
             {providerForm.type === 'openai-compatible' && (isCustom || isOpenRouter) && (
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.providers.baseUrl')} {isOpenRouter && t('settings.providers.defaultCorrect')}</label>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={providerForm.baseURL || ''}
                         onChange={e => setProviderForm({...providerForm, baseURL: e.target.value})}
-                        disabled={!isCustom && !isOpenRouter} 
+                        disabled={!isCustom && !isOpenRouter}
                         className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                 </div>
             )}
 
             <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-500 uppercase">{t('settings.providers.apiKey')} {providerForm.type === 'google' && t('settings.providers.apiKeyOptional')}</label>
+                <label className="text-xs font-medium text-gray-500 uppercase">
+                    {t('settings.providers.apiKey')}
+                    {isOpenRouter && <span className="text-blue-500 ml-1">{t('settings.providers.apiKeyOptional')}</span>}
+                </label>
                 <div className="flex gap-2">
                     <div className="relative w-full">
-                        <input 
+                        <input
                             type={showApiKey ? "text" : "password"}
                             value={providerForm.apiKey || ''}
                             onChange={e => setProviderForm({...providerForm, apiKey: e.target.value})}
                             className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2 pr-10 text-sm text-gray-900 dark:text-white font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="sk-..."
+                            placeholder={t('settings.providers.apiKeyPlaceholder')}
                         />
-                        <button 
+                        <button
                             onClick={() => setShowApiKey(!showApiKey)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                             tabIndex={-1}
@@ -957,9 +1011,9 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                             {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                     </div>
-                    
-                    {canSyncModels && (
-                        <button 
+
+                    {canSyncModels && hasApiKey && (
+                        <button
                             onClick={() => handleSyncModels(providerId, providerForm as LLMProvider)}
                             disabled={isSyncingModels}
                             className="px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg flex items-center gap-2 text-xs font-medium whitespace-nowrap transition-colors"
@@ -1218,7 +1272,23 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                                             <div>
                                                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                                     {provider.name}
-                                                    {provider.apiKey && <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} /> {t('settings.providers.connected')}</span>}
+                                                    {provider.id === 'provider-openrouter' ? (
+                                                        provider.apiKey ? (
+                                                            <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                                <Key size={8} /> {t('settings.providers.connected')}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                                <Gift size={8} /> {t('settings.providers.freeTier')}
+                                                            </span>
+                                                        )
+                                                    ) : (
+                                                        provider.apiKey && (
+                                                            <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                                <Check size={8} /> {t('settings.providers.connected')}
+                                                            </span>
+                                                        )
+                                                    )}
                                                 </h3>
                                                 <div className="text-xs text-gray-500 mt-0.5">
                                                     {provider.type === 'google' ? t('settings.providers.googleApi') : t('settings.providers.openaiApi')}
