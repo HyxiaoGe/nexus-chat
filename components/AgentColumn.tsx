@@ -17,7 +17,6 @@ interface AgentColumnProps {
   onStopAgent?: (messageId: string) => void;
   onRegenerateAgent?: (messageId: string) => void;
   onCopyMessage?: (content: string) => void;
-  config?: any;
   index: number;
   totalCount: number;
 }
@@ -29,7 +28,6 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
   onStopAgent,
   onRegenerateAgent,
   onCopyMessage,
-  config,
   index,
   totalCount
 }) => {
@@ -188,7 +186,7 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
               >
                 <MessageBubble
                   message={message}
-                  config={config}
+                  config={agent}
                   onStopAgent={onStopAgent}
                   onRegenerateAgent={onRegenerateAgent}
                   onCopyMessage={onCopyMessage}

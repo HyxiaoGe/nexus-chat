@@ -9,7 +9,6 @@ interface ResponsiveGridProps {
   onStopAgent?: (messageId: string) => void;
   onRegenerateAgent?: (messageId: string) => void;
   onCopyMessage?: (content: string) => void;
-  config?: any;
 }
 
 export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
@@ -18,8 +17,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
   onOpenFullscreen,
   onStopAgent,
   onRegenerateAgent,
-  onCopyMessage,
-  config
+  onCopyMessage
 }) => {
   const enabledAgents = agents.filter(a => a.enabled);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +94,6 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
             onStopAgent={onStopAgent}
             onRegenerateAgent={onRegenerateAgent}
             onCopyMessage={onCopyMessage}
-            config={config}
             index={index}
             totalCount={enabledAgents.length}
           />

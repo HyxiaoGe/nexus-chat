@@ -555,7 +555,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
               </div>
               </div>
               ) : (
-                /* Message Stream - New Responsive Grid Layout */
+                // Message Stream - New Responsive Grid Layout
                 <ResponsiveGrid
                   agents={agents.filter(a => a.enabled)}
                   messages={messages}
@@ -566,7 +566,6 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                     navigator.clipboard.writeText(content);
                     toastSuccess(t('common.copied'));
                   }}
-                  config={undefined}
                 />
               )}
         </div>
