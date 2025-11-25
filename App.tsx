@@ -517,8 +517,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                   className="h-full overflow-y-auto scroll-smooth px-4 md:px-6"
               >
               <div className="max-w-5xl mx-auto w-full h-full flex items-center justify-center">
-              {/* Empty state stays the same */}
-                /* Empty State Carousel */
+                {/* Empty State: Welcome message and suggestions */}
                 <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500 px-4">
                     <div className="space-y-4">
                         <div className="w-24 h-24 mx-auto bg-gradient-to-tr from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/20 rotate-3 transform transition-transform hover:rotate-6">
