@@ -48,10 +48,12 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
           top: scrollRef.current.scrollHeight,
           behavior: 'smooth',
         });
-        // Note: isNearBottom will be updated by handleScroll event after scroll completes
+        // 重置为底部状态
+        setIsNearBottom(true);
       }
     }
-  }, [messages, isNearBottom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]); // Only depend on messages to avoid infinite loop
 
   // 监听滚动位置
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
