@@ -9,14 +9,17 @@
 **Root Cause**: The `handleSyncModels` function only updated the provider with fetched models but **didn't save the API key** that was entered in the form. The API key stayed in local component state (`providerForm`) and never made it to the global `providers` state. When the welcome dialog logic checked for configured keys, it found none.
 
 **Fix**: Modified `handleSyncModels` to save the API key from `providerForm` along with the fetched models:
+
 ```typescript
-const updatedProviders = providers.map(p =>
-    p.id === providerId ? {
+const updatedProviders = providers.map((p) =>
+  p.id === providerId
+    ? {
         ...p,
         apiKey: providerConfig.apiKey, // Now saves the API key!
         fetchedModels: models,
-        lastFetched: Date.now()
-    } : p
+        lastFetched: Date.now(),
+      }
+    : p
 );
 ```
 
@@ -29,18 +32,19 @@ const updatedProviders = providers.map(p =>
 **Root Cause**: OpenRouter's `/models` endpoint is **public and doesn't require authentication**! The code was just calling `fetchProviderModels` which hit the public endpoint, so it "succeeded" even with invalid keys.
 
 **Fix**: Added proper API key validation using the existing `validateOpenRouterKey` function BEFORE fetching models:
+
 ```typescript
 if (isOpenRouter && providerConfig.apiKey) {
-    info(t('settings.providers.validating'));
-    const { validateOpenRouterKey } = await import('../services/geminiService');
-    const isValid = await validateOpenRouterKey(providerConfig.apiKey);
+  info(t('settings.providers.validating'));
+  const { validateOpenRouterKey } = await import('../services/geminiService');
+  const isValid = await validateOpenRouterKey(providerConfig.apiKey);
 
-    if (!isValid) {
-        error(t('settings.providers.invalidKey'));
-        setIsSyncingModels(false);
-        return; // Stop if validation fails
-    }
-    success(t('settings.providers.keyVerified'));
+  if (!isValid) {
+    error(t('settings.providers.invalidKey'));
+    setIsSyncingModels(false);
+    return; // Stop if validation fails
+  }
+  success(t('settings.providers.keyVerified'));
 }
 ```
 
@@ -51,10 +55,12 @@ Now the key is validated against OpenRouter's `/api/v1/auth/key` endpoint before
 ### 3. Confusing Button Text ✅
 
 **Problem**: Two buttons with misleading names:
+
 - "验证并同步" (Verify & Sync) - Didn't actually verify
 - "保存并认证" (Save & Authenticate) - Didn't actually authenticate
 
 **Fix**:
+
 - **Button 1** ("验证并同步"): Now actually validates the key AND syncs models, so the name is accurate
 - **Button 2**: Changed from "保存并认证" to "保存" (Save) - just saves without validation, useful for local providers like Ollama that don't need validation
 

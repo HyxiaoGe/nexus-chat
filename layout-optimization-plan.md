@@ -5,11 +5,11 @@
 ### 1.1 根据AI数量动态调整
 
 | AI数量 | 桌面布局（≥1280px） | 平板布局（768-1279px） | 手机布局（<768px） |
-|--------|-------------------|---------------------|------------------|
-| 1个    | 1列（居中）        | 1列（全宽）          | 1列（全宽）       |
-| 2个    | 2列并排           | 2列并排              | 1列垂直堆叠       |
-| 3个    | 3列并排 或 2+1布局 | 2列并排 + 1列下方     | 1列垂直堆叠       |
-| 4个    | 2x2网格           | 2列并排              | 1列垂直堆叠       |
+| ------ | ------------------- | ---------------------- | ------------------ |
+| 1个    | 1列（居中）         | 1列（全宽）            | 1列（全宽）        |
+| 2个    | 2列并排             | 2列并排                | 1列垂直堆叠        |
+| 3个    | 3列并排 或 2+1布局  | 2列并排 + 1列下方      | 1列垂直堆叠        |
+| 4个    | 2x2网格             | 2列并排                | 1列垂直堆叠        |
 
 ### 1.2 每列最小/最佳宽度计算
 
@@ -25,6 +25,7 @@ MAX_COLUMN_WIDTH = 800px
 ```
 
 **计算逻辑：**
+
 ```typescript
 function calculateLayout(enabledAgentsCount: number, availableWidth: number) {
   if (enabledAgentsCount === 1) {
@@ -60,6 +61,7 @@ function calculateLayout(enabledAgentsCount: number, availableWidth: number) {
 ### 2.1 全屏模式触发方式
 
 **方式一：顶部工具栏按钮**
+
 ```
 ┌──────────────────────────────────────────────┐
 │ Hello... | 162 tokens  [🖼️ 全屏] [⚙️ 设置]  │
@@ -67,12 +69,14 @@ function calculateLayout(enabledAgentsCount: number, availableWidth: number) {
 ```
 
 **方式二：快捷键**
+
 - `F11` 或 `Cmd/Ctrl + Shift + F` 触发全屏
 - `ESC` 退出全屏
 
 ### 2.2 全屏模式效果
 
 **普通模式：**
+
 ```
 ┌────────┬──────────────────────────────────────┐
 │        │  Header                              │
@@ -86,6 +90,7 @@ function calculateLayout(enabledAgentsCount: number, availableWidth: number) {
 ```
 
 **全屏模式：**
+
 ```
 ┌──────────────────────────────────────────────┐
 │  Header   [← 返回] [🖼️ 退出全屏]            │
@@ -99,6 +104,7 @@ function calculateLayout(enabledAgentsCount: number, availableWidth: number) {
 ```
 
 **4个AI全屏模式：**
+
 ```
 ┌─────────────────────┬─────────────────────┐
 │       AI 1          │       AI 2          │
@@ -115,18 +121,18 @@ function calculateLayout(enabledAgentsCount: number, availableWidth: number) {
 
 ```typescript
 interface LayoutState {
-  isFullscreen: boolean;        // 是否全屏
-  sidebarVisible: boolean;       // Sidebar是否可见
+  isFullscreen: boolean; // 是否全屏
+  sidebarVisible: boolean; // Sidebar是否可见
   viewMode: 'auto' | 'grid' | 'column'; // 布局模式
-  columnCount: number;           // 列数（auto时自动计算）
+  columnCount: number; // 列数（auto时自动计算）
 }
 
 // 全屏模式自动隐藏Sidebar
 const toggleFullscreen = () => {
-  setLayoutState(prev => ({
+  setLayoutState((prev) => ({
     ...prev,
     isFullscreen: !prev.isFullscreen,
-    sidebarVisible: !prev.isFullscreen ? false : true
+    sidebarVisible: !prev.isFullscreen ? false : true,
   }));
 };
 ```
@@ -429,14 +435,14 @@ const [layoutState, setLayoutState] = useState<LayoutState>({
   isFullscreen: false,
   sidebarVisible: true,
   viewMode: 'auto',
-  columnCount: 2
+  columnCount: 2,
 });
 
 const toggleFullscreen = () => {
-  setLayoutState(prev => ({
+  setLayoutState((prev) => ({
     ...prev,
     isFullscreen: !prev.isFullscreen,
-    sidebarVisible: prev.isFullscreen // 退出全屏时恢复Sidebar
+    sidebarVisible: prev.isFullscreen, // 退出全屏时恢复Sidebar
   }));
 };
 ```
@@ -492,7 +498,7 @@ const virtualizer = useVirtualizer({
   count: messages.length,
   getScrollElement: () => scrollRef.current,
   estimateSize: () => 100, // 预估消息高度
-  overscan: 5 // 预渲染5条消息
+  overscan: 5, // 预渲染5条消息
 });
 ```
 
@@ -501,12 +507,15 @@ const virtualizer = useVirtualizer({
 ```typescript
 // 按agent分组消息，避免每次渲染重新过滤
 const messagesByAgent = useMemo(() => {
-  return messages.reduce((acc, msg) => {
-    if (!msg.agentId) return acc;
-    if (!acc[msg.agentId]) acc[msg.agentId] = [];
-    acc[msg.agentId].push(msg);
-    return acc;
-  }, {} as Record<string, Message[]>);
+  return messages.reduce(
+    (acc, msg) => {
+      if (!msg.agentId) return acc;
+      if (!acc[msg.agentId]) acc[msg.agentId] = [];
+      acc[msg.agentId].push(msg);
+      return acc;
+    },
+    {} as Record<string, Message[]>
+  );
 }, [messages]);
 ```
 
@@ -566,18 +575,21 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 ## 七、实施优先级
 
 ### Phase 1: 核心功能（MVP）
+
 - ✅ ResponsiveGrid 组件
 - ✅ AgentColumn 组件
 - ✅ 2x2网格布局（4个AI）
 - ✅ 全屏模式基础功能
 
 ### Phase 2: 体验优化
+
 - ✅ 智能滚动
 - ✅ 快捷键支持
 - ✅ 布局动画过渡
 - ✅ 空状态提示
 
 ### Phase 3: 高级功能
+
 - ⚪ 虚拟滚动（长对话性能优化）
 - ⚪ 拖拽调整列宽
 - ⚪ 用户布局偏好保存
@@ -602,17 +614,20 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 ## 九、测试场景
 
 ### 9.1 功能测试
+
 - [ ] 1-4个AI的各种组合
 - [ ] 全屏模式进入/退出
 - [ ] 快捷键响应
 - [ ] 响应式断点切换
 
 ### 9.2 性能测试
+
 - [ ] 100+条消息的滚动性能
 - [ ] 4个AI同时流式输出
 - [ ] 窗口resize时的重新布局性能
 
 ### 9.3 兼容性测试
+
 - [ ] Chrome/Edge/Firefox/Safari
 - [ ] 1920x1080、2560x1440等常见分辨率
 - [ ] iPad横屏/竖屏
@@ -623,6 +638,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 ## 十、预期效果对比
 
 ### 当前布局问题：
+
 ```
 [User] Hello. Is anyone there?
 ↓
@@ -636,6 +652,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 ```
 
 ### 优化后效果：
+
 ```
 ┌──────────────┬──────────────┐
 │ Claude       │ GPT-4        │
@@ -663,9 +680,9 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 ```json
 {
   "dependencies": {
-    "react-resizable-panels": "^2.0.0",  // 可调整大小的面板（可选）
-    "@tanstack/react-virtual": "^3.0.0",  // 虚拟滚动（可选）
-    "lucide-react": "已安装"               // 图标库
+    "react-resizable-panels": "^2.0.0", // 可调整大小的面板（可选）
+    "@tanstack/react-virtual": "^3.0.0", // 虚拟滚动（可选）
+    "lucide-react": "已安装" // 图标库
   }
 }
 ```
@@ -673,6 +690,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 ---
 
 **下一步行动：**
+
 1. 确认方案细节
 2. 创建feature分支
 3. 实施Phase 1核心功能

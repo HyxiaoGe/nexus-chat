@@ -41,12 +41,14 @@
 ## ✨ 功能特性
 
 ### 🤖 多智能体系统
+
 - **无限智能体**：创建和管理多个具有自定义个性的 AI 智能体
 - **并行生成**：所有智能体同时响应你的提示
 - **智能体特定重新生成**：重新生成单个智能体的响应，不影响其他智能体
 - **独立停止控制**：在其他智能体继续工作时停止特定智能体的生成
 
 ### 💬 高级聊天体验
+
 - **实时流式传输**：使用服务器发送事件（SSE）实现流畅的打字机式文本生成
 - **智能内容渲染**：
   - 带语言检测的语法高亮代码块
@@ -57,12 +59,14 @@
 - **会话历史**：自动会话分组（今天、昨天、本周、更早）
 
 ### 📊 Token 分析与成本追踪
+
 - **每条消息统计**：每个 AI 响应的 token 数量和估算成本
 - **会话级别追踪**：当前对话的累计 token 使用量和成本
 - **全局统计**：在设置仪表板中按模型查看总使用量
 - **OpenRouter 定价**：基于官方定价 API 的实时成本计算
 
 ### 🎨 用户体验
+
 - **国际化（i18n）**：完全支持英语和简体中文
 - **主题支持**：亮色和暗色模式，带平滑过渡
 - **响应式设计**：针对桌面、平板和移动设备优化
@@ -70,6 +74,7 @@
 - **智能滚动**：智能滚动到底部，带手动滚动检测
 
 ### 🔧 提供商集成
+
 - **Google Gemini**：原生 SDK 集成，支持 Gemini 1.5/2.0 模型
 - **OpenRouter**：访问 100+ 模型，包括 GPT-4、Claude、Llama、DeepSeek
 - **OpenAI 兼容**：连接到任何 OpenAI 兼容端点
@@ -77,6 +82,7 @@
 - **动态模型加载**：从提供商自动同步模型列表
 
 ### 💾 数据管理
+
 - **本地存储**：所有数据存储在浏览器 localStorage（无需服务器）
 - **导出/导入**：备份和恢复整个聊天历史和设置
 - **会话管理**：创建、删除和组织对话会话
@@ -89,15 +95,19 @@
 <div align="center">
 
 ### 💬 多智能体聊天界面
+
 ![多智能体聊天](./docs/screenshots/chat-interface.png)
 
 ### 📊 Token 使用统计
+
 ![Token 统计](./docs/screenshots/token-statistics.png)
 
 ### ⚙️ 智能体配置
+
 ![智能体设置](./docs/screenshots/agent-settings.png)
 
 ### 🌓 暗色模式
+
 ![暗色模式](./docs/screenshots/dark-mode.png)
 
 </div>
@@ -125,12 +135,14 @@
 #### 安装步骤
 
 1. **克隆仓库**
+
    ```bash
    git clone https://github.com/HyxiaoGe/nexus-chat.git
    cd nexus-chat
    ```
 
 2. **安装依赖**
+
    ```bash
    npm install
    # 或
@@ -138,16 +150,20 @@
    ```
 
 3. **配置环境变量（可选）**
+
    ```bash
    cp .env.example .env
    ```
+
    编辑 `.env` 添加默认 API 密钥：
+
    ```env
    VITE_GOOGLE_API_KEY=your_gemini_api_key
    VITE_OPENROUTER_API_KEY=your_openrouter_api_key
    ```
 
 4. **启动开发服务器**
+
    ```bash
    npm run dev
    # 或
@@ -160,11 +176,13 @@
 ### 首次使用
 
 **使用免费额度（无需 API Key）：**
+
 1. 打开应用 - 你会看到欢迎弹窗
 2. 点击 **"先用免费额度"** 立即开始
 3. 开始聊天！所有启用的智能体将使用共享的免费额度响应
 
 **使用自己的 API Key（无限使用）：**
+
 1. 点击右上角的**设置**图标（⚙️）
 2. 进入**提供商**标签页
 3. 点击 **OpenRouter**，按照引导从 [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) 获取 API Key
@@ -176,22 +194,26 @@
 ## 🛠️ 技术栈
 
 ### 前端
+
 - **React 18.2** - 现代 React 与 Hooks
 - **TypeScript 5.0** - 类型安全开发
 - **Vite 5.x** - 闪电般快速的构建工具
 - **Tailwind CSS 3.x** - 实用优先的 CSS 框架
 
 ### 状态管理
+
 - **React Hooks** - useState、useEffect、useRef、useMemo
 - **自定义 Hooks** - 聊天协调、滚动管理的模块化逻辑
 - **LocalStorage API** - 客户端数据持久化
 
 ### AI 集成
+
 - **@google/genai** - 官方 Google 生成式 AI SDK
 - **OpenRouter API** - 多模型聚合 API
 - **服务器发送事件（SSE）** - 实时流式响应
 
 ### UI/UX
+
 - **i18next** - 国际化框架
 - **Lucide React** - 精美的图标库
 - **@lobehub/icons** - AI 模型的品牌图标
@@ -199,6 +221,7 @@
 - **语法高亮** - 代码块格式化
 
 ### 开发工具
+
 - **ESLint** - 代码检查
 - **TypeScript 编译器** - 类型检查
 - **Vite 构建** - 生产优化
@@ -243,6 +266,7 @@ NexusChat 支持任何 OpenAI 兼容的 API 端点：
 4. 点击"保存并验证"以测试连接
 
 **示例配置：**
+
 - **Ollama**：`http://localhost:11434/v1`
 - **LM Studio**：`http://localhost:1234/v1`
 - **本地 vLLM**：`http://localhost:8000/v1`
@@ -263,6 +287,7 @@ NexusChat 支持任何 OpenAI 兼容的 API 端点：
 ### 数据隐私
 
 ⚠️ **重要安全提示：**
+
 - API 密钥以**未加密**形式存储在浏览器 `localStorage` 中
 - 仅在**可信设备**上使用 NexusChat
 - 对于生产环境使用，请实现服务器端密钥管理
@@ -275,6 +300,7 @@ NexusChat 支持任何 OpenAI 兼容的 API 端点：
 ### Vercel（推荐）
 
 1. **推送到 GitHub**
+
    ```bash
    git add .
    git commit -m "准备部署"
@@ -302,11 +328,12 @@ NexusChat 支持任何 OpenAI 兼容的 API 端点：
    - 点击"部署"
    - 你的应用将在 `your-project.vercel.app` 上线
 
-> ⚠️ **重要提示**：`OPENROUTER_API_KEY`（不带 VITE_ 前缀）由服务端 API 代理使用，永远不会暴露给客户端。这确保了免费额度功能的安全性。
+> ⚠️ **重要提示**：`OPENROUTER_API_KEY`（不带 VITE\_ 前缀）由服务端 API 代理使用，永远不会暴露给客户端。这确保了免费额度功能的安全性。
 
 ### Netlify
 
 1. 构建项目：
+
    ```bash
    npm run build
    ```
@@ -330,6 +357,7 @@ Docker 支持计划在 v1.4.0 版本中推出。
 ## 🗺️ 路线图
 
 ### v1.4.0（当前版本）✅
+
 - [x] **免费额度支持** - 无需 API Key 即可开始使用（有每日限制）
 - [x] **服务端 API 代理** - 通过 Vercel Edge Functions 安全管理 API Key
 - [x] **优化新手引导** - 更好的用户引导和 API Key 配置指南
@@ -337,17 +365,20 @@ Docker 支持计划在 v1.4.0 版本中推出。
 - [ ] 视觉模型支持（图像输入）
 
 ### v1.5.0（2025年第二季度）
+
 - [ ] 语音输入/输出（TTS/STT）
 - [ ] 可扩展的插件系统
 - [ ] 对话分支
 - [ ] 高级分析仪表板
 
 ### v1.6.0（2025年第三季度）
+
 - [ ] 带认证的多用户支持
 - [ ] 云同步
 - [ ] 团队协作功能
 
 ### 未来考虑
+
 - 自定义智能体工作流（链接、路由）
 - 与外部工具集成（网络搜索、计算器）
 - 移动应用（React Native）
@@ -360,14 +391,17 @@ Docker 支持计划在 v1.4.0 版本中推出。
 欢迎贡献！以下是你可以帮助的方式：
 
 ### 报告错误
+
 - 使用 [GitHub Issues](https://github.com/HyxiaoGe/nexus-chat/issues) 页面
 - 包括重现步骤、预期行为和屏幕截图
 
 ### 功能请求
+
 - 使用"enhancement"标签开启一个 issue
 - 描述功能及其用例
 
 ### Pull Requests
+
 1. Fork 仓库
 2. 创建功能分支（`git checkout -b feature/amazing-feature`）
 3. 提交更改（`git commit -m '添加惊人的功能'`）
@@ -375,6 +409,7 @@ Docker 支持计划在 v1.4.0 版本中推出。
 5. 开启 Pull Request
 
 ### 开发设置
+
 ```bash
 # 安装依赖
 npm install

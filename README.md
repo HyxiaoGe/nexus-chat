@@ -41,12 +41,14 @@
 ## ✨ Features
 
 ### 🤖 Multi-Agent System
+
 - **Unlimited Agents**: Create and manage multiple AI agents with custom personalities
 - **Parallel Generation**: All agents respond simultaneously to your prompts
 - **Agent-Specific Regeneration**: Regenerate responses for individual agents without affecting others
 - **Individual Stop Controls**: Stop specific agents mid-generation while others continue
 
 ### 💬 Advanced Chat Experience
+
 - **Real-time Streaming**: Smooth, typewriter-style text generation with Server-Sent Events (SSE)
 - **Smart Content Rendering**:
   - Syntax-highlighted code blocks with language detection
@@ -57,12 +59,14 @@
 - **Session History**: Automatic session grouping (Today, Yesterday, This Week, Older)
 
 ### 📊 Token Analytics & Cost Tracking
+
 - **Per-Message Statistics**: Token count and estimated cost for each AI response
 - **Session-Level Tracking**: Cumulative token usage and cost for current conversation
 - **Global Statistics**: Total usage by model in Settings dashboard
 - **OpenRouter Pricing**: Real-time cost calculation based on official pricing API
 
 ### 🎨 User Experience
+
 - **Internationalization (i18n)**: Full support for English and Simplified Chinese
 - **Theme Support**: Light and Dark modes with smooth transitions
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
@@ -70,6 +74,7 @@
 - **Auto-scroll**: Smart scroll-to-bottom with manual scroll detection
 
 ### 🔧 Provider Integration
+
 - **Google Gemini**: Native SDK integration for Gemini 1.5/2.0 models
 - **OpenRouter**: Access to 100+ models including GPT-4, Claude, Llama, DeepSeek
 - **OpenAI Compatible**: Connect to any OpenAI-compatible endpoint
@@ -77,6 +82,7 @@
 - **Dynamic Model Loading**: Automatic model list synchronization from providers
 
 ### 💾 Data Management
+
 - **Local Storage**: All data stored in browser localStorage (no server required)
 - **Export/Import**: Backup and restore your entire chat history and settings
 - **Session Management**: Create, delete, and organize conversation sessions
@@ -89,15 +95,19 @@
 <div align="center">
 
 ### 💬 Multi-Agent Chat Interface
+
 ![Multi-Agent Chat](./docs/screenshots/chat-interface.png)
 
 ### 📊 Token Usage Statistics
+
 ![Token Statistics](./docs/screenshots/token-statistics.png)
 
 ### ⚙️ Agent Configuration
+
 ![Agent Settings](./docs/screenshots/agent-settings.png)
 
 ### 🌓 Dark Mode
+
 ![Dark Mode](./docs/screenshots/dark-mode.png)
 
 </div>
@@ -125,12 +135,14 @@ Visit the live demo and start chatting immediately with the **Free Tier** - no s
 #### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/HyxiaoGe/nexus-chat.git
    cd nexus-chat
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    # or
@@ -138,16 +150,20 @@ Visit the live demo and start chatting immediately with the **Free Tier** - no s
    ```
 
 3. **Configure environment (Optional)**
+
    ```bash
    cp .env.example .env
    ```
+
    Edit `.env` to add default API keys:
+
    ```env
    VITE_GOOGLE_API_KEY=your_gemini_api_key
    VITE_OPENROUTER_API_KEY=your_openrouter_api_key
    ```
 
 4. **Start development server**
+
    ```bash
    npm run dev
    # or
@@ -160,11 +176,13 @@ Visit the live demo and start chatting immediately with the **Free Tier** - no s
 ### First-Time Setup
 
 **Using Free Tier (No API Key):**
+
 1. Open the app - you'll see the Welcome dialog
 2. Click **"Start with Free Tier"** to begin immediately
 3. Start chatting! All enabled agents will respond using the shared free quota
 
 **Using Your Own API Key (Unlimited):**
+
 1. Click the **Settings** icon (⚙️) in the top-right corner
 2. Go to **Providers** tab
 3. Click on **OpenRouter** and follow the guide to get your API key from [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
@@ -176,22 +194,26 @@ Visit the live demo and start chatting immediately with the **Free Tier** - no s
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **React 18.2** - Modern React with Hooks
 - **TypeScript 5.0** - Type-safe development
 - **Vite 5.x** - Lightning-fast build tool
 - **Tailwind CSS 3.x** - Utility-first CSS framework
 
 ### State Management
+
 - **React Hooks** - useState, useEffect, useRef, useMemo
 - **Custom Hooks** - Modular logic for chat orchestration, scroll management
 - **LocalStorage API** - Client-side data persistence
 
 ### AI Integration
+
 - **@google/genai** - Official Google Generative AI SDK
 - **OpenRouter API** - Multi-model aggregation API
 - **Server-Sent Events (SSE)** - Real-time streaming responses
 
 ### UI/UX
+
 - **i18next** - Internationalization framework
 - **Lucide React** - Beautiful icon library
 - **@lobehub/icons** - Brand icons for AI models
@@ -199,6 +221,7 @@ Visit the live demo and start chatting immediately with the **Free Tier** - no s
 - **Syntax Highlighting** - Code block formatting
 
 ### Developer Tools
+
 - **ESLint** - Code linting
 - **TypeScript Compiler** - Type checking
 - **Vite Build** - Production optimization
@@ -243,6 +266,7 @@ NexusChat supports any OpenAI-compatible API endpoint:
 4. Click "Save & Verify" to test connection
 
 **Example Configurations:**
+
 - **Ollama**: `http://localhost:11434/v1`
 - **LM Studio**: `http://localhost:1234/v1`
 - **Local vLLM**: `http://localhost:8000/v1`
@@ -263,6 +287,7 @@ NexusChat supports any OpenAI-compatible API endpoint:
 ### Data Privacy
 
 ⚠️ **Important Security Notes:**
+
 - API keys are stored **unencrypted** in browser `localStorage`
 - Only use NexusChat on **trusted devices**
 - For production use, implement server-side key management
@@ -275,6 +300,7 @@ NexusChat supports any OpenAI-compatible API endpoint:
 ### Vercel (Recommended)
 
 1. **Push to GitHub**
+
    ```bash
    git add .
    git commit -m "Ready for deployment"
@@ -302,11 +328,12 @@ NexusChat supports any OpenAI-compatible API endpoint:
    - Click "Deploy"
    - Your app will be live at `your-project.vercel.app`
 
-> ⚠️ **Important**: The `OPENROUTER_API_KEY` (without VITE_ prefix) is used by the serverless API proxy and is never exposed to the client. This enables the free tier feature securely.
+> ⚠️ **Important**: The `OPENROUTER_API_KEY` (without VITE\_ prefix) is used by the serverless API proxy and is never exposed to the client. This enables the free tier feature securely.
 
 ### Netlify
 
 1. Build the project:
+
    ```bash
    npm run build
    ```
@@ -330,6 +357,7 @@ Docker support is planned for v1.4.0.
 ## 🗺️ Roadmap
 
 ### v1.4.0 (Current) ✅
+
 - [x] **Free Tier Support** - Start using without API key (daily limit)
 - [x] **Serverless API Proxy** - Secure API key management via Vercel Edge Functions
 - [x] **Improved Onboarding** - Better guidance for new users and API key setup
@@ -337,17 +365,20 @@ Docker support is planned for v1.4.0.
 - [ ] Vision model support (image input)
 
 ### v1.5.0 (Q2 2025)
+
 - [ ] Voice input/output (TTS/STT)
 - [ ] Plugin system for extensibility
 - [ ] Conversation branching
 - [ ] Advanced analytics dashboard
 
 ### v1.6.0 (Q3 2025)
+
 - [ ] Multi-user support with authentication
 - [ ] Cloud synchronization
 - [ ] Team collaboration features
 
 ### Future Considerations
+
 - Custom agent workflows (chaining, routing)
 - Integration with external tools (web search, calculators)
 - Mobile app (React Native)
@@ -360,14 +391,17 @@ Docker support is planned for v1.4.0.
 Contributions are welcome! Here's how you can help:
 
 ### Reporting Bugs
+
 - Use the [GitHub Issues](https://github.com/HyxiaoGe/nexus-chat/issues) page
 - Include steps to reproduce, expected behavior, and screenshots
 
 ### Feature Requests
+
 - Open an issue with the "enhancement" label
 - Describe the feature and its use case
 
 ### Pull Requests
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
@@ -375,6 +409,7 @@ Contributions are welcome! Here's how you can help:
 5. Open a Pull Request
 
 ### Development Setup
+
 ```bash
 # Install dependencies
 npm install
