@@ -15,6 +15,7 @@ import {
   Key,
   Grid3x3,
   Columns2,
+  BookOpen,
 } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
@@ -35,6 +36,7 @@ import { useDebounce } from './hooks/useDebounce';
 import { ResponsiveGrid } from './components/ResponsiveGrid';
 import { ComparisonView } from './components/ComparisonView';
 import { FullscreenAgentView } from './components/FullscreenAgentView';
+import { TestCaseLibrary } from './components/TestCaseLibrary';
 
 interface NexusChatProps {
   appSettings: AppSettings;
@@ -61,6 +63,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     'general' | 'agents' | 'providers' | 'data'
   >('general');
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [isTestCaseLibraryOpen, setIsTestCaseLibraryOpen] = useState(false);
 
   // View mode: grid (default) or comparison
   const [viewMode, setViewMode] = useState<'grid' | 'comparison'>(() => {
@@ -748,6 +751,15 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             {/* Gradient border wrapper */}
             <div className="relative rounded-[2rem] p-[2px] bg-gradient-to-r from-transparent via-transparent to-transparent focus-within:from-blue-500 focus-within:via-purple-500 focus-within:to-blue-500 transition-all duration-500 shadow-2xl shadow-blue-900/5 dark:shadow-black/50">
               <div className="relative group rounded-[2rem] bg-white dark:bg-[#151b26] transition-all">
+                {/* Test Case Library Button */}
+                <button
+                  onClick={() => setIsTestCaseLibraryOpen(true)}
+                  className="absolute left-3 bottom-3 p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                  title="测试用例库"
+                >
+                  <BookOpen size={20} />
+                </button>
+
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -756,7 +768,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                   placeholder={t('app.inputPlaceholder')}
                   disabled={isStreaming}
                   rows={1}
-                  className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-6 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
+                  className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-14 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
                   style={{ minHeight: '60px' }}
                 />
 
@@ -851,6 +863,22 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             />
           );
         })()}
+
+      {/* Test Case Library */}
+      <TestCaseLibrary
+        isOpen={isTestCaseLibraryOpen}
+        onClose={() => setIsTestCaseLibraryOpen(false)}
+        onSendTestCase={(prompt) => {
+          setInput(prompt);
+          setIsTestCaseLibraryOpen(false);
+          // Auto-send after a short delay to let the textarea update
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus();
+            }
+          }, 100);
+        }}
+      />
     </div>
   );
 };

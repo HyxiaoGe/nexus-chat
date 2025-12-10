@@ -266,6 +266,7 @@ export const STORAGE_KEYS = {
   AGENTS: 'nexus_agents',
   SETTINGS: 'nexus_settings',
   TOKEN_STATS: 'nexus_token_stats',
+  CUSTOM_TEST_CASES: 'nexus_custom_test_cases',
 };
 
 // --- UX Presets ---

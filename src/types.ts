@@ -6,6 +6,27 @@ export interface AppSettings {
   language: 'en' | 'zh';
 }
 
+// Test case for model comparison
+export interface TestCase {
+  id: string;
+  title: string;
+  prompt: string;
+  category: TestCaseCategory;
+  isCustom?: boolean; // User-created test case
+  isFavorite?: boolean;
+  createdAt?: number;
+}
+
+export type TestCaseCategory =
+  | 'conversation' // 对话能力
+  | 'coding' // 编程能力
+  | 'writing' // 写作能力
+  | 'reasoning' // 推理能力
+  | 'multilingual' // 多语言能力
+  | 'knowledge' // 知识问答
+  | 'creative' // 创意生成
+  | 'custom'; // 自定义收藏
+
 // OpenRouter API model metadata
 export interface OpenRouterModel {
   id: string;
