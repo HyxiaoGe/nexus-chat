@@ -69,22 +69,23 @@ export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> =>
   }
 };
 
-// Fetch OpenRouter models via proxy (no API key required)
+// Fetch OpenRouter models (public endpoint, no API key required)
 export const fetchModelsViaProxy = async (): Promise<OpenRouterModel[]> => {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-    console.log('Fetching OpenRouter models via proxy...');
+    console.log('Fetching OpenRouter models...');
 
-    const response = await fetch('/api/models', {
+    // OpenRouter 的模型列表是公开的，不需要 API Key
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
       method: 'GET',
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch models via proxy: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to fetch OpenRouter models: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -112,7 +113,7 @@ export const fetchModelsViaProxy = async (): Promise<OpenRouterModel[]> => {
 
     return [];
   } catch (error) {
-    console.error('Failed to fetch models via proxy:', error);
+    console.error('Failed to fetch OpenRouter models:', error);
     return [];
   }
 };
