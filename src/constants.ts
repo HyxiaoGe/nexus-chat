@@ -1,4 +1,5 @@
 import { AgentConfig, LLMProvider, AppSettings } from './types';
+import { getSystemPrompt } from './data/systemPrompts';
 
 // Detect browser language and default to it if supported
 const detectBrowserLanguage = (): 'en' | 'zh' => {
@@ -145,6 +146,9 @@ export const DEFAULT_PROVIDERS: LLMProvider[] = [
   },
 ];
 
+// Get default system prompts based on browser language
+const defaultLang = detectBrowserLanguage();
+
 export const DEFAULT_AGENTS: AgentConfig[] = [
   // Default enabled agents (4)
   {
@@ -153,7 +157,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'anthropic',
     providerId: 'provider-openrouter',
     modelId: 'anthropic/claude-opus-4.5',
-    systemPrompt: '你是 Claude，由 Anthropic 创建的人工智能助手。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: true,
     config: {
       temperature: 0.7,
@@ -166,7 +170,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'openai',
     providerId: 'provider-openrouter',
     modelId: 'openai/gpt-5.1-chat',
-    systemPrompt: '你是一个乐于助人的助手。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: true,
     config: {
       temperature: 0.7,
@@ -178,7 +182,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'gemini',
     providerId: 'provider-openrouter',
     modelId: 'google/gemini-3-pro-preview',
-    systemPrompt: '你是一个乐于助人且反应迅速的助手。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: true,
     config: {
       temperature: 0.7,
@@ -190,7 +194,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'deepseek',
     providerId: 'provider-openrouter',
     modelId: 'deepseek/deepseek-r1',
-    systemPrompt: '你是一个推理引擎。请在 <think> 标签内清晰地展示你的思维链。',
+    systemPrompt: getSystemPrompt('reasoning', defaultLang),
     enabled: true,
     config: {
       temperature: 0.6,
@@ -203,7 +207,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'grok',
     providerId: 'provider-openrouter',
     modelId: 'x-ai/grok-4.1-fast',
-    systemPrompt: '你是 Grok，一个由 xAI 开发的 AI 助手。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: false,
     config: {
       temperature: 0.7,
@@ -215,7 +219,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'qwen',
     providerId: 'provider-openrouter',
     modelId: 'qwen/qwen3-max',
-    systemPrompt: '你是通义千问，由阿里巴巴开发的大语言模型。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: false,
     config: {
       temperature: 0.7,
@@ -227,7 +231,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'moonshot',
     providerId: 'provider-openrouter',
     modelId: 'moonshotai/kimi-k2-thinking',
-    systemPrompt: '你是 Kimi，由 Moonshot AI 开发的智能助手。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: false,
     config: {
       temperature: 0.7,
@@ -239,7 +243,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'zhipu',
     providerId: 'provider-openrouter',
     modelId: 'z-ai/glm-4.6',
-    systemPrompt: '你是智谱清言，由智谱 AI 开发的语言模型。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: false,
     config: {
       temperature: 0.7,
@@ -251,7 +255,7 @@ export const DEFAULT_AGENTS: AgentConfig[] = [
     avatar: 'minimax',
     providerId: 'provider-openrouter',
     modelId: 'minimax/minimax-m2',
-    systemPrompt: '你是 MiniMax 智能助手。',
+    systemPrompt: getSystemPrompt('general', defaultLang),
     enabled: false,
     config: {
       temperature: 0.7,
