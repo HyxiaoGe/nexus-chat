@@ -33,7 +33,7 @@ import {
   Gift,
   Key,
 } from 'lucide-react';
-import { fetchProviderModels } from '../services/geminiService';
+import { fetchProviderModels, fetchModelsViaProxy } from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
@@ -308,6 +308,41 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       setTokenStats(statsJson ? JSON.parse(statsJson) : { byModel: {} });
     }
   }, [isOpen]);
+
+  // Auto-fetch OpenRouter models via proxy on first load (no API key required)
+  useEffect(() => {
+    const openRouterProvider = providers.find((p) => p.id === 'provider-openrouter');
+
+    // Only fetch if:
+    // 1. OpenRouter provider exists
+    // 2. Models haven't been fetched yet OR it's been more than 24 hours
+    if (openRouterProvider) {
+      const shouldFetch =
+        !openRouterProvider.fetchedModels ||
+        openRouterProvider.fetchedModels.length === 0 ||
+        !openRouterProvider.lastFetched ||
+        Date.now() - openRouterProvider.lastFetched > 24 * 60 * 60 * 1000; // 24 hours
+
+      if (shouldFetch && isOpen) {
+        fetchModelsViaProxy()
+          .then((models) => {
+            if (models.length > 0) {
+              const updatedProviders = providers.map((p) =>
+                p.id === 'provider-openrouter'
+                  ? { ...p, fetchedModels: models, lastFetched: Date.now() }
+                  : p
+              );
+              onUpdateProviders(updatedProviders);
+              console.log(`Auto-fetched ${models.length} OpenRouter models via proxy`);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to auto-fetch models:', err);
+          });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]); // Only depend on isOpen to avoid infinite loop
 
   // --- Aggregated Models Logic ---
   // Combine models from ALL providers into a single searchable list

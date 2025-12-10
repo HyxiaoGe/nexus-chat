@@ -69,6 +69,54 @@ export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> =>
   }
 };
 
+// Fetch OpenRouter models via proxy (no API key required)
+export const fetchModelsViaProxy = async (): Promise<OpenRouterModel[]> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    console.log('Fetching OpenRouter models via proxy...');
+
+    const response = await fetch('/api/models', {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch models via proxy: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Parse OpenRouter response format
+    if (Array.isArray(data.data)) {
+      return data.data.map((m: any) => ({
+        id: m.id,
+        name: m.name || m.id,
+        created: m.created || 0,
+        description: m.description,
+        context_length: m.context_length || 0,
+        max_completion_tokens: m.max_completion_tokens,
+        pricing: m.pricing || {
+          prompt: '0',
+          completion: '0',
+          image: '0',
+          request: '0',
+        },
+        architecture: m.architecture,
+        top_provider: m.top_provider,
+        supported_parameters: m.supported_parameters,
+      }));
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Failed to fetch models via proxy:', error);
+    return [];
+  }
+};
+
 // Fetch models from OpenRouter with full metadata
 export const fetchProviderModels = async (provider: LLMProvider): Promise<OpenRouterModel[]> => {
   try {
