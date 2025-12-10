@@ -3,6 +3,7 @@ import { AgentConfig, Message } from '../types';
 import { MessageBubble } from './MessageBubble';
 import { BrandIcon } from './BrandIcons';
 import { Loader2, MessageSquare, Square, RefreshCw, Copy, Maximize2 } from 'lucide-react';
+import { getShortModelName } from '../utils/common';
 
 interface ComparisonViewProps {
   agents: AgentConfig[];
@@ -106,6 +107,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
             {enabledAgents.map(agent => (
               <label
                 key={agent.id}
+                title={agent.modelId}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all ${
                   visibleAgentIds.has(agent.id)
                     ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
@@ -119,7 +121,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
                   className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                 />
                 <BrandIcon brand={agent.avatar} className="w-3 h-3" />
-                <span className="max-w-[100px] truncate">{agent.name}</span>
+                <span className="max-w-[120px] truncate">{getShortModelName(agent.modelId)}</span>
               </label>
             ))}
           </div>
@@ -170,9 +172,9 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                        {agent.name}
+                        {getShortModelName(agent.modelId)}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title={agent.modelId}>
                         {agent.modelId}
                       </p>
                     </div>

@@ -64,3 +64,76 @@ export const getTimeGroup = (timestamp: number): TimeGroup => {
     return 'older';
   }
 };
+
+/**
+ * Extract a short, human-readable model name from modelId
+ * @param modelId - Full model ID (e.g., "anthropic/claude-opus-4.5")
+ * @returns Short model name (e.g., "Claude Opus 4.5")
+ *
+ * @example
+ * getShortModelName("anthropic/claude-opus-4.5") // "Claude Opus 4.5"
+ * getShortModelName("openai/gpt-5.1-chat") // "GPT-5.1"
+ * getShortModelName("google/gemini-3-pro-preview") // "Gemini 3 Pro"
+ * getShortModelName("deepseek/deepseek-r1") // "DeepSeek R1"
+ */
+export const getShortModelName = (modelId: string): string => {
+  if (!modelId) return '';
+
+  // Remove vendor prefix (e.g., "anthropic/", "openai/")
+  const withoutVendor = modelId.includes('/') ? modelId.split('/')[1] : modelId;
+
+  // Remove common suffixes
+  let name = withoutVendor
+    .replace(/-chat$/i, '')
+    .replace(/-instruct$/i, '')
+    .replace(/-preview$/i, '')
+    .replace(/-turbo$/i, '');
+
+  // Handle specific patterns
+  if (name.startsWith('claude-')) {
+    // claude-opus-4.5 → Claude Opus 4.5
+    name = name.replace(/^claude-/, '');
+  } else if (name.startsWith('gpt-')) {
+    // gpt-5.1-chat → GPT-5.1
+    name = name.replace(/^gpt-/, 'gpt-');
+  } else if (name.startsWith('gemini-')) {
+    // gemini-3-pro-preview → Gemini 3 Pro
+    name = name.replace(/^gemini-/, '');
+  } else if (name.startsWith('deepseek-')) {
+    // deepseek-r1 → DeepSeek R1
+    name = name.replace(/^deepseek-/, '');
+  } else if (name.includes('llama')) {
+    // llama-3.1-405b-instruct → Llama 3.1 405B
+    name = name.replace(/llama-/gi, '');
+  }
+
+  // Capitalize and format
+  const parts = name.split('-').map(part => {
+    // Keep version numbers as-is
+    if (/^\d/.test(part)) return part;
+
+    // Uppercase special terms
+    if (part.toLowerCase() === 'gpt') return 'GPT';
+    if (part.toLowerCase() === 'r1') return 'R1';
+    if (/^\d+b$/i.test(part)) return part.toUpperCase();
+
+    // Capitalize first letter
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  });
+
+  // Join with spaces
+  let result = parts.join(' ');
+
+  // Special handling for model families
+  if (modelId.includes('claude')) {
+    result = 'Claude ' + result;
+  } else if (modelId.includes('gemini')) {
+    result = 'Gemini ' + result;
+  } else if (modelId.includes('deepseek')) {
+    result = 'DeepSeek ' + result;
+  } else if (modelId.includes('llama')) {
+    result = 'Llama ' + result;
+  }
+
+  return result.trim();
+};
