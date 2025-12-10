@@ -13,6 +13,8 @@ import {
   RefreshCw,
   Gift,
   Key,
+  Grid3x3,
+  Columns2,
 } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
@@ -31,6 +33,7 @@ import { useScrollToBottom } from './hooks/useScrollToBottom';
 import { useVersionCheck } from './hooks/useVersionCheck';
 import { useDebounce } from './hooks/useDebounce';
 import { ResponsiveGrid } from './components/ResponsiveGrid';
+import { ComparisonView } from './components/ComparisonView';
 import { FullscreenAgentView } from './components/FullscreenAgentView';
 
 interface NexusChatProps {
@@ -58,6 +61,12 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     'general' | 'agents' | 'providers' | 'data'
   >('general');
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+
+  // View mode: grid (default) or comparison
+  const [viewMode, setViewMode] = useState<'grid' | 'comparison'>(() => {
+    const saved = localStorage.getItem('nexus_view_mode');
+    return (saved === 'comparison' ? 'comparison' : 'grid') as 'grid' | 'comparison';
+  });
 
   // Fullscreen agent view state
   const [fullscreenView, setFullscreenView] = useState<{
@@ -109,6 +118,11 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
       i18n.changeLanguage(appSettings.language);
     }
   }, [appSettings.language, i18n]);
+
+  // Save view mode preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('nexus_view_mode', viewMode);
+  }, [viewMode]);
 
   // --- Initialization ---
   useEffect(() => {
@@ -580,13 +594,45 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 border border-gray-200 dark:border-gray-800/50 rounded-full transition-all hover:shadow-sm"
-          >
-            <SettingsIcon size={16} className="text-blue-500 dark:text-blue-400" />
-            <span className="hidden sm:inline">{t('app.settings')}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle - Only show when there are messages */}
+            {messages.length > 0 && (
+              <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-full">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                    viewMode === 'grid'
+                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                  title="网格视图"
+                >
+                  <Grid3x3 size={14} />
+                  <span className="hidden sm:inline">网格</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('comparison')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                    viewMode === 'comparison'
+                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+                  title="对比视图"
+                >
+                  <Columns2 size={14} />
+                  <span className="hidden sm:inline">对比</span>
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 border border-gray-200 dark:border-gray-800/50 rounded-full transition-all hover:shadow-sm"
+            >
+              <SettingsIcon size={16} className="text-blue-500 dark:text-blue-400" />
+              <span className="hidden sm:inline">{t('app.settings')}</span>
+            </button>
+          </div>
         </header>
 
         {/* UPDATE NOTIFICATION */}
@@ -667,9 +713,22 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 </div>
               </div>
             </div>
-          ) : (
-            // Message Stream - New Responsive Grid Layout
+          ) : viewMode === 'grid' ? (
+            // Grid View - Responsive Grid Layout
             <ResponsiveGrid
+              agents={agents.filter((a) => a.enabled)}
+              messages={messages}
+              onOpenFullscreen={openFullscreenView}
+              onStopAgent={stopAgent}
+              onRegenerateAgent={regenerateAgent}
+              onCopyMessage={(content) => {
+                navigator.clipboard.writeText(content);
+                toastSuccess(t('common.copied'));
+              }}
+            />
+          ) : (
+            // Comparison View - Side by Side Layout
+            <ComparisonView
               agents={agents.filter((a) => a.enabled)}
               messages={messages}
               onOpenFullscreen={openFullscreenView}
