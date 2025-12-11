@@ -38,7 +38,7 @@ import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
 import {
-  SYSTEM_PROMPT_TEMPLATES,
+  SYSTEM_PROMPT_TEMPLATE_SELECTORS,
   PROVIDER_PRESETS,
   BRAND_CONFIGS,
   getBrandFromModelId,
@@ -46,6 +46,7 @@ import {
   isNewModel,
   STORAGE_KEYS,
 } from '../constants';
+import { getSystemPrompt } from '../data/systemPrompts';
 import { BrandIcon } from './BrandIcons';
 import { Sparkles } from 'lucide-react';
 
@@ -277,7 +278,7 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   onClose,
   initialSection = 'general',
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const confirm = useConfirm();
   const [activeSection, setActiveSection] = useState<Section>(initialSection);
 
@@ -511,10 +512,12 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     onUpdateAgents(agents.map((a) => (a.id === id ? { ...a, enabled: !a.enabled } : a)));
   };
 
-  const applyAgentTemplate = (template: (typeof SYSTEM_PROMPT_TEMPLATES)[0]) => {
+  const applyAgentTemplate = (template: (typeof SYSTEM_PROMPT_TEMPLATE_SELECTORS)[0]) => {
+    const currentLanguage = i18n.language as 'en' | 'zh';
+    const promptText = getSystemPrompt(template.id, currentLanguage);
     setAgentForm((prev) => ({
       ...prev,
-      systemPrompt: template.prompt,
+      systemPrompt: promptText,
     }));
   };
 
@@ -922,13 +925,13 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
             <label className="text-xs font-medium text-gray-500 uppercase">
               {t('settings.agents.systemPrompt')}
             </label>
-            <div className="flex gap-1">
-              {SYSTEM_PROMPT_TEMPLATES.map((tpl) => (
+            <div className="flex gap-1 flex-wrap">
+              {SYSTEM_PROMPT_TEMPLATE_SELECTORS.map((tpl) => (
                 <button
-                  key={tpl.label}
+                  key={tpl.id}
                   onClick={() => applyAgentTemplate(tpl)}
-                  className="text-[10px] px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 rounded transition-colors"
-                  title={tpl.label}
+                  className="text-sm px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 rounded transition-colors"
+                  title={i18n.language === 'zh' ? tpl.label.zh : tpl.label.en}
                 >
                   {tpl.icon}
                 </button>

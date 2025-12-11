@@ -275,29 +275,16 @@ export const STORAGE_KEYS = {
 
 // --- UX Presets ---
 
-export const SYSTEM_PROMPT_TEMPLATES = [
-  {
-    label: '代码专家',
-    icon: '💻',
-    prompt:
-      '你是一位软件工程专家。请提供清晰、高效且文档齐全的代码。解释你的逻辑并优先考虑最佳实践。',
-  },
-  {
-    label: '创意写作',
-    icon: '✍️',
-    prompt:
-      '你是一位富有创造力的作家，擅长生动的意象和情感深度。用引人入胜的叙述和独特的视角吸引读者。',
-  },
-  {
-    label: '简洁助手',
-    icon: '⚡',
-    prompt: '非常简洁。直接回答，不要废话或开场白。',
-  },
-  {
-    label: '翻译员',
-    icon: '🌐',
-    prompt: '你是一位专业翻译。准确翻译以下内容，保留原文的语气和文化细微差别。',
-  },
+// System prompt template selectors (UI only, full templates in systemPrompts.ts)
+export const SYSTEM_PROMPT_TEMPLATE_SELECTORS = [
+  { id: 'general', icon: '🤖', label: { en: 'General', zh: '通用' } },
+  { id: 'conversation', icon: '💬', label: { en: 'Conversation', zh: '对话' } },
+  { id: 'coding', icon: '💻', label: { en: 'Coding', zh: '编程' } },
+  { id: 'writing', icon: '✍️', label: { en: 'Writing', zh: '写作' } },
+  { id: 'reasoning', icon: '🧠', label: { en: 'Reasoning', zh: '推理' } },
+  { id: 'multilingual', icon: '🌐', label: { en: 'Translation', zh: '翻译' } },
+  { id: 'knowledge', icon: '📚', label: { en: 'Knowledge', zh: '知识' } },
+  { id: 'creative', icon: '🎨', label: { en: 'Creative', zh: '创意' } },
 ];
 
 export const PROVIDER_PRESETS = [
