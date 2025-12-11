@@ -9,6 +9,8 @@ interface ResponsiveGridProps {
   onStopAgent?: (messageId: string) => void;
   onRegenerateAgent?: (messageId: string) => void;
   onCopyMessage?: (content: string) => void;
+  onRateMessage?: (messageId: string, rating: number) => void;
+  onMarkAsBest?: (messageId: string) => void;
 }
 
 export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
@@ -18,6 +20,8 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
   onStopAgent,
   onRegenerateAgent,
   onCopyMessage,
+  onRateMessage,
+  onMarkAsBest,
 }) => {
   const enabledAgents = agents.filter((a) => a.enabled);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,6 +103,8 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
             onStopAgent={onStopAgent}
             onRegenerateAgent={onRegenerateAgent}
             onCopyMessage={onCopyMessage}
+            onRateMessage={onRateMessage}
+            onMarkAsBest={onMarkAsBest}
             index={index}
             totalCount={enabledAgents.length}
           />

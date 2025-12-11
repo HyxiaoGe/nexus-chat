@@ -389,6 +389,63 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   // Alias for new components
   const regenerateAgent = handleRegenerateMessage;
 
+  // Handle message rating
+  const handleRateMessage = (messageId: string, rating: number) => {
+    setMessages((prev) => {
+      const updated = prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              rating: {
+                ...m.rating,
+                userRating: rating,
+              },
+            }
+          : m
+      );
+      if (activeSessionId) saveMessagesToStorage(activeSessionId, updated);
+      return updated;
+    });
+  };
+
+  // Handle mark as best
+  const handleMarkAsBest = (messageId: string) => {
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) return;
+
+    setMessages((prev) => {
+      const updated = prev.map((m) => {
+        // If marking a new message as best, unmark others from same prompt
+        if (m.id === messageId) {
+          return {
+            ...m,
+            rating: {
+              ...m.rating,
+              isMarkedAsBest: !m.rating?.isMarkedAsBest,
+            },
+          };
+        }
+        // Unmark other messages with same timestamp (same prompt round)
+        if (
+          m.timestamp === message.timestamp &&
+          m.role === 'model' &&
+          m.rating?.isMarkedAsBest
+        ) {
+          return {
+            ...m,
+            rating: {
+              ...m.rating,
+              isMarkedAsBest: false,
+            },
+          };
+        }
+        return m;
+      });
+      if (activeSessionId) saveMessagesToStorage(activeSessionId, updated);
+      return updated;
+    });
+  };
+
   const handleSuggestionClick = (prompt: string) => {
     setInput(prompt);
     if (textareaRef.current) {
@@ -728,6 +785,8 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 navigator.clipboard.writeText(content);
                 toastSuccess(t('common.copied'));
               }}
+              onRateMessage={handleRateMessage}
+              onMarkAsBest={handleMarkAsBest}
             />
           ) : (
             // Comparison View - Side by Side Layout
@@ -741,6 +800,8 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 navigator.clipboard.writeText(content);
                 toastSuccess(t('common.copied'));
               }}
+              onRateMessage={handleRateMessage}
+              onMarkAsBest={handleMarkAsBest}
             />
           )}
         </div>

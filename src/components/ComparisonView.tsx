@@ -12,6 +12,8 @@ interface ComparisonViewProps {
   onStopAgent?: (messageId: string) => void;
   onRegenerateAgent?: (messageId: string) => void;
   onCopyMessage: (content: string) => void;
+  onRateMessage?: (messageId: string, rating: number) => void;
+  onMarkAsBest?: (messageId: string) => void;
 }
 
 export const ComparisonView: React.FC<ComparisonViewProps> = ({
@@ -21,6 +23,8 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
   onStopAgent,
   onRegenerateAgent,
   onCopyMessage,
+  onRateMessage,
+  onMarkAsBest,
 }) => {
   const scrollRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [syncScroll, setSyncScroll] = useState(true);
@@ -229,6 +233,8 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
                           ? onStopAgent
                           : undefined
                       }
+                      onRateMessage={msg.role === 'model' ? onRateMessage : undefined}
+                      onMarkAsBest={msg.role === 'model' ? onMarkAsBest : undefined}
                       isInColumn={true}
                     />
                   ))

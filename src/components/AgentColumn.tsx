@@ -11,6 +11,8 @@ interface AgentColumnProps {
   onStopAgent?: (messageId: string) => void;
   onRegenerateAgent?: (messageId: string) => void;
   onCopyMessage?: (content: string) => void;
+  onRateMessage?: (messageId: string, rating: number) => void;
+  onMarkAsBest?: (messageId: string) => void;
   index: number;
   totalCount: number;
 }
@@ -22,6 +24,8 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
   onStopAgent,
   onRegenerateAgent,
   onCopyMessage,
+  onRateMessage,
+  onMarkAsBest,
   index,
   totalCount: _totalCount,
 }) => {
@@ -200,6 +204,8 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
                   onStopAgent={onStopAgent}
                   onRegenerateAgent={onRegenerateAgent}
                   onCopyMessage={onCopyMessage}
+                  onRateMessage={message.role === 'model' ? onRateMessage : undefined}
+                  onMarkAsBest={message.role === 'model' ? onMarkAsBest : undefined}
                   isInColumn={true}
                 />
               </div>

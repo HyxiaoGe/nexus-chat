@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { Message, AgentConfig } from '../types';
-import { User, Copy, AlertCircle, Info, Square, Edit2, Check, X, RefreshCw } from 'lucide-react';
+import { User, Copy, AlertCircle, Info, Square, Edit2, Check, X, RefreshCw, Star, Award } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SmartContentRenderer } from './SmartContentRenderer';
 import { BrandIcon } from './BrandIcons';
+import {
+  formatResponseTime,
+  formatTokensPerSecond,
+  getPerformanceRating,
+  getPerformanceColor,
+  getCompletenessColor,
+} from '../utils/messageRating';
 
 interface MessageBubbleProps {
   message: Message;
@@ -15,19 +22,23 @@ interface MessageBubbleProps {
   isInColumn?: boolean; // New prop for column layout
   onCopyMessage?: (content: string) => void;
   onRegenerateAgent?: (messageId: string) => void;
+  onRateMessage?: (messageId: string, rating: number) => void;
+  onMarkAsBest?: (messageId: string) => void;
 }
 
 const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   message,
   config,
   onStopAgent,
-    showToast,
-    onEditMessage,
-    onRegenerateMessage,
-    isInColumn = false,
-    onCopyMessage,
-    onRegenerateAgent,
-  }) => {
+  showToast,
+  onEditMessage,
+  onRegenerateMessage,
+  isInColumn = false,
+  onCopyMessage,
+  onRegenerateAgent,
+  onRateMessage,
+  onMarkAsBest,
+}) => {
     const { t } = useTranslation();
     const isUser = message.role === 'user';
     const [isEditing, setIsEditing] = useState(false);
@@ -171,6 +182,39 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
                           )}
                       </span>
                     )}
+
+                    {/* Performance Metrics - Show when available */}
+                    {!message.isStreaming &&
+                      message.rating?.metrics &&
+                      message.rating.metrics.responseTime !== undefined &&
+                      message.rating.metrics.tokensPerSecond !== undefined &&
+                      message.rating.metrics.completenessScore !== undefined && (
+                        <>
+                          {/* Response Time */}
+                          <span
+                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${getPerformanceColor(getPerformanceRating(message.rating.metrics.tokensPerSecond))}`}
+                            title={`${getPerformanceRating(message.rating.metrics.tokensPerSecond)} speed`}
+                          >
+                            ⚡ {formatResponseTime(message.rating.metrics.responseTime)}
+                          </span>
+
+                          {/* Tokens per Second */}
+                          <span
+                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${getPerformanceColor(getPerformanceRating(message.rating.metrics.tokensPerSecond))}`}
+                            title="Generation speed"
+                          >
+                            🚀 {formatTokensPerSecond(message.rating.metrics.tokensPerSecond)}
+                          </span>
+
+                          {/* Completeness Score */}
+                          <span
+                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${getCompletenessColor(message.rating.metrics.completenessScore)}`}
+                            title="Response completeness"
+                          >
+                            📊 {message.rating.metrics.completenessScore}%
+                          </span>
+                        </>
+                      )}
 
                     {/* System Prompt Tooltip */}
                     <div className="relative group/info">
@@ -387,6 +431,45 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
                       <Copy size={12} />
                       <span>{t('common.copy')}</span>
                     </button>
+
+                    {/* Star Rating */}
+                    {onRateMessage && (
+                      <div className="flex items-center gap-0.5 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <button
+                            key={rating}
+                            onClick={() => onRateMessage(message.id, rating)}
+                            className="hover:scale-110 transition-transform"
+                            title={`Rate ${rating} stars`}
+                          >
+                            <Star
+                              size={12}
+                              className={`${
+                                message.rating?.userRating && message.rating.userRating >= rating
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300 dark:text-gray-600'
+                              } hover:text-yellow-400 transition-colors`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Mark as Best */}
+                    {onMarkAsBest && (
+                      <button
+                        onClick={() => onMarkAsBest(message.id)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                          message.rating?.isMarkedAsBest
+                            ? 'bg-gradient-to-r from-amber-400 to-yellow-400 text-white shadow-md'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                        title={message.rating?.isMarkedAsBest ? 'Marked as best' : 'Mark as best'}
+                      >
+                        <Award size={12} />
+                        <span>{message.rating?.isMarkedAsBest ? 'Best' : 'Mark'}</span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -414,18 +497,23 @@ const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
 
 // Custom comparison function for memo
 const areEqual = (prevProps: MessageBubbleProps, nextProps: MessageBubbleProps) => {
-  // Only re-render if message content, streaming state, error, tokenUsage, or callbacks change
+  // Only re-render if message content, streaming state, error, tokenUsage, rating, or callbacks change
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.isStreaming === nextProps.message.isStreaming &&
     prevProps.message.error === nextProps.message.error &&
     prevProps.message.tokenUsage?.totalTokens === nextProps.message.tokenUsage?.totalTokens &&
+    prevProps.message.rating?.userRating === nextProps.message.rating?.userRating &&
+    prevProps.message.rating?.isMarkedAsBest === nextProps.message.rating?.isMarkedAsBest &&
+    prevProps.message.rating?.metrics?.responseTime === nextProps.message.rating?.metrics?.responseTime &&
     prevProps.config?.id === nextProps.config?.id &&
     prevProps.onStopAgent === nextProps.onStopAgent &&
     prevProps.showToast === nextProps.showToast &&
     prevProps.onEditMessage === nextProps.onEditMessage &&
-    prevProps.onRegenerateMessage === nextProps.onRegenerateMessage
+    prevProps.onRegenerateMessage === nextProps.onRegenerateMessage &&
+    prevProps.onRateMessage === nextProps.onRateMessage &&
+    prevProps.onMarkAsBest === nextProps.onMarkAsBest
   );
 };
 
