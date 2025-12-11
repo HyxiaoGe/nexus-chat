@@ -4,6 +4,7 @@ import { generateContentStream } from '../services/geminiService';
 import { generateId, generateSmartTitle } from '../utils/common';
 import { useTranslation } from 'react-i18next';
 import { STORAGE_KEYS } from '../constants';
+import { calculateMessageMetrics } from '../utils/messageRating';
 
 interface UseChatOrchestratorProps {
   activeSessionId: string | null;
@@ -161,6 +162,7 @@ export const useChatOrchestrator = ({
     }
 
     // 3. Create Placeholder Messages
+    const streamStartTime = Date.now();
     const agentMessages: Message[] = activeAgents.map((agent) => ({
       id: generateId(),
       sessionId: activeSessionId,
@@ -169,6 +171,7 @@ export const useChatOrchestrator = ({
       agentId: agent.id,
       timestamp: Date.now(),
       isStreaming: true,
+      streamStartTime,
     }));
 
     const newMessagesState = [...messages, userMsg, ...agentMessages];
@@ -260,11 +263,29 @@ export const useChatOrchestrator = ({
                   });
                 }
 
-                // Update message with token usage
+                // Update message with token usage and calculate metrics
+                const streamEndTime = Date.now();
                 setMessages((prev) => {
-                  const final = prev.map((m) =>
-                    m.id === messageId ? { ...m, isStreaming: false, tokenUsage: usage } : m
-                  );
+                  const final = prev.map((m) => {
+                    if (m.id === messageId) {
+                      const updatedMsg = {
+                        ...m,
+                        isStreaming: false,
+                        tokenUsage: usage,
+                        streamEndTime,
+                      };
+                      // Calculate metrics
+                      const metrics = calculateMessageMetrics(updatedMsg);
+                      return {
+                        ...updatedMsg,
+                        rating: {
+                          ...m.rating,
+                          metrics,
+                        },
+                      };
+                    }
+                    return m;
+                  });
                   saveMessagesToStorage(activeSessionId, final);
                   return final;
                 });
@@ -343,6 +364,7 @@ export const useChatOrchestrator = ({
     }
 
     // 2. Create Placeholder Messages (no user message added)
+    const streamStartTime = Date.now();
     const agentMessages: Message[] = activeAgents.map((agent) => ({
       id: generateId(),
       sessionId: activeSessionId,
@@ -351,6 +373,7 @@ export const useChatOrchestrator = ({
       agentId: agent.id,
       timestamp: Date.now(),
       isStreaming: true,
+      streamStartTime,
     }));
 
     // Use functional update to get the latest messages state
@@ -445,11 +468,29 @@ export const useChatOrchestrator = ({
                   });
                 }
 
-                // Update message with token usage
+                // Update message with token usage and calculate metrics
+                const streamEndTime = Date.now();
                 setMessages((prev) => {
-                  const final = prev.map((m) =>
-                    m.id === messageId ? { ...m, isStreaming: false, tokenUsage: usage } : m
-                  );
+                  const final = prev.map((m) => {
+                    if (m.id === messageId) {
+                      const updatedMsg = {
+                        ...m,
+                        isStreaming: false,
+                        tokenUsage: usage,
+                        streamEndTime,
+                      };
+                      // Calculate metrics
+                      const metrics = calculateMessageMetrics(updatedMsg);
+                      return {
+                        ...updatedMsg,
+                        rating: {
+                          ...m.rating,
+                          metrics,
+                        },
+                      };
+                    }
+                    return m;
+                  });
                   saveMessagesToStorage(activeSessionId, final);
                   return final;
                 });
@@ -525,6 +566,7 @@ export const useChatOrchestrator = ({
       agentId: targetAgent.id,
       timestamp: Date.now(),
       isStreaming: true,
+      streamStartTime: Date.now(),
     };
 
     // Add the placeholder message

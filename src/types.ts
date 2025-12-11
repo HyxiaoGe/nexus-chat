@@ -88,6 +88,17 @@ export interface TokenUsage {
   estimatedCost?: number; // In USD
 }
 
+export interface MessageRating {
+  userRating?: number; // 1-5 stars, user's subjective rating
+  isMarkedAsBest?: boolean; // Flag for "best response" in comparison
+  metrics?: {
+    responseTime?: number; // Time in milliseconds from request to completion
+    outputLength?: number; // Character count of response
+    tokensPerSecond?: number; // Generation speed metric
+    completenessScore?: number; // 0-100, estimated completeness (future: AI-based)
+  };
+}
+
 export interface Message {
   id: string;
   sessionId: string;
@@ -98,6 +109,9 @@ export interface Message {
   isStreaming?: boolean;
   error?: string;
   tokenUsage?: TokenUsage; // Token consumption stats
+  rating?: MessageRating; // Quality metrics and user ratings
+  streamStartTime?: number; // For calculating response time
+  streamEndTime?: number; // For calculating response time
 }
 
 export interface Session {
