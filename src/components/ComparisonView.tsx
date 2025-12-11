@@ -4,6 +4,7 @@ import { MessageBubble } from './MessageBubble';
 import { BrandIcon } from './BrandIcons';
 import { Loader2, MessageSquare, Square, RefreshCw, Copy, Maximize2 } from 'lucide-react';
 import { getShortModelName } from '../utils/common';
+import { comparemessages, getRankingBadge } from '../utils/messageRating';
 
 interface ComparisonViewProps {
   agents: AgentConfig[];
@@ -72,6 +73,34 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
     },
     {} as Record<string, Message[]>
   );
+
+  // Calculate rankings for each prompt's responses
+  const messageRankings = React.useMemo(() => {
+    const rankings = new Map<string, number>();
+
+    // Group model messages by their timestamp (same prompt round)
+    const messageGroups = new Map<number, Message[]>();
+    messages.forEach((msg) => {
+      if (msg.role === 'model' && msg.rating?.metrics) {
+        if (!messageGroups.has(msg.timestamp)) {
+          messageGroups.set(msg.timestamp, []);
+        }
+        messageGroups.get(msg.timestamp)!.push(msg);
+      }
+    });
+
+    // Calculate rankings for each group (default: sort by speed)
+    messageGroups.forEach((group) => {
+      if (group.length > 1) {
+        const sorted = comparemessages(group, 'speed');
+        sorted.forEach((msg: Message, index: number) => {
+          rankings.set(msg.id, index + 1);
+        });
+      }
+    });
+
+    return rankings;
+  }, [messages]);
 
   // Synchronized scrolling
   const handleScroll = (index: number) => {
@@ -185,6 +214,31 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1">
+                    {/* Show average ranking badge */}
+                    {(() => {
+                      const agentMessages = messagesByAgent[agent.id]?.filter((m) => m.role === 'model') || [];
+                      const rankings = agentMessages
+                        .map((m) => messageRankings.get(m.id))
+                        .filter((r): r is number => r !== undefined);
+
+                      if (rankings.length > 0) {
+                        const avgRank = rankings.reduce((a, b) => a + b, 0) / rankings.length;
+                        const badge = getRankingBadge(Math.round(avgRank) - 1); // getRankingBadge expects 0-indexed
+                        if (badge) {
+                          return (
+                            <div
+                              className={`flex items-center gap-1 px-2 py-1 ${badge.color} rounded-full`}
+                              title={`Average rank: ${avgRank.toFixed(1)}`}
+                            >
+                              <span className="text-sm">{badge.emoji}</span>
+                              <span className="text-xs font-medium">#{Math.round(avgRank)}</span>
+                            </div>
+                          );
+                        }
+                      }
+                      return null;
+                    })()}
+
                     {isStreaming && (
                       <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">
                         <Loader2 className="w-3 h-3 animate-spin text-blue-600 dark:text-blue-400" />
