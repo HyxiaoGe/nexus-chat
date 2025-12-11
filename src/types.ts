@@ -25,6 +25,7 @@ export type TestCaseCategory =
   | 'multilingual' // 多语言能力
   | 'knowledge' // 知识问答
   | 'creative' // 创意生成
+  | 'trending' // 热点话题
   | 'custom'; // 自定义收藏
 
 // OpenRouter API model metadata

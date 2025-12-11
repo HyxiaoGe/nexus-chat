@@ -16,6 +16,7 @@ import {
   Grid3x3,
   Columns2,
   BookOpen,
+  BookTemplate,
 } from 'lucide-react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n from './i18n';
@@ -37,6 +38,7 @@ import { ResponsiveGrid } from './components/ResponsiveGrid';
 import { ComparisonView } from './components/ComparisonView';
 import { FullscreenAgentView } from './components/FullscreenAgentView';
 import { TestCaseLibrary } from './components/TestCaseLibrary';
+import { SystemPromptManager } from './components/SystemPromptManager';
 
 interface NexusChatProps {
   appSettings: AppSettings;
@@ -64,6 +66,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
   >('general');
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [isTestCaseLibraryOpen, setIsTestCaseLibraryOpen] = useState(false);
+  const [isSystemPromptManagerOpen, setIsSystemPromptManagerOpen] = useState(false);
 
   // View mode: grid (default) or comparison
   const [viewMode, setViewMode] = useState<'grid' | 'comparison'>(() => {
@@ -446,6 +449,12 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
     });
   };
 
+  // Handle applying system prompt to agent
+  const handleApplySystemPrompt = (agentId: string, prompt: string) => {
+    setAgents((prev) => prev.map((a) => (a.id === agentId ? { ...a, systemPrompt: prompt } : a)));
+    toastSuccess(t('common.saved'));
+  };
+
   const handleSuggestionClick = (prompt: string) => {
     setInput(prompt);
     if (textareaRef.current) {
@@ -816,9 +825,18 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                 <button
                   onClick={() => setIsTestCaseLibraryOpen(true)}
                   className="absolute left-3 bottom-3 p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
-                  title="测试用例库"
+                  title={t('app.testCaseLibrary', '测试用例库')}
                 >
                   <BookOpen size={20} />
+                </button>
+
+                {/* System Prompt Manager Button */}
+                <button
+                  onClick={() => setIsSystemPromptManagerOpen(true)}
+                  className="absolute left-16 bottom-3 p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-all"
+                  title={t('app.systemPromptManager', '提示词模板')}
+                >
+                  <BookTemplate size={20} />
                 </button>
 
                 <textarea
@@ -829,7 +847,7 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
                   placeholder={t('app.inputPlaceholder')}
                   disabled={isStreaming}
                   rows={1}
-                  className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-14 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
+                  className="w-full bg-transparent text-gray-900 dark:text-white rounded-[2rem] pl-28 pr-14 py-4 max-h-[200px] resize-none focus:outline-none scrollbar-hide placeholder:text-gray-400"
                   style={{ minHeight: '60px' }}
                 />
 
@@ -939,6 +957,14 @@ const NexusChat: React.FC<NexusChatProps> = ({ appSettings, setAppSettings }) =>
             }
           }, 100);
         }}
+      />
+
+      {/* System Prompt Manager */}
+      <SystemPromptManager
+        isOpen={isSystemPromptManagerOpen}
+        onClose={() => setIsSystemPromptManagerOpen(false)}
+        agents={agents}
+        onApplyToAgent={handleApplySystemPrompt}
       />
     </div>
   );

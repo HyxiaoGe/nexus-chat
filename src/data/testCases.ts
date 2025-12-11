@@ -191,5 +191,6 @@ export const TEST_CASE_CATEGORIES = [
   { id: 'multilingual', name: '多语言', icon: '🌍', description: '测试翻译和多语言理解' },
   { id: 'knowledge', name: '知识问答', icon: '📚', description: '测试知识储备和解释能力' },
   { id: 'creative', name: '创意生成', icon: '🎨', description: '测试创意思维和策划能力' },
+  { id: 'trending', name: '热点话题', icon: '🔥', description: '实时热点和前沿话题分析' },
   { id: 'custom', name: '我的收藏', icon: '⭐', description: '保存的自定义测试用例' },
 ] as const;
