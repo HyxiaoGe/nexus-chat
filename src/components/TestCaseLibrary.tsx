@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { TestCase, TestCaseCategory } from '../types';
 import { BUILTIN_TEST_CASES, TEST_CASE_CATEGORIES } from '../data/testCases';
 import { STORAGE_KEYS } from '../constants';
-import { X, Send, Star, Plus, Trash2, Edit2 } from 'lucide-react';
+import { X, Send, Star, Plus, Trash2, Edit2, RefreshCw } from 'lucide-react';
 import { generateId } from '../utils/common';
+import { fetchTrendingTopics, topicToTestPrompt, TrendingTopic } from '../services/trendingTopics';
+import { useTranslation } from 'react-i18next';
 
 interface TestCaseLibraryProps {
   isOpen: boolean;
@@ -16,10 +18,13 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
   onClose,
   onSendTestCase,
 }) => {
+  const { i18n } = useTranslation();
   const [activeCategory, setActiveCategory] = useState<TestCaseCategory>('conversation');
   const [customTestCases, setCustomTestCases] = useState<TestCase[]>([]);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newTestCase, setNewTestCase] = useState({ title: '', prompt: '' });
+  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(false);
 
   // Load custom test cases from localStorage
   useEffect(() => {
@@ -32,6 +37,25 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
       }
     }
   }, []);
+
+  // Load trending topics when category changes to 'trending'
+  useEffect(() => {
+    if (activeCategory === 'trending' && trendingTopics.length === 0) {
+      loadTrendingTopics();
+    }
+  }, [activeCategory]);
+
+  const loadTrendingTopics = async () => {
+    setIsLoadingTrending(true);
+    try {
+      const topics = await fetchTrendingTopics();
+      setTrendingTopics(topics);
+    } catch (error) {
+      console.error('Failed to load trending topics:', error);
+    } finally {
+      setIsLoadingTrending(false);
+    }
+  };
 
   // Save custom test cases to localStorage
   const saveCustomTestCases = (cases: TestCase[]) => {
@@ -213,7 +237,83 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
 
               {/* Test Case Cards */}
               <div className="grid grid-cols-1 gap-3">
-                {allTestCases.length === 0 ? (
+                {/* Trending Topics Special Rendering */}
+                {activeCategory === 'trending' ? (
+                  isLoadingTrending ? (
+                    <div className="text-center py-12">
+                      <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600 dark:text-blue-400 mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400">正在获取热点话题...</p>
+                    </div>
+                  ) : trendingTopics.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+                      <p>暂无热点话题</p>
+                      <button
+                        onClick={loadTrendingTopics}
+                        className="mt-4 text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mx-auto"
+                      >
+                        <RefreshCw size={16} />
+                        刷新
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          找到 {trendingTopics.length} 个热点话题
+                        </span>
+                        <button
+                          onClick={loadTrendingTopics}
+                          className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center gap-1"
+                        >
+                          <RefreshCw size={14} />
+                          刷新
+                        </button>
+                      </div>
+                      {trendingTopics.map((topic) => (
+                        <div
+                          key={topic.id}
+                          className="group p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md hover:border-orange-300 dark:hover:border-orange-700 transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs rounded-full font-medium">
+                                  {topic.source}
+                                </span>
+                                <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                  {topic.title}
+                                </h4>
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                                {topic.description}
+                              </p>
+                              {topic.url && (
+                                <a
+                                  href={topic.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 block truncate"
+                                >
+                                  {topic.url}
+                                </a>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => {
+                                const prompt = topicToTestPrompt(topic, i18n.language as 'en' | 'zh');
+                                onSendTestCase(prompt);
+                              }}
+                              className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex-shrink-0"
+                              title="发送测试"
+                            >
+                              <Send size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )
+                ) : allTestCases.length === 0 ? (
                   <div className="text-center py-12 text-gray-400 dark:text-gray-500">
                     <p>暂无测试用例</p>
                     {activeCategory === 'custom' && (
