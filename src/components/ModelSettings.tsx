@@ -32,6 +32,7 @@ import {
   ExternalLink,
   Gift,
   Key,
+  GripVertical,
 } from 'lucide-react';
 import { fetchProviderModels, fetchModelsViaProxy } from '../services/geminiService';
 import { useToast } from './Toast';
@@ -49,6 +50,23 @@ import {
 import { getSystemPrompt } from '../data/systemPrompts';
 import { BrandIcon } from './BrandIcons';
 import { Sparkles } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ModelSettingsProps {
   agents: AgentConfig[];
@@ -75,6 +93,170 @@ interface IconOption {
   icon?: string | React.ReactNode;
   badges?: { label: string; icon?: React.ReactNode; colorClass: string }[];
 }
+
+// --- Sortable Agent Card Component ---
+interface SortableAgentCardProps {
+  agent: AgentConfig;
+  provider: LLMProvider | undefined;
+  agentModelMetadata: any;
+  tokenStats: TokenStats;
+  editingAgentId: string | null;
+  onEdit: () => void;
+  onToggle: () => void;
+  renderAgentForm: () => React.ReactNode;
+}
+
+const SortableAgentCard: React.FC<SortableAgentCardProps> = ({
+  agent,
+  provider,
+  agentModelMetadata,
+  tokenStats,
+  editingAgentId,
+  onEdit,
+  onToggle,
+  renderAgentForm,
+}) => {
+  const { t } = useTranslation();
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: agent.id, disabled: !!editingAgentId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const isGoogle = provider?.type === 'google';
+  const showAgentNewBadge = isNewModel(agentModelMetadata?.created);
+  const showAgentThinkingBadge = isThinkingModel(agent.modelId);
+
+  if (editingAgentId === agent.id) {
+    return (
+      <div key={agent.id} className="md:col-span-2">
+        {renderAgentForm()}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative group border-2 rounded-2xl p-5 transition-all duration-300 bg-gradient-to-br ${
+        agent.enabled
+          ? 'from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20 border-blue-300 dark:border-blue-800 shadow-md hover:shadow-xl hover:scale-[1.02]'
+          : 'from-white to-gray-50 dark:from-gray-900 dark:to-gray-900 border-gray-200 dark:border-gray-800 opacity-60 hover:opacity-80'
+      } ${isDragging ? 'z-50 shadow-2xl ring-4 ring-blue-400 dark:ring-blue-600' : ''}`}
+    >
+      <div className="flex items-start justify-between mb-3">
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <GripVertical size={18} className="text-gray-400" />
+        </div>
+
+        <div className="flex items-center gap-3 flex-1 min-w-0 ml-6">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center shadow-lg overflow-hidden border-2 border-gray-100 dark:border-gray-700 flex-shrink-0">
+            {agent.avatar?.startsWith('http') ? (
+              <img src={agent.avatar} className="w-10 h-10 object-contain" alt="avatar" />
+            ) : (
+              <BrandIcon brand={agent.avatar} size={28} />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">
+                {agent.name}
+              </h3>
+              {showAgentNewBadge && (
+                <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm flex-shrink-0">
+                  <Sparkles size={9} />
+                  NEW
+                </span>
+              )}
+              {showAgentThinkingBadge && (
+                <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm flex-shrink-0">
+                  <BrainCircuit size={9} />
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <span
+                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border shadow-sm ${
+                  isGoogle
+                    ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 dark:from-green-900/30 dark:to-emerald-900/20 dark:text-green-400 dark:border-green-900'
+                    : 'border-purple-200 bg-gradient-to-r from-purple-50 to-violet-50 text-purple-700 dark:from-purple-900/30 dark:to-violet-900/20 dark:text-purple-400 dark:border-purple-900'
+                }`}
+              >
+                {provider?.name || t('common.unknown')}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 flex-shrink-0">
+          <button
+            onClick={onToggle}
+            className={`transition-colors ${
+              agent.enabled ? 'text-blue-500 hover:text-blue-600' : 'text-gray-400 hover:text-gray-500'
+            }`}
+          >
+            {agent.enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+          </button>
+        </div>
+      </div>
+      <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
+        <p className="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded flex-1">
+          {agent.modelId}
+        </p>
+        <button
+          onClick={onEdit}
+          className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+          title={t('settings.agents.edit')}
+        >
+          <Edit2 size={14} />
+        </button>
+      </div>
+
+      {/* Token Usage Statistics */}
+      {tokenStats.byModel[agent.modelId] && (
+        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            <span className="font-semibold">
+              {tokenStats.byModel[agent.modelId].totalTokens.toLocaleString()} tokens
+            </span>
+            <span className="text-gray-400">•</span>
+            <span>{tokenStats.byModel[agent.modelId].requestCount} requests</span>
+            {tokenStats.byModel[agent.modelId].totalCost > 0 && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span className="text-green-600 dark:text-green-400 font-semibold">
+                  ${tokenStats.byModel[agent.modelId].totalCost.toFixed(4)}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const IconSelect = ({
   value,
@@ -286,6 +468,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentForm, setAgentForm] = useState<Partial<AgentConfig>>({});
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  
+  // @dnd-kit sensors configuration
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 移动8px后才开始拖拽，避免误触
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates, // 支持键盘操作
+    })
+  );
 
   // Provider Editing State
   const [expandedProviderId, setExpandedProviderId] = useState<string | null>(null);
@@ -510,6 +704,24 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     }
 
     onUpdateAgents(agents.map((a) => (a.id === id ? { ...a, enabled: !a.enabled } : a)));
+  };
+
+  // @dnd-kit Drag End Handler
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = agents.findIndex((a) => a.id === active.id);
+    const newIndex = agents.findIndex((a) => a.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newAgents = arrayMove(agents, oldIndex, newIndex);
+      onUpdateAgents(newAgents);
+      success(t('settings.agents.reordered'));
+    }
   };
 
   const applyAgentTemplate = (template: (typeof SYSTEM_PROMPT_TEMPLATE_SELECTORS)[0]) => {
@@ -1396,127 +1608,36 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 {editingAgentId &&
                   !agents.find((a) => a.id === editingAgentId) &&
                   renderAgentForm()}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {agents.map((agent) => {
-                    const provider = providers.find((p) => p.id === agent.providerId);
-                    const isGoogle = provider?.type === 'google';
-                    const agentModelMetadata = allAggregatedModels.find(
-                      (m) => m.modelId === agent.modelId
-                    );
-                    const showAgentNewBadge = isNewModel(agentModelMetadata?.created);
-                    const showAgentThinkingBadge = isThinkingModel(agent.modelId);
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={agents.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {agents.map((agent) => {
+                        const provider = providers.find((p) => p.id === agent.providerId);
+                        const agentModelMetadata = allAggregatedModels.find(
+                          (m) => m.modelId === agent.modelId
+                        );
 
-                    if (editingAgentId === agent.id) {
-                      return (
-                        <div key={agent.id} className="md:col-span-2">
-                          {renderAgentForm()}
-                        </div>
-                      );
-                    }
-                    return (
-                      <div
-                        key={agent.id}
-                        className={`relative group border-2 rounded-2xl p-5 transition-all duration-300 bg-gradient-to-br ${agent.enabled ? 'from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20 border-blue-300 dark:border-blue-800 shadow-md hover:shadow-xl hover:scale-[1.02]' : 'from-white to-gray-50 dark:from-gray-900 dark:to-gray-900 border-gray-200 dark:border-gray-800 opacity-60 hover:opacity-80'}`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center shadow-lg overflow-hidden border-2 border-gray-100 dark:border-gray-700 flex-shrink-0">
-                              {agent.avatar?.startsWith('http') ? (
-                                <img
-                                  src={agent.avatar}
-                                  className="w-10 h-10 object-contain"
-                                  alt="avatar"
-                                />
-                              ) : (
-                                <BrandIcon brand={agent.avatar} size={28} />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">
-                                  {agent.name}
-                                </h3>
-                                {showAgentNewBadge && (
-                                  <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900/40 dark:to-teal-900/40 dark:text-emerald-300 shadow-sm flex-shrink-0">
-                                    <Sparkles size={9} />
-                                    NEW
-                                  </span>
-                                )}
-                                {showAgentThinkingBadge && (
-                                  <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 dark:from-purple-900/40 dark:to-violet-900/40 dark:text-purple-300 shadow-sm flex-shrink-0">
-                                    <BrainCircuit size={9} />
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                <span
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border shadow-sm ${isGoogle ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 dark:from-green-900/30 dark:to-emerald-900/20 dark:text-green-400 dark:border-green-900' : 'border-purple-200 bg-gradient-to-r from-purple-50 to-violet-50 text-purple-700 dark:from-purple-900/30 dark:to-violet-900/20 dark:text-purple-400 dark:border-purple-900'}`}
-                                >
-                                  {provider?.name || t('common.unknown')}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1 flex-shrink-0">
-                            <button
-                              onClick={() => handleToggleAgent(agent.id)}
-                              className={`transition-colors ${agent.enabled ? 'text-blue-500 hover:text-blue-600' : 'text-gray-400 hover:text-gray-500'}`}
-                            >
-                              {agent.enabled ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-2">
-                          <p className="text-[11px] text-gray-500 dark:text-gray-400 font-mono truncate bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded flex-1">
-                            {agent.modelId}
-                          </p>
-                          <button
-                            onClick={() => handleEditAgent(agent)}
-                            className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
-                            title={t('settings.agents.edit')}
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                        </div>
-
-                        {/* Token Usage Statistics */}
-                        {tokenStats.byModel[agent.modelId] && (
-                          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                            <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                />
-                              </svg>
-                              <span className="font-semibold">
-                                {tokenStats.byModel[agent.modelId].totalTokens.toLocaleString()}{' '}
-                                tokens
-                              </span>
-                              <span className="text-gray-400">•</span>
-                              <span>{tokenStats.byModel[agent.modelId].requestCount} requests</span>
-                              {tokenStats.byModel[agent.modelId].totalCost > 0 && (
-                                <>
-                                  <span className="text-gray-400">•</span>
-                                  <span className="text-green-600 dark:text-green-400 font-semibold">
-                                    ${tokenStats.byModel[agent.modelId].totalCost.toFixed(4)}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                        return (
+                          <SortableAgentCard
+                            key={agent.id}
+                            agent={agent}
+                            provider={provider}
+                            agentModelMetadata={agentModelMetadata}
+                            tokenStats={tokenStats}
+                            editingAgentId={editingAgentId}
+                            onEdit={() => handleEditAgent(agent)}
+                            onToggle={() => handleToggleAgent(agent.id)}
+                            renderAgentForm={renderAgentForm}
+                          />
+                        );
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
               </div>
             )}
 

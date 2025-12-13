@@ -149,6 +149,7 @@ export const resources = {
           agentSaved: 'Agent saved successfully',
           agentDeleted: 'Agent deleted',
           maxAgentsWarning: 'Maximum 4 agents can be enabled simultaneously',
+          reordered: 'Agent order updated',
         },
         editor: {
           preview: 'Agent Preview',
@@ -388,6 +389,7 @@ export const resources = {
           agentSaved: '智能体保存成功',
           agentDeleted: '智能体已删除',
           maxAgentsWarning: '最多只能同时启用4个智能体',
+          reordered: '智能体顺序已更新',
         },
         editor: {
           preview: '智能体预览',

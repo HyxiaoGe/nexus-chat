@@ -13,7 +13,7 @@ const detectBrowserLanguage = (): 'en' | 'zh' => {
 };
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
-  theme: 'dark',
+  theme: 'light',
   enterToSend: true,
   language: detectBrowserLanguage(),
 };
