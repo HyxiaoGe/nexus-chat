@@ -82,7 +82,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
     <div
       ref={containerRef}
       className={`
-        h-full overflow-y-auto
+        h-full overflow-y-auto pb-32
         ${useTwoByTwoGrid ? 'p-3' : 'p-4'}
       `}
     >
@@ -90,7 +90,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
         className={`
           grid gap-4
           ${getGridClasses()}
-          ${useTwoByTwoGrid ? 'auto-rows-auto' : 'auto-rows-fr'}
+          ${useTwoByTwoGrid ? 'auto-rows-[minmax(480px,1fr)]' : 'auto-rows-fr'}
           transition-all duration-300 ease-in-out
         `}
       >
