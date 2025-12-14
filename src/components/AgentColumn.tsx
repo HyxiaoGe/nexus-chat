@@ -91,7 +91,7 @@ export const AgentColumn: React.FC<AgentColumnProps> = ({
 
   return (
     <div
-      className="group relative flex flex-col min-h-[600px] max-h-[600px] bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+      className="group relative flex flex-col min-h-[480px] h-full bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
       style={{
         animation: 'slideInUp 0.4s ease-out',
         animationDelay,
