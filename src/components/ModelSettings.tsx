@@ -19,6 +19,7 @@ import {
   Sun,
   Edit2,
   Check,
+  WifiOff,
   ShieldCheck,
   Eye,
   EyeOff,
@@ -34,7 +35,11 @@ import {
   Key,
   GripVertical,
 } from 'lucide-react';
-import { fetchProviderModels, fetchModelsViaProxy } from '../services/geminiService';
+import {
+  fetchProviderModels,
+  fetchModelsViaProxy,
+  DEFAULT_MODEL_CACHE_TTL,
+} from '../services/geminiService';
 import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
@@ -488,6 +493,24 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
   const [manualModelEntry, setManualModelEntry] = useState(false);
   const { success, error, info } = useToast();
 
+  const [offlineModelWarnings, setOfflineModelWarnings] = useState<Record<string, string>>({});
+
+  const addOfflineWarning = (providerId: string, providerName: string) => {
+    setOfflineModelWarnings((prev) => ({
+      ...prev,
+      [providerId]: `Offline mode: using cached models for ${providerName}.`,
+    }));
+    info(`Using cached models for ${providerName} (offline)`);
+  };
+
+  const clearOfflineWarning = (providerId: string) => {
+    setOfflineModelWarnings((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
+  };
+
   // Load global token stats from localStorage
   const [tokenStats, setTokenStats] = useState<TokenStats>(() => {
     const statsJson = localStorage.getItem(STORAGE_KEYS.TOKEN_STATS);
@@ -517,16 +540,22 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         Date.now() - openRouterProvider.lastFetched > 24 * 60 * 60 * 1000; // 24 hours
 
       if (shouldFetch && isOpen) {
-        fetchModelsViaProxy()
-          .then((models) => {
-            if (models.length > 0) {
+        fetchModelsViaProxy(DEFAULT_MODEL_CACHE_TTL, openRouterProvider.id)
+          .then((result) => {
+            if (result.offlineFallback) {
+              addOfflineWarning(openRouterProvider.id, openRouterProvider.name);
+            } else {
+              clearOfflineWarning(openRouterProvider.id);
+            }
+
+            if (result.models.length > 0) {
               const updatedProviders = providers.map((p) =>
                 p.id === 'provider-openrouter'
-                  ? { ...p, fetchedModels: models, lastFetched: Date.now() }
+                  ? { ...p, fetchedModels: result.models, lastFetched: result.timestamp }
                   : p
               );
               onUpdateProviders(updatedProviders);
-              console.log(`Auto-fetched ${models.length} OpenRouter models via proxy`);
+              console.log(`Auto-fetched ${result.models.length} OpenRouter models via proxy`);
             }
           })
           .catch((err) => {
@@ -762,23 +791,33 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
       }
 
       // Then fetch models
-      const models = await fetchProviderModels(providerConfig);
-      if (models.length > 0) {
+      const result = await fetchProviderModels(providerConfig, DEFAULT_MODEL_CACHE_TTL);
+      if (result.offlineFallback) {
+        addOfflineWarning(providerId, providerConfig.name);
+      } else {
+        clearOfflineWarning(providerId);
+      }
+
+      if (result.models.length > 0) {
         // Update provider with BOTH the new apiKey from form AND the fetched models
         const updatedProviders = providers.map((p) =>
           p.id === providerId
             ? {
                 ...p,
                 apiKey: providerConfig.apiKey, // Save the API key!
-                fetchedModels: models,
-                lastFetched: Date.now(),
+                fetchedModels: result.models,
+                lastFetched: result.timestamp,
               }
             : p
         );
         onUpdateProviders(updatedProviders);
-        success(t('settings.providers.syncSuccess', { count: models.length }));
+        success(t('settings.providers.syncSuccess', { count: result.models.length }));
       } else {
-        error(t('settings.providers.noModels'));
+        error(
+          result.offlineFallback
+            ? `${t('settings.providers.noModels')} (offline cache unavailable)`
+            : t('settings.providers.noModels')
+        );
       }
     } catch (e: any) {
       error(`${t('common.error')}: ${e.message}`);
@@ -803,10 +842,16 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         if (!provider.lastFetched || provider.lastFetched < oneHourAgo) {
           console.log(`Auto-refreshing models for ${provider.name}...`);
           try {
-            const models = await fetchProviderModels(provider);
-            if (models.length > 0) {
+            const result = await fetchProviderModels(provider, DEFAULT_MODEL_CACHE_TTL);
+            if (result.offlineFallback) {
+              addOfflineWarning(provider.id, provider.name);
+            } else {
+              clearOfflineWarning(provider.id);
+            }
+
+            if (result.models.length > 0) {
               const updatedProviders = providers.map((p) =>
-                p.id === provider.id ? { ...p, fetchedModels: models, lastFetched: Date.now() } : p
+                p.id === provider.id ? { ...p, fetchedModels: result.models, lastFetched: result.timestamp } : p
               );
               onUpdateProviders(updatedProviders);
               info(t('settings.providers.autoRefreshed', { name: provider.name }));
@@ -1476,6 +1521,33 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
                 {activeSection === 'data' && t('settings.data.desc')}
               </p>
             </div>
+
+            {Object.keys(offlineModelWarnings).length > 0 && (
+              <div className="mb-4 space-y-2">
+                {Object.entries(offlineModelWarnings).map(([id, message]) => (
+                  <div
+                    key={id}
+                    className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+                  >
+                    <div className="mt-1 text-amber-700 dark:text-amber-300">
+                      <WifiOff size={16} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{message}</p>
+                      <p className="text-xs text-amber-700/80 dark:text-amber-300/70">
+                        Cached model list is being used until connectivity returns.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => clearOfflineWarning(id)}
+                      className="text-amber-600 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-100"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {activeSection === 'general' && (
               <div className="space-y-6">
