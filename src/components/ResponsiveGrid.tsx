@@ -64,7 +64,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
     return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
   };
 
-  // 特殊处理：4个AI使用2x2网格
+  // 特殊处理：4个AI使用2x2网格，行高用 minmax 保持最小高度但不被其他列拖高
   const useTwoByTwoGrid = enabledAgents.length === 4;
 
   if (enabledAgents.length === 0) {
@@ -82,15 +82,15 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
     <div
       ref={containerRef}
       className={`
-        h-full overflow-y-auto
+        h-full overflow-y-auto pb-32
         ${useTwoByTwoGrid ? 'p-3' : 'p-4'}
       `}
     >
       <div
         className={`
-          grid gap-4
+          grid gap-4 items-start
           ${getGridClasses()}
-          ${useTwoByTwoGrid ? 'auto-rows-auto' : 'auto-rows-fr'}
+          ${useTwoByTwoGrid ? 'auto-rows-[minmax(480px,auto)]' : 'auto-rows-fr'}
           transition-all duration-300 ease-in-out
         `}
       >
