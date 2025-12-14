@@ -1,6 +1,47 @@
 import { GoogleGenAI } from '@google/genai';
 import { AgentConfig, LLMProvider, OpenRouterModel, TokenUsage } from '../types';
 
+const MODEL_CACHE_PREFIX = 'nexus_models_cache_';
+export const DEFAULT_MODEL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+interface ModelCacheEntry {
+  timestamp: number;
+  models: OpenRouterModel[];
+}
+
+export interface ModelFetchResult {
+  models: OpenRouterModel[];
+  fromCache: boolean;
+  offlineFallback: boolean;
+  timestamp: number;
+}
+
+const getCacheKey = (providerId: string) => `${MODEL_CACHE_PREFIX}${providerId}`;
+
+const loadCachedModels = (providerId: string): ModelCacheEntry | null => {
+  try {
+    const raw = localStorage.getItem(getCacheKey(providerId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ModelCacheEntry;
+    if (!Array.isArray(parsed.models)) return null;
+    return parsed;
+  } catch (error) {
+    console.warn('Failed to parse model cache', error);
+    return null;
+  }
+};
+
+const saveCachedModels = (providerId: string, models: OpenRouterModel[]) => {
+  try {
+    const entry: ModelCacheEntry = { timestamp: Date.now(), models };
+    localStorage.setItem(getCacheKey(providerId), JSON.stringify(entry));
+    return entry.timestamp;
+  } catch (error) {
+    console.warn('Failed to write model cache', error);
+    return Date.now();
+  }
+};
+
 interface GenerateStreamParams {
   agent: AgentConfig;
   provider: LLMProvider;
@@ -70,7 +111,17 @@ export const validateOpenRouterKey = async (apiKey: string): Promise<boolean> =>
 };
 
 // Fetch OpenRouter models (public endpoint, no API key required)
-export const fetchModelsViaProxy = async (): Promise<OpenRouterModel[]> => {
+export const fetchModelsViaProxy = async (
+  ttlMs: number = DEFAULT_MODEL_CACHE_TTL,
+  providerId = 'provider-openrouter'
+): Promise<ModelFetchResult> => {
+  const cached = loadCachedModels(providerId);
+  const now = Date.now();
+
+  if (cached && now - cached.timestamp < ttlMs) {
+    return { models: cached.models, fromCache: true, offlineFallback: false, timestamp: cached.timestamp };
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
@@ -91,8 +142,9 @@ export const fetchModelsViaProxy = async (): Promise<OpenRouterModel[]> => {
     const data = await response.json();
 
     // Parse OpenRouter response format
+    let models: OpenRouterModel[] = [];
     if (Array.isArray(data.data)) {
-      return data.data.map((m: any) => ({
+      models = data.data.map((m: any) => ({
         id: m.id,
         name: m.name || m.id,
         created: m.created || 0,
@@ -111,15 +163,29 @@ export const fetchModelsViaProxy = async (): Promise<OpenRouterModel[]> => {
       }));
     }
 
-    return [];
+    const timestamp = saveCachedModels(providerId, models);
+    return { models, fromCache: false, offlineFallback: false, timestamp };
   } catch (error) {
     console.error('Failed to fetch OpenRouter models:', error);
-    return [];
+    if (cached) {
+      return { models: cached.models, fromCache: true, offlineFallback: true, timestamp: cached.timestamp };
+    }
+    return { models: [], fromCache: false, offlineFallback: true, timestamp: now };
   }
 };
 
 // Fetch models from OpenRouter with full metadata
-export const fetchProviderModels = async (provider: LLMProvider): Promise<OpenRouterModel[]> => {
+export const fetchProviderModels = async (
+  provider: LLMProvider,
+  ttlMs: number = DEFAULT_MODEL_CACHE_TTL
+): Promise<ModelFetchResult> => {
+  const cached = loadCachedModels(provider.id);
+  const now = Date.now();
+
+  if (cached && now - cached.timestamp < ttlMs) {
+    return { models: cached.models, fromCache: true, offlineFallback: false, timestamp: cached.timestamp };
+  }
+
   try {
     let baseUrl = provider.baseURL || 'https://api.openai.com/v1';
 
@@ -216,7 +282,7 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<OpenRo
     }
 
     // Filter out invalid models and sort by creation date (newest first)
-    return models
+    const normalizedModels = models
       .filter((m) => m.id && typeof m.id === 'string')
       .sort((a, b) => {
         // Primary sort: by created timestamp (newest first)
@@ -228,9 +294,15 @@ export const fetchProviderModels = async (provider: LLMProvider): Promise<OpenRo
         // Secondary sort: by name (alphabetical)
         return a.name.localeCompare(b.name);
       });
+
+    const timestamp = saveCachedModels(provider.id, normalizedModels);
+    return { models: normalizedModels, fromCache: false, offlineFallback: false, timestamp };
   } catch (error) {
     console.error('Error fetching models:', error);
-    throw error;
+    if (cached) {
+      return { models: cached.models, fromCache: true, offlineFallback: true, timestamp: cached.timestamp };
+    }
+    return { models: [], fromCache: false, offlineFallback: true, timestamp: now };
   }
 };
 
