@@ -64,7 +64,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
     return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
   };
 
-  // 特殊处理：4个AI使用2x2网格
+  // 特殊处理：4个AI使用分栏布局，避免单条超长回复拉伸同一行的另一列高度
   const useTwoByTwoGrid = enabledAgents.length === 4;
 
   if (enabledAgents.length === 0) {
@@ -82,33 +82,40 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
     <div
       ref={containerRef}
       className={`
-        h-full overflow-y-auto
+        h-full overflow-y-auto pb-32
         ${useTwoByTwoGrid ? 'p-3' : 'p-4'}
       `}
     >
       <div
         className={`
-          grid gap-4
-          ${getGridClasses()}
-          ${useTwoByTwoGrid ? 'auto-rows-auto' : 'auto-rows-fr'}
+          ${useTwoByTwoGrid
+            ? 'columns-1 md:columns-2 [column-gap:1rem]'
+            : `grid gap-4 items-start ${getGridClasses()} auto-rows-fr`}
           transition-all duration-300 ease-in-out
         `}
       >
-        {enabledAgents.map((agent, index) => (
-          <AgentColumn
-            key={agent.id}
-            agent={agent}
-            messages={messagesByAgent[agent.id] || []}
-            onOpenFullscreen={onOpenFullscreen}
-            onStopAgent={onStopAgent}
-            onRegenerateAgent={onRegenerateAgent}
-            onCopyMessage={onCopyMessage}
-            onRateMessage={onRateMessage}
-            onMarkAsBest={onMarkAsBest}
-            index={index}
-            totalCount={enabledAgents.length}
-          />
-        ))}
+        {enabledAgents.map((agent, index) => {
+          const columnWrapperClass = useTwoByTwoGrid
+            ? 'mb-4 break-inside-avoid-column last:mb-0'
+            : '';
+
+          return (
+            <div key={agent.id} className={columnWrapperClass}>
+              <AgentColumn
+                agent={agent}
+                messages={messagesByAgent[agent.id] || []}
+                onOpenFullscreen={onOpenFullscreen}
+                onStopAgent={onStopAgent}
+                onRegenerateAgent={onRegenerateAgent}
+                onCopyMessage={onCopyMessage}
+                onRateMessage={onRateMessage}
+                onMarkAsBest={onMarkAsBest}
+                index={index}
+                totalCount={enabledAgents.length}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
