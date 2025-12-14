@@ -4,7 +4,7 @@ import { BUILTIN_TEST_CASES, TEST_CASE_CATEGORIES } from '../data/testCases';
 import { STORAGE_KEYS } from '../constants';
 import { X, Send, Star, Plus, Trash2, Edit2, RefreshCw } from 'lucide-react';
 import { generateId } from '../utils/common';
-import { fetchTrendingTopics, topicToTestPrompt, TrendingTopic } from '../services/trendingTopics';
+import { fetchTrendingTopics, generateTopicPrompts, TrendingTopic } from '../services/trendingTopics';
 import { useTranslation } from 'react-i18next';
 
 interface TestCaseLibraryProps {
@@ -25,6 +25,17 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
   const [newTestCase, setNewTestCase] = useState({ title: '', prompt: '' });
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
   const [isLoadingTrending, setIsLoadingTrending] = useState(false);
+
+  // Handle ESC key to close
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   // Load custom test cases from localStorage
   useEffect(() => {
@@ -122,8 +133,14 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-5xl h-[80vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden m-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-5xl h-[80vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden m-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
           <div>
@@ -269,14 +286,15 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
                           刷新
                         </button>
                       </div>
-                      {trendingTopics.map((topic) => (
-                        <div
-                          key={topic.id}
-                          className="group p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md hover:border-orange-300 dark:hover:border-orange-700 transition-all"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
+                      {trendingTopics.map((topic) => {
+                        const prompts = generateTopicPrompts(topic, i18n.language as 'en' | 'zh');
+                        return (
+                          <div
+                            key={topic.id}
+                            className="group p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md hover:border-orange-300 dark:hover:border-orange-700 transition-all"
+                          >
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
                                 <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs rounded-full font-medium">
                                   {topic.source}
                                 </span>
@@ -292,25 +310,33 @@ export const TestCaseLibrary: React.FC<TestCaseLibraryProps> = ({
                                   href={topic.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 block truncate"
+                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline block truncate"
                                 >
                                   {topic.url}
                                 </a>
                               )}
+                              <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                  {i18n.language === 'zh' ? '选择分析角度：' : 'Select analysis perspective:'}
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {prompts.map((promptItem) => (
+                                    <button
+                                      key={promptItem.perspective}
+                                      onClick={() => onSendTestCase(promptItem.prompt)}
+                                      className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 text-gray-700 dark:text-gray-300 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900/30 dark:hover:to-purple-900/30 border border-blue-200 dark:border-blue-800 transition-all hover:scale-105"
+                                      title={promptItem.title}
+                                    >
+                                      <span>{promptItem.icon}</span>
+                                      <span className="truncate">{promptItem.title}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
-                            <button
-                              onClick={() => {
-                                const prompt = topicToTestPrompt(topic, i18n.language as 'en' | 'zh');
-                                onSendTestCase(prompt);
-                              }}
-                              className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex-shrink-0"
-                              title="发送测试"
-                            >
-                              <Send size={16} />
-                            </button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </>
                   )
                 ) : allTestCases.length === 0 ? (

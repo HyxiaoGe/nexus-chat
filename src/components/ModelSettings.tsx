@@ -39,7 +39,6 @@ import { useToast } from './Toast';
 import { useConfirm } from '../contexts/DialogContext';
 import { useTranslation } from 'react-i18next';
 import {
-  SYSTEM_PROMPT_TEMPLATE_SELECTORS,
   PROVIDER_PRESETS,
   BRAND_CONFIGS,
   getBrandFromModelId,
@@ -47,7 +46,6 @@ import {
   isNewModel,
   STORAGE_KEYS,
 } from '../constants';
-import { getSystemPrompt } from '../data/systemPrompts';
 import { BrandIcon } from './BrandIcons';
 import { Sparkles } from 'lucide-react';
 import {
@@ -724,15 +722,6 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
     }
   };
 
-  const applyAgentTemplate = (template: (typeof SYSTEM_PROMPT_TEMPLATE_SELECTORS)[0]) => {
-    const currentLanguage = i18n.language as 'en' | 'zh';
-    const promptText = getSystemPrompt(template.id, currentLanguage);
-    setAgentForm((prev) => ({
-      ...prev,
-      systemPrompt: promptText,
-    }));
-  };
-
   // --- Provider Logic ---
   const handleExpandProvider = (provider: LLMProvider) => {
     if (expandedProviderId === provider.id) {
@@ -1133,29 +1122,18 @@ export const ModelSettings: React.FC<ModelSettingsProps> = ({
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-gray-500 uppercase">
-              {t('settings.agents.systemPrompt')}
-            </label>
-            <div className="flex gap-1 flex-wrap">
-              {SYSTEM_PROMPT_TEMPLATE_SELECTORS.map((tpl) => (
-                <button
-                  key={tpl.id}
-                  onClick={() => applyAgentTemplate(tpl)}
-                  className="text-sm px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-600 dark:text-gray-300 hover:text-blue-600 rounded transition-colors"
-                  title={i18n.language === 'zh' ? tpl.label.zh : tpl.label.en}
-                >
-                  {tpl.icon}
-                </button>
-              ))}
-            </div>
-          </div>
+          <label className="text-xs font-medium text-gray-500 uppercase">
+            {t('settings.agents.systemPrompt')}
+          </label>
           <textarea
             value={agentForm.systemPrompt || ''}
             onChange={(e) => setAgentForm({ ...agentForm, systemPrompt: e.target.value })}
             className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none font-mono leading-relaxed"
             placeholder={t('settings.agents.placeholderPrompt')}
           />
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            {i18n.language === 'zh' ? '💡 使用左下角的 📚 按钮访问系统提示词模板库' : '💡 Use the 📚 button at the bottom-left to access prompt templates'}
+          </p>
         </div>
 
         {/* --- Advanced Configuration (New Section) --- */}

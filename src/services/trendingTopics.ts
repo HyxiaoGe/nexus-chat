@@ -170,36 +170,98 @@ export async function fetchTrendingTopics(): Promise<TrendingTopic[]> {
 }
 
 /**
- * Convert trending topic to test case prompt
+ * Analysis perspectives for trending topics
+ */
+export type AnalysisPerspective = 'summary' | 'background' | 'impact' | 'opinion' | 'solution';
+
+export interface TopicPrompt {
+  perspective: AnalysisPerspective;
+  title: string;
+  prompt: string;
+  icon: string;
+}
+
+/**
+ * Generate multiple analysis prompts for a trending topic
+ */
+export function generateTopicPrompts(topic: TrendingTopic, language: 'en' | 'zh'): TopicPrompt[] {
+  const baseInfo = language === 'zh'
+    ? `【话题】${topic.title}\n【来源】${topic.source}${topic.url ? `\n【链接】${topic.url}` : ''}`
+    : `[Topic] ${topic.title}\n[Source] ${topic.source}${topic.url ? `\n[Link] ${topic.url}` : ''}`;
+
+  if (language === 'zh') {
+    return [
+      {
+        perspective: 'summary',
+        title: '📋 事实总结',
+        icon: '📋',
+        prompt: `${baseInfo}\n\n请总结这个话题的核心内容和关键信息，包括：\n• 主要事件或内容是什么？\n• 涉及哪些关键人物、组织或技术？\n• 当前的进展状态如何？\n\n要求：客观陈述事实，避免主观评价。`,
+      },
+      {
+        perspective: 'background',
+        title: '🔍 背景分析',
+        icon: '🔍',
+        prompt: `${baseInfo}\n\n请分析这个话题的背景和原因：\n• 为什么会出现这个话题/事件？\n• 有哪些历史背景或前因后果？\n• 相关的技术原理或理论基础是什么？\n\n要求：深入挖掘背后的原因和逻辑。`,
+      },
+      {
+        perspective: 'impact',
+        title: '💡 影响评估',
+        icon: '💡',
+        prompt: `${baseInfo}\n\n请评估这个话题可能产生的影响：\n• 对行业、技术、社会会产生什么影响？\n• 短期和长期的影响分别是什么？\n• 哪些群体会受到影响？\n\n要求：从多个维度分析影响范围和程度。`,
+      },
+      {
+        perspective: 'opinion',
+        title: '💭 观点讨论',
+        icon: '💭',
+        prompt: `${baseInfo}\n\n请分享你对这个话题的看法：\n• 你如何评价这个事件/内容？\n• 有哪些值得关注的亮点或问题？\n• 不同立场的人可能会有什么不同看法？\n\n要求：提供多角度的观点，保持客观理性。`,
+      },
+      {
+        perspective: 'solution',
+        title: '🎯 解决方案',
+        icon: '🎯',
+        prompt: `${baseInfo}\n\n如果这个话题涉及问题或挑战，请提出解决思路：\n• 可以采取哪些应对措施？\n• 有什么最佳实践或参考案例？\n• 未来应该如何发展或改进？\n\n要求：提供可行的建议和行动方向。`,
+      },
+    ];
+  } else {
+    return [
+      {
+        perspective: 'summary',
+        title: '📋 Summary',
+        icon: '📋',
+        prompt: `${baseInfo}\n\nPlease summarize the core content and key information:\n• What is the main event or content?\n• What key people, organizations, or technologies are involved?\n• What is the current progress?\n\nRequirement: State facts objectively, avoid subjective evaluations.`,
+      },
+      {
+        perspective: 'background',
+        title: '🔍 Background',
+        icon: '🔍',
+        prompt: `${baseInfo}\n\nPlease analyze the background and reasons:\n• Why did this topic/event emerge?\n• What historical context or cause-and-effect relationships exist?\n• What are the relevant technical principles or theoretical foundations?\n\nRequirement: Dig deep into underlying reasons and logic.`,
+      },
+      {
+        perspective: 'impact',
+        title: '💡 Impact',
+        icon: '💡',
+        prompt: `${baseInfo}\n\nPlease assess the potential impact:\n• What impact will it have on industry, technology, or society?\n• What are the short-term and long-term impacts?\n• Which groups will be affected?\n\nRequirement: Analyze impact scope and magnitude from multiple dimensions.`,
+      },
+      {
+        perspective: 'opinion',
+        title: '💭 Opinion',
+        icon: '💭',
+        prompt: `${baseInfo}\n\nPlease share your views on this topic:\n• How do you evaluate this event/content?\n• What highlights or issues deserve attention?\n• What different perspectives might people from different positions have?\n\nRequirement: Provide multi-perspective views, maintain objectivity.`,
+      },
+      {
+        perspective: 'solution',
+        title: '🎯 Solution',
+        icon: '🎯',
+        prompt: `${baseInfo}\n\nIf this topic involves problems or challenges, please propose solutions:\n• What countermeasures can be taken?\n• What best practices or reference cases exist?\n• How should it develop or improve in the future?\n\nRequirement: Provide feasible suggestions and action directions.`,
+      },
+    ];
+  }
+}
+
+/**
+ * Convert trending topic to test case prompt (backward compatibility)
  */
 export function topicToTestPrompt(topic: TrendingTopic, language: 'en' | 'zh'): string {
-  if (language === 'zh') {
-    return `分析以下热点话题：
-
-标题：${topic.title}
-来源：${topic.source}
-${topic.url ? `链接：${topic.url}` : ''}
-
-请从以下角度进行分析：
-1. 核心内容和关键信息
-2. 技术背景和相关知识
-3. 发展趋势和未来影响
-4. 实际应用场景和价值
-
-请提供客观、全面的分析。`;
-  } else {
-    return `Analyze the following trending topic:
-
-Title: ${topic.title}
-Source: ${topic.source}
-${topic.url ? `Link: ${topic.url}` : ''}
-
-Please analyze from these perspectives:
-1. Core content and key information
-2. Technical background and related knowledge
-3. Development trends and future impact
-4. Practical applications and value
-
-Provide an objective and comprehensive analysis.`;
-  }
+  const prompts = generateTopicPrompts(topic, language);
+  return prompts[0].prompt; // Return summary prompt by default
 }
