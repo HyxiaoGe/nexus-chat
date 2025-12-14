@@ -546,7 +546,7 @@ export const useChatOrchestrator = ({
 
   // Regenerate response for a single specific agent
   const regenerateSingleAgent = async (userPrompt: string, targetAgentId: string) => {
-    if (!userPrompt.trim() || !activeSessionId || isStreaming) return;
+    if (!userPrompt.trim() || !activeSessionId) return;
 
     const currentInput = userPrompt.trim();
 
@@ -598,7 +598,9 @@ export const useChatOrchestrator = ({
           return final;
         });
         abortControllersRef.current.delete(messageId);
-        setIsStreaming(false);
+        if (abortControllersRef.current.size === 0) {
+          setIsStreaming(false);
+        }
         return;
       }
 
@@ -652,7 +654,9 @@ export const useChatOrchestrator = ({
               return final;
             });
             abortControllersRef.current.delete(messageId);
-            setIsStreaming(false);
+            if (abortControllersRef.current.size === 0) {
+              setIsStreaming(false);
+            }
           },
         });
       } catch (error: unknown) {
@@ -689,7 +693,9 @@ export const useChatOrchestrator = ({
           return final;
         });
         abortControllersRef.current.delete(messageId);
-        setIsStreaming(false);
+        if (abortControllersRef.current.size === 0) {
+          setIsStreaming(false);
+        }
       }
     } catch (error: unknown) {
       console.error('Error regenerating single agent:', error);
@@ -698,7 +704,9 @@ export const useChatOrchestrator = ({
           `${t('app.freeTier.limitReached')}: ${t('app.freeTier.limitReachedDesc')}`
         );
       }
-      setIsStreaming(false);
+      if (abortControllersRef.current.size === 0) {
+        setIsStreaming(false);
+      }
     }
   };
 
